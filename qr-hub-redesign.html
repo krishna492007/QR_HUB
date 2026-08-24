@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Hub — Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-950:#0A0A0D;
+    --ink-900:#131318;
+    --ink-850:#17181F;
+    --ink-800:#1D1E27;
+    --ink-750:#25262F;
+    --ink-700:#2E2F39;
+    --line:rgba(255,255,255,.07);
+    --line-strong:rgba(255,255,255,.14);
+    --amber:#D9A257;
+    --amber-soft:#EFCC8F;
+    --amber-dim:rgba(217,162,87,.14);
+    --amber-dim2:rgba(217,162,87,.28);
+    --cyan:#3FD8C4;
+    --cyan-dim:rgba(63,216,196,.14);
+    --cyan-dim2:rgba(63,216,196,.30);
+    --text-1:#F1EFEA;
+    --text-2:#94949E;
+    --text-3:#5C5D66;
+    --danger:#E2664D;
+    --radius-lg:22px;
+    --radius-md:16px;
+    --radius-sm:11px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 20% 10%, rgba(217,162,87,.06), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(63,216,196,.05), transparent 45%),
+      #050506;
+    font-family:'Inter',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:28px 12px;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ---------- phone frame ---------- */
+  .phone{
+    width:390px;
+    max-width:94vw;
+    height:844px;
+    max-height:92vh;
+    background:var(--ink-950);
+    border-radius:46px;
+    border:1px solid var(--line-strong);
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.8), 0 0 0 8px #000, 0 0 0 9px #1a1a1a;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- status bar ---------- */
+  .statusbar{
+    height:46px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 26px;
+    font-family:'Space Grotesk';
+    font-size:14px;
+    font-weight:600;
+    color:var(--text-1);
+    z-index:5;
+  }
+  .statusbar .icons{display:flex; align-items:center; gap:5px; color:var(--text-1);}
+
+  /* ---------- screens ---------- */
+  .screens{flex:1 1 auto; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  .screen.active{display:flex;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .dotfield{
+    background-image:radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1.5px);
+    background-size:14px 14px;
+  }
+
+  /* ================= GENERATE ================= */
+  .gen-header{padding:22px 22px 14px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.14em;
+    color:var(--amber-soft); text-transform:uppercase; display:flex; align-items:center; gap:7px;
+  }
+  .eyebrow::before{content:''; width:14px; height:1px; background:var(--amber);}
+  .gen-title{font-size:27px; font-weight:600; color:var(--text-1); margin-top:8px; letter-spacing:-.01em;}
+  .gen-sub{font-size:13.5px; color:var(--text-2); margin-top:5px;}
+
+  .gen-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:11px;
+    padding:6px 22px 18px;
+  }
+  .tile{
+    position:relative;
+    background:var(--ink-800);
+    border:1px solid var(--line);
+    border-radius:var(--radius-md);
+    padding:16px 8px 13px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .tile:active{transform:scale(.96);}
+  .tile .icon-wrap{
+    width:42px; height:42px; border-radius:12px;
+    background:var(--ink-750);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-1);
+    transition:background .15s ease, color .15s ease;
+  }
+  .tile svg{width:19px; height:19px;}
+  .tile .label{font-size:12.5px; font-weight:500; color:var(--text-1); text-align:center;}
+  .tile .bracket{
+    position:absolute; width:10px; height:10px; opacity:0; transition:opacity .15s ease;
+  }
+  .tile .bracket.tl{top:6px; left:6px; border-top:2px solid var(--amber); border-left:2px solid var(--amber); border-radius:4px 0 0 0;}
+  .tile .bracket.tr{top:6px; right:6px; border-top:2px solid var(--amber); border-right:2px solid var(--amber); border-radius:0 4px 0 0;}
+  .tile .bracket.bl{bottom:6px; left:6px; border-bottom:2px solid var(--amber); border-left:2px solid var(--amber); border-radius:0 0 0 4px;}
+  .tile .bracket.br{bottom:6px; right:6px; border-bottom:2px solid var(--amber); border-right:2px solid var(--amber); border-radius:0 0 4px 0;}
+  .tile.selected{border-color:var(--amber-dim2); background:linear-gradient(180deg, var(--amber-dim), var(--ink-800) 70%); box-shadow:0 6px 20px -8px rgba(217,162,87,.35);}
+  .tile.selected .icon-wrap{background:var(--amber-dim2); color:var(--amber-soft);}
+  .tile.selected .bracket{opacity:1;}
+
+  .gen-cta-wrap{margin-top:auto; padding:10px 22px 18px;}
+  .gen-cta{
+    height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk'; font-size:15px; font-weight:600;
+    background:var(--ink-800); color:var(--text-3); border:1px solid var(--line);
+    transition:all .18s ease;
+  }
+  .gen-cta.ready{
+    background:linear-gradient(180deg, var(--amber-soft), var(--amber));
+    color:#20140A; border:none;
+    box-shadow:0 10px 24px -10px rgba(217,162,87,.55);
+  }
+
+  /* ================= SCAN ================= */
+  .scan-top{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px 6px; position:relative; z-index:6;
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius:12px; background:var(--ink-800); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; color:var(--text-1); cursor:pointer;
+  }
+  .icon-btn svg{width:17px; height:17px;}
+  .scan-title{font-family:'Space Grotesk'; font-size:16px; font-weight:600; color:var(--text-1);}
+
+  .scan-menu{
+    position:absolute; top:58px; right:18px; width:238px;
+    background:rgba(23,24,31,.96); backdrop-filter:blur(14px);
+    border:1px solid var(--line-strong); border-radius:16px;
+    box-shadow:0 24px 48px -16px rgba(0,0,0,.6);
+    overflow:hidden; z-index:20;
+    opacity:0; transform:translateY(-6px); pointer-events:none;
+    transition:opacity .16s ease, transform .16s ease;
+  }
+  .scan-menu.open{opacity:1; transform:translateY(0); pointer-events:auto;}
+  .menu-row{padding:12px 14px; display:flex; align-items:center; gap:11px; border-bottom:1px solid var(--line);}
+  .menu-row:last-of-type{border-bottom:none;}
+  .menu-ico{width:30px; height:30px; border-radius:9px; background:var(--ink-750); display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--amber-soft);}
+  .menu-ico svg{width:14px; height:14px;}
+  .menu-txt .t1{font-size:12.5px; color:var(--text-2);}
+  .menu-txt .t2{font-size:13.5px; font-weight:600; color:var(--text-1); margin-top:1px;}
+  .menu-txt .t2.cyan{color:var(--cyan); display:flex; align-items:center; gap:5px;}
+  .dot-live{width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 0 0 rgba(63,216,196,.6); animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,216,196,.5);} 70%{box-shadow:0 0 0 6px rgba(63,216,196,0);} 100%{box-shadow:0 0 0 0 rgba(63,216,196,0);}}
+  .menu-foot{padding:10px 14px; text-align:center; font-size:10.5px; color:var(--text-3); letter-spacing:.04em;}
+
+  .viewfinder-wrap{flex:1; padding:14px 18px 10px; display:flex; flex-direction:column;}
+  .viewfinder{
+    flex:1; border-radius:26px; position:relative; overflow:hidden;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px),
+      linear-gradient(160deg, #1b1c22, #101116 60%, #0c0d11);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .frame{
+    width:68%; aspect-ratio:1/1; position:relative;
+  }
+  .frame .corner{position:absolute; width:30px; height:30px;}
+  .frame .corner.tl{top:0; left:0; border-top:2.5px solid var(--amber); border-left:2.5px solid var(--amber); border-radius:8px 0 0 0;}
+  .frame .corner.tr{top:0; right:0; border-top:2.5px solid var(--amber); border-right:2.5px solid var(--amber); border-radius:0 8px 0 0;}
+  .frame .corner.bl{bottom:0; left:0; border-bottom:2.5px solid var(--amber); border-left:2.5px solid var(--amber); border-radius:0 0 0 8px;}
+  .frame .corner.br{bottom:0; right:0; border-bottom:2.5px solid var(--amber); border-right:2.5px solid var(--amber); border-radius:0 0 8px 0;}
+  .scanline{
+    position:absolute; left:4%; right:4%; height:2px;
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow:0 0 12px 2px rgba(63,216,196,.7);
+    animation:sweep 2.6s ease-in-out infinite;
+  }
+  @keyframes sweep{0%{top:6%;} 50%{top:92%;} 100%{top:6%;}}
+  .scan-caption{
+    text-align:center; margin-top:14px; font-size:12.5px; color:var(--text-2);
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .scan-caption .mono{color:var(--cyan); font-size:11px;}
+
+  .scan-controls{
+    margin:14px 18px 18px; padding:12px 6px;
+    background:rgba(23,24,31,.92); backdrop-filter:blur(10px);
+    border:1px solid var(--line-strong); border-radius:20px;
+    display:flex; align-items:center; justify-content:space-around;
+  }
+  .ctrl{display:flex; flex-direction:column; align-items:center; gap:7px; flex:1; cursor:pointer;}
+  .ctrl .c-ico{width:38px; height:38px; border-radius:12px; background:var(--ink-750); display:flex; align-items:center; justify-content:center; color:var(--text-1); transition:all .15s ease;}
+  .ctrl.on .c-ico{background:var(--amber-dim2); color:var(--amber-soft);}
+  .ctrl svg{width:17px; height:17px;}
+  .ctrl .c-label{font-size:11px; color:var(--text-2); font-weight:500;}
+  .ctrl.on .c-label{color:var(--amber-soft);}
+  .ctrl-divider{width:1px; height:30px; background:var(--line-strong);}
+
+  /* ================= HISTORY ================= */
+  .hist-header{padding:20px 22px 4px; display:flex; align-items:flex-start; justify-content:space-between;}
+  .hist-title-row{display:flex; align-items:center; gap:9px;}
+  .hist-title{font-family:'Space Grotesk'; font-size:24px; font-weight:600; color:var(--text-1);}
+  .count-badge{background:var(--amber-dim); color:var(--amber-soft); font-family:'IBM Plex Mono'; font-size:11.5px; padding:2px 9px; border-radius:20px; font-weight:500;}
+  .hist-actions{display:flex; gap:8px;}
+
+  .segmented{display:flex; gap:20px; padding:18px 22px 0; border-bottom:1px solid var(--line);}
+  .seg-item{font-size:13.5px; font-weight:500; color:var(--text-2); padding-bottom:11px; position:relative; cursor:pointer;}
+  .seg-item.active{color:var(--text-1); font-weight:600;}
+  .seg-item.active::after{content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--amber); border-radius:2px;}
+
+  .chip-row{display:flex; gap:8px; padding:14px 22px;}
+  .chip{
+    font-size:12px; font-weight:500; padding:6px 13px; border-radius:20px;
+    background:var(--ink-800); border:1px solid var(--line); color:var(--text-2); cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip.active{border-color:var(--amber-dim2); color:var(--text-1); background:var(--amber-dim);}
+
+  .hist-list{padding:2px 22px 22px; display:flex; flex-direction:column; gap:10px;}
+  .hcard{
+    background:var(--ink-800); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:13px; display:flex; align-items:center; gap:12px;
+  }
+  .hcard .h-ico{
+    width:42px; height:42px; border-radius:12px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hcard .h-ico.created{background:var(--amber-dim); color:var(--amber-soft);}
+  .hcard .h-ico.scanned{background:var(--cyan-dim); color:var(--cyan);}
+  .hcard .h-ico svg{width:18px; height:18px;}
+  .hcard .h-body{flex:1; min-width:0;}
+  .hcard .h-title{font-size:14.5px; font-weight:600; color:var(--text-1);}
+  .hcard .h-sub{font-family:'IBM Plex Mono'; font-size:11px; color:var(--text-3); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hcard .h-meta{display:flex; align-items:center; gap:7px; margin-top:7px;}
+  .h-time{font-size:11px; color:var(--text-2); display:flex; align-items:center; gap:4px;}
+  .h-status{font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:10px; letter-spacing:.02em;}
+  .h-status.created{background:var(--amber-dim); color:var(--amber-soft);}
+  .h-status.scanned{background:var(--cyan-dim); color:var(--cyan);}
+  .heart{width:20px; height:20px; color:var(--text-3); cursor:pointer; flex:0 0 auto;}
+  .heart.filled{color:var(--danger);}
+
+  /* ---------- bottom nav ---------- */
+  .bottomnav{
+    flex:0 0 auto; display:flex; border-top:1px solid var(--line);
+    background:var(--ink-900); padding:11px 10px 20px;
+  }
+  .nav-item{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer;
+    color:var(--text-3);
+  }
+  .nav-item svg{width:21px; height:21px;}
+  .nav-item .n-label{font-size:10.5px; font-weight:500;}
+  .nav-item.active{color:var(--amber-soft);}
+  .nav-item .n-indicator{width:3px; height:3px; border-radius:50%; background:transparent;}
+  .nav-item.active .n-indicator{background:var(--amber);}
+
+  /* ---------- theme toggle ---------- */
+  .theme-toggle{
+    width:26px; height:26px; border-radius:50%; background:var(--ink-800);
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    color:var(--text-1); cursor:pointer; margin-right:2px;
+  }
+  .theme-toggle svg{width:13px; height:13px;}
+  .theme-toggle .icon-sun{display:none;}
+  .phone[data-theme="light"] .theme-toggle .icon-moon{display:none;}
+  .phone[data-theme="light"] .theme-toggle .icon-sun{display:block;}
+
+  /* ---------- ticket perforation (light-mode signature) ---------- */
+  .ticket-edge{display:none;}
+  .phone[data-theme="light"] .ticket-edge{
+    display:flex; align-items:center; justify-content:space-between;
+    position:relative; height:14px; margin:0 -4px 16px;
+  }
+  .phone[data-theme="light"] .ticket-edge::before{
+    content:''; position:absolute; left:15px; right:15px; top:50%;
+    border-top:2px dashed rgba(20,20,22,.22);
+  }
+  .phone[data-theme="light"] .ticket-edge span{
+    width:14px; height:14px; border-radius:50%; background:var(--ink-950);
+    border:1px solid var(--line-strong); position:relative; z-index:1;
+  }
+
+  /* =======================================================
+     LIGHT THEME — "daylight / print" mode, not a mechanical
+     inversion: paper surfaces, ink accents, a flatbed-scanner
+     light bar instead of a laser, crop-mark corners.
+     ======================================================= */
+  .phone[data-theme="light"]{
+    --ink-950:#ECEEEA;
+    --ink-900:#FBFBF9;
+    --ink-850:#FFFFFF;
+    --ink-800:#FFFFFF;
+    --ink-750:#F0F1EB;
+    --ink-700:#E2E3DD;
+    --line:rgba(20,20,22,.09);
+    --line-strong:rgba(20,20,22,.16);
+    --amber:#A8721E;
+    --amber-soft:#8C5E17;
+    --amber-dim:rgba(168,114,30,.10);
+    --amber-dim2:rgba(168,114,30,.32);
+    --cyan:#0E8A78;
+    --cyan-dim:rgba(14,138,120,.10);
+    --cyan-dim2:rgba(14,138,120,.30);
+    --text-1:#16171A;
+    --text-2:#63646A;
+    --text-3:#9C9DA1;
+    --danger:#C6432B;
+  }
+  .phone[data-theme="light"] .dotfield{
+    background-image:radial-gradient(circle, rgba(20,20,22,.06) 1px, transparent 1.5px);
+  }
+  .phone[data-theme="light"] .tile.selected{
+    box-shadow:0 6px 16px -8px rgba(168,114,30,.28);
+  }
+  .phone[data-theme="light"] .gen-cta.ready{
+    box-shadow:0 10px 20px -10px rgba(168,114,30,.35);
+  }
+  .phone[data-theme="light"] .gen-cta:not(.ready){
+    background:var(--ink-750); border-color:var(--line);
+  }
+  .phone[data-theme="light"] .scan-menu{
+    background:rgba(255,255,255,.94);
+    box-shadow:0 20px 40px -18px rgba(20,20,22,.22);
+  }
+  .phone[data-theme="light"] .scan-controls{
+    background:rgba(255,255,255,.9);
+    box-shadow:0 10px 24px -14px rgba(20,20,22,.2);
+  }
+  .phone[data-theme="light"] .viewfinder{
+    background:
+      repeating-linear-gradient(115deg, rgba(20,20,22,.025) 0 2px, transparent 2px 6px),
+      linear-gradient(160deg, #FFFFFF, #F1F2EC 55%, #E6E7E0);
+  }
+  .phone[data-theme="light"] .scanline{
+    background:linear-gradient(90deg, transparent, #FFFCF3, transparent);
+    box-shadow:0 10px 16px -6px rgba(20,20,22,.3);
+    height:3px;
+  }
+  .phone[data-theme="light"] .scan-caption .mono{ color:var(--cyan); }
+  @keyframes pulse-light{
+    0%{box-shadow:0 0 0 0 rgba(14,138,120,.5);}
+    70%{box-shadow:0 0 0 6px rgba(14,138,120,0);}
+    100%{box-shadow:0 0 0 0 rgba(14,138,120,0);}
+  }
+  .phone[data-theme="light"] .dot-live{ animation:pulse-light 1.8s infinite; }
+  .phone[data-theme="light"] .hcard{ box-shadow:0 1px 2px rgba(20,20,22,.04); }
+  .phone[data-theme="light"] .frame .corner{ border-width:2px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="statusbar">
+    <span>9:41</span>
+    <div class="icons">
+      <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"/></svg>
+      </div>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="12"><rect x="1" y="1" width="19" height="10" rx="2.5" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="3" y="3" width="13" height="6" rx="1" fill="currentColor"/><rect x="21.5" y="4" width="1.6" height="4" rx="0.8" fill="currentColor"/></svg>
+    </div>
+  </div>
+
+  <div class="screens">
+
+    <!-- ================= GENERATE ================= -->
+    <div class="screen active dotfield" id="screen-generate" style="background-position:0 0;">
+      <div class="gen-header">
+        <div class="eyebrow">Create</div>
+        <div class="gen-title">Generate a QR</div>
+        <div class="gen-sub">Pick a type below to get started</div>
+      </div>
+
+      <div class="gen-grid" id="genGrid">
+        <!-- tiles injected by JS -->
+      </div>
+
+      <div class="gen-cta-wrap">
+        <div class="ticket-edge"><span></span><span></span></div>
+        <div class="gen-cta" id="genCta">Select a type to continue</div>
+      </div>
+    </div>
+
+    <!-- ================= SCAN ================= -->
+    <div class="screen" id="screen-scan">
+      <div class="scan-top">
+        <div class="icon-btn" id="scanBack">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <div class="scan-title">Scan</div>
+        <div class="icon-btn" id="scanMenuBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg>
+        </div>
+
+        <div class="scan-menu" id="scanMenu">
+          <div class="menu-row">
+            <div class="menu-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.7L21 8.6l-4.5 4.2L17.6 19 12 15.8 6.4 19l1.1-6.2L3 8.6l6.4-.9L12 2z"/></svg></div>
+            <div class="menu-txt"><div class="t1">Default UPI app</div><div class="t2">PhonePe</div></div>
+          </div>
+          <div class="menu-row">
+            <div class="menu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+            <div class="menu-txt"><div class="t1">Quick auto-pay</div><div class="t2 cyan"><span class="dot-live"></span>Active on scan</div></div>
+          </div>
+          <div class="menu-row">
+            <div class="menu-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/></svg></div>
+            <div class="menu-txt"><div class="t2" style="margin-top:0;">Privacy policy</div></div>
+          </div>
+          <div class="menu-foot mono">BUILT BY KRISHNA</div>
+        </div>
+      </div>
+
+      <div class="viewfinder-wrap">
+        <div class="viewfinder">
+          <div class="frame">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+            <div class="scanline"></div>
+          </div>
+        </div>
+        <div class="scan-caption">Align the code inside the frame <span class="mono">// live</span></div>
+      </div>
+
+      <div class="scan-controls">
+        <div class="ctrl on" id="ctrlFlash">
+          <div class="c-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+          <div class="c-label">Flash</div>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl">
+          <div class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none"/><path d="M21 16l-5.5-5-4 4-2-2L3 18"/></svg></div>
+          <div class="c-label">Gallery</div>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="ctrl">
+          <div class="c-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M21 6H9a6 6 0 0 0-6 6"/><path d="M7 22l-4-4 4-4"/><path d="M3 18h12a6 6 0 0 0 6-6"/></svg></div>
+          <div class="c-label">Flip</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= HISTORY ================= -->
+    <div class="screen" id="screen-history">
+      <div class="hist-header">
+        <div class="hist-title-row">
+          <div class="hist-title">History</div>
+          <div class="count-badge">3</div>
+        </div>
+        <div class="hist-actions">
+          <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+          <div class="icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg></div>
+        </div>
+      </div>
+
+      <div class="segmented" id="segmented">
+        <div class="seg-item active" data-seg="all">All</div>
+        <div class="seg-item" data-seg="scanned">Scanned</div>
+        <div class="seg-item" data-seg="created">Created</div>
+        <div class="seg-item" data-seg="fav">Favorites</div>
+      </div>
+
+      <div class="chip-row">
+        <div class="chip active">All</div>
+        <div class="chip">Text</div>
+        <div class="chip">UPI</div>
+      </div>
+
+      <div class="hist-list">
+        <div class="hcard">
+          <div class="h-ico created">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>
+          </div>
+          <div class="h-body">
+            <div class="h-title">hello</div>
+            <div class="h-meta">
+              <span class="h-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>2 min ago</span>
+              <span class="h-status created">CREATED</span>
+            </div>
+          </div>
+          <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="this.classList.toggle('filled'); this.setAttribute('fill', this.classList.contains('filled')?'currentColor':'none')"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
+        </div>
+
+        <div class="hcard">
+          <div class="h-ico created">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>
+          </div>
+          <div class="h-body">
+            <div class="h-title">hello</div>
+            <div class="h-meta">
+              <span class="h-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>3 min ago</span>
+              <span class="h-status created">CREATED</span>
+            </div>
+          </div>
+          <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="this.classList.toggle('filled'); this.setAttribute('fill', this.classList.contains('filled')?'currentColor':'none')"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
+        </div>
+
+        <div class="hcard">
+          <div class="h-ico scanned">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V10l9-7 9 7v11h-6v-7H9v7H3z"/></svg>
+          </div>
+          <div class="h-body">
+            <div class="h-title">UPI QR Code</div>
+            <div class="h-sub">6232659514-1@okbizaxis</div>
+            <div class="h-meta">
+              <span class="h-time"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>18 min ago</span>
+              <span class="h-status scanned">SCANNED</span>
+            </div>
+          </div>
+          <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="this.classList.toggle('filled'); this.setAttribute('fill', this.classList.contains('filled')?'currentColor':'none')"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= BOTTOM NAV ================= -->
+  <div class="bottomnav">
+    <div class="nav-item active" data-target="generate">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke-dasharray="2.2 2.2"/></svg>
+      <div class="n-label">Generate</div>
+      <div class="n-indicator"></div>
+    </div>
+    <div class="nav-item" data-target="scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><rect x="8" y="8" width="8" height="8" rx="1.2"/></svg>
+      <div class="n-label">Scan</div>
+      <div class="n-indicator"></div>
+    </div>
+    <div class="nav-item" data-target="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+      <div class="n-label">History</div>
+      <div class="n-indicator"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- icon set for generate grid ----
+  const icon = {
+    text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg>',
+    url: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 15l6-6"/><path d="M13 6l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M11 18l-1 1a4 4 0 0 1-6-6l1-1"/></svg>',
+    upi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V10l8-6 8 6v11M9 21v-6h6v6"/></svg>',
+    wa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4 8.3 8.3 0 0 1-4-1L3 20l1.2-5.5a8.3 8.3 0 0 1-1-4A8.4 8.4 0 0 1 11.6 2 8.4 8.4 0 0 1 21 11.5z"/><path d="M8.5 9.5c.3 2.5 2.5 4.7 5 5" stroke-linecap="round"/></svg>',
+    group: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3.5 20c.5-3.2 2.8-5 5.5-5s5 1.8 5.5 5"/><path d="M15 15.3c2.2.2 4 1.7 4.4 4.4"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.2 2 2 0 0 1 6 3z"/></svg>',
+    sms: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4V4z"/><path d="M8 9h8M8 12h5" stroke-linecap="round"/></svg>',
+    email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+    contact: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5"/></svg>',
+    wifi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/></svg>',
+    location: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.5 7-11.5a7 7 0 0 0-14 0C5 14.5 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>',
+    event: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/></svg>'
+  };
+  const types = [
+    ['text','Text'], ['url','URL'], ['upi','UPI'],
+    ['wa','WhatsApp'], ['group','WA Group'], ['phone','Phone'],
+    ['sms','SMS'], ['email','Email'], ['contact','Contact'],
+    ['wifi','WiFi'], ['location','Location'], ['event','Event']
+  ];
+  const grid = document.getElementById('genGrid');
+  types.forEach(([key,label])=>{
+    const tile = document.createElement('div');
+    tile.className='tile';
+    tile.innerHTML = `
+      <div class="bracket tl"></div><div class="bracket tr"></div>
+      <div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="icon-wrap">${icon[key]}</div>
+      <div class="label">${label}</div>`;
+    tile.addEventListener('click', ()=>{
+      const wasSelected = tile.classList.contains('selected');
+      document.querySelectorAll('.tile').forEach(t=>t.classList.remove('selected'));
+      const cta = document.getElementById('genCta');
+      if(!wasSelected){
+        tile.classList.add('selected');
+        cta.textContent = `Continue with ${label}`;
+        cta.classList.add('ready');
+      } else {
+        cta.textContent = 'Select a type to continue';
+        cta.classList.remove('ready');
+      }
+    });
+    grid.appendChild(tile);
+  });
+
+  // ---- bottom nav switching ----
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('screen-'+item.dataset.target).classList.add('active');
+      document.getElementById('scanMenu').classList.remove('open');
+    });
+  });
+
+  // ---- scan menu toggle ----
+  const scanMenu = document.getElementById('scanMenu');
+  document.getElementById('scanMenuBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    scanMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', ()=> scanMenu.classList.remove('open'));
+
+  // ---- theme toggle ----
+  document.getElementById('themeToggle').addEventListener('click', ()=>{
+    const phone = document.querySelector('.phone');
+    const isLight = phone.getAttribute('data-theme') === 'light';
+    phone.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  });
+
+  // ---- flash toggle ----
+  document.getElementById('ctrlFlash').addEventListener('click', function(){ this.classList.toggle('on'); });
+
+  // ---- history segmented + chips ----
+  document.querySelectorAll('.seg-item').forEach(s=>{
+    s.addEventListener('click', ()=>{
+      document.querySelectorAll('.seg-item').forEach(x=>x.classList.remove('active'));
+      s.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
