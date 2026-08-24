@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.*
+import com.qr.hub.util.ads.BannerAdView
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -183,8 +184,9 @@ fun HistoryScreen(
                             )
                         }
 
-                        // Bottom spacer for navigation bar
+                        // AdMob Banner Ad
                         item {
+                            BannerAdView()
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }

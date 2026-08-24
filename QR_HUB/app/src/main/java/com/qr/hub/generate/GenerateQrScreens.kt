@@ -1,5 +1,6 @@
 package com.qr.hub.generate
 
+import android.app.Activity
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
@@ -8,6 +9,8 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import com.qr.hub.util.ads.AdManager
+import com.qr.hub.util.ads.BannerAdView
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -1184,19 +1187,22 @@ private fun GenerateQrFormScreen(
                     else Modifier.border(1.dp, BorderLine, RoundedCornerShape(16.dp))
                 )
                 .clickable(enabled = isValid && !isGenerating) {
-                    scope.launch {
-                        isGenerating = true
-                        withContext(Dispatchers.Default) {
-                            onGenerate(logoBitmap)
+                    val activity = context as? Activity
+                    AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                        scope.launch {
+                            isGenerating = true
+                            withContext(Dispatchers.Default) {
+                                onGenerate(logoBitmap)
+                            }
+                            isGenerating = false
+                            val qrContent = getContent()
+                            if (qrContent.isNotEmpty() && qrContent != lastSavedContent) {
+                                historyViewModel.saveGenerate(qrContent, qrType)
+                                lastSavedContent = qrContent
+                            }
+                            kotlinx.coroutines.delay(200)
+                            scrollState.animateScrollTo(scrollState.maxValue)
                         }
-                        isGenerating = false
-                        val qrContent = getContent()
-                        if (qrContent.isNotEmpty() && qrContent != lastSavedContent) {
-                            historyViewModel.saveGenerate(qrContent, qrType)
-                            lastSavedContent = qrContent
-                        }
-                        kotlinx.coroutines.delay(200)
-                        scrollState.animateScrollTo(scrollState.maxValue)
                     }
                 },
             contentAlignment = Alignment.Center
@@ -1225,6 +1231,10 @@ private fun GenerateQrFormScreen(
                 )
             }
         }
+
+        // ── BANNER AD (Bottom of Form) ──
+        Spacer(modifier = Modifier.height(14.dp))
+        BannerAdView(modifier = Modifier.padding(horizontal = 18.dp))
 
         // ── GENERATED QR DISPLAY ──
         generatedBitmap?.let { bitmap ->
@@ -1286,7 +1296,12 @@ private fun GenerateQrFormScreen(
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(Ink750)
                                 .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
-                                .clickable { shareBitmap(context, bitmap, "qr_code.png") },
+                                .clickable {
+                                    val activity = context as? Activity
+                                    AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                        shareBitmap(context, bitmap, "qr_code.png")
+                                    }
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1304,10 +1319,13 @@ private fun GenerateQrFormScreen(
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(AmberCtaGradient)
                                 .clickable(enabled = !isDownloading) {
-                                    downloadScope.launch {
-                                        isDownloading = true
-                                        downloadBitmap(context, bitmap, "qr_${System.currentTimeMillis()}.png")
-                                        isDownloading = false
+                                    val activity = context as? Activity
+                                    AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                        downloadScope.launch {
+                                            isDownloading = true
+                                            downloadBitmap(context, bitmap, "qr_${System.currentTimeMillis()}.png")
+                                            isDownloading = false
+                                        }
                                     }
                                 },
                             contentAlignment = Alignment.Center

@@ -17,8 +17,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import android.app.Activity
 import com.qr.hub.generate.QRGenerator
 import com.qr.hub.util.UpiPreferenceManager
+import com.qr.hub.util.ads.AdManager
+import com.qr.hub.util.ads.BannerAdView
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -394,6 +397,14 @@ fun ResultScreen(
                         }
                     }
                 )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // ============================================
+            // BANNER AD
+            // ============================================
+            item {
+                BannerAdView()
                 Spacer(Modifier.height(16.dp))
             }
         }

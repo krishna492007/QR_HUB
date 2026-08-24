@@ -1,11 +1,14 @@
 package com.qr.hub.history
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import com.qr.hub.util.ads.AdManager
+import com.qr.hub.util.ads.BannerAdView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -306,7 +309,12 @@ fun HistoryDetailScreen(
                         .clip(RoundedCornerShape(14.dp))
                         .background(Ink750)
                         .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
-                        .clickable { shareQR(context, item.rawValue) },
+                        .clickable {
+                            val activity = context as? Activity
+                            AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                shareQR(context, item.rawValue)
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -325,10 +333,13 @@ fun HistoryDetailScreen(
                         .background(DetailCtaGradient)
                         .clickable(enabled = !isDownloading && qrBitmap != null) {
                             qrBitmap?.let { bmp ->
-                                scope.launch {
-                                    isDownloading = true
-                                    saveQRToGallery(context, bmp, "QR_${item.id}")
-                                    isDownloading = false
+                                val activity = context as? Activity
+                                AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                    scope.launch {
+                                        isDownloading = true
+                                        saveQRToGallery(context, bmp, "QR_${item.id}")
+                                        isDownloading = false
+                                    }
                                 }
                             }
                         },
@@ -350,6 +361,11 @@ fun HistoryDetailScreen(
                     }
                 }
             }
+
+            // Banner Ad at bottom
+            Spacer(modifier = Modifier.height(16.dp))
+            BannerAdView()
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }

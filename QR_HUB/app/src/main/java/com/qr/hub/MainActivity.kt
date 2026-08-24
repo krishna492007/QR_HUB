@@ -57,6 +57,8 @@ import com.qr.hub.scanner.ScannerScreen
 import com.qr.hub.ui.theme.QRHUBTheme
 import com.qr.hub.util.*
 
+import com.qr.hub.util.ads.AdManager
+
 private val DarkBg = DarkPrimary
 private val LightBg = LightPrimary
 
@@ -74,6 +76,7 @@ sealed class Screen {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AdManager.initialize(this)
         enableEdgeToEdge()
         setContent {
             QRHUBTheme {
