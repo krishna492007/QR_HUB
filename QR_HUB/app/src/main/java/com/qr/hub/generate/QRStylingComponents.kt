@@ -11,6 +11,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +39,7 @@ import com.qr.hub.R
 import com.qr.hub.util.*
 
 /**
- * Interactive QR Code Customization UI Section with type-aware Frames and Logos
+ * Interactive QR Code Customization UI Section with type-aware Frames, Logos, and In-App 1:1 Cropper
  */
 @Composable
 fun QRCustomizationSection(
@@ -50,6 +52,10 @@ fun QRCustomizationSection(
     val tabs = listOf("Presets", "Dot Shape", "Corner Eyes", "Frames", "Center Logo")
     val context = LocalContext.current
 
+    // State for Image Crop Dialog
+    var rawPickedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var showCropDialog by remember { mutableStateOf(false) }
+
     // Gallery Picker for custom logo
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -60,12 +66,31 @@ fun QRCustomizationSection(
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 inputStream?.close()
                 if (bitmap != null) {
-                    onStyleChanged(styleConfig.copy(logoBitmap = bitmap, logoTag = "custom"))
+                    rawPickedBitmap = bitmap
+                    showCropDialog = true
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+    }
+
+    // Show In-App Square Cropper Dialog
+    if (showCropDialog && rawPickedBitmap != null) {
+        ImageCropDialog(
+            sourceBitmap = rawPickedBitmap!!,
+            onDismiss = { showCropDialog = false },
+            onCropApplied = { croppedBmp ->
+                showCropDialog = false
+                onStyleChanged(
+                    styleConfig.copy(
+                        logoBitmap = croppedBmp,
+                        logoTag = "custom",
+                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+                    )
+                )
+            }
+        )
     }
 
     Box(
@@ -177,6 +202,7 @@ private fun PresetsTab(
                             preset.config.copy(
                                 logoBitmap = currentConfig.logoBitmap,
                                 logoTag = currentConfig.logoTag,
+                                logoShape = currentConfig.logoShape,
                                 frameStyle = currentConfig.frameStyle,
                                 frameText = currentConfig.frameText
                             )
@@ -463,7 +489,7 @@ private data class FrameOption(
 )
 
 /**
- * Type-Aware Center Logo Options (adapts dynamically to UPI, WhatsApp, WiFi, etc.)
+ * Type-Aware Center Logo Options with Logo Shape Selector (Squircle, Circle, Square)
  */
 @Composable
 private fun TypeAwareCenterLogoTab(
@@ -475,14 +501,76 @@ private fun TypeAwareCenterLogoTab(
     val context = LocalContext.current
     val upperType = qrType.uppercase()
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Option 1: None
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+        // ── 1. LOGO SHAPE SELECTOR (SQUIRCLE, CIRCLE, SQUARE) ──
+        if (currentConfig.logoBitmap != null) {
+            Column {
+                Text(
+                    "Logo Badge Shape",
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QRLogoShape.values().forEach { shape ->
+                        val isSelected = currentConfig.logoShape == shape
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) AmberDim else Ink750)
+                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(10.dp))
+                                .clickable { onStyleChanged(currentConfig.copy(logoShape = shape)) }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                shape.displayName,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) AmberSoft else TextPrimary
+                            )
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(color = BorderLine, modifier = Modifier.padding(vertical = 4.dp))
+        }
+
+        // ── 2. LOGO CHOICES ──
+
+        // Option 1: Official App Logo (Default Branded Choice)
         LogoOptionRow(
-            title = "No Center Logo",
-            subtitle = "Pure clean QR pattern",
-            icon = Icons.Default.Close,
-            isSelected = currentConfig.logoBitmap == null,
-            onClick = { onStyleChanged(currentConfig.copy(logoBitmap = null, logoTag = "none")) }
+            title = "QR Hub Official Logo (Default)",
+            subtitle = "Gold Square App Crown Icon",
+            icon = Icons.Default.QrCodeScanner,
+            isSelected = currentConfig.logoTag == "app_logo",
+            onClick = {
+                val logo = try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
+                onStyleChanged(
+                    currentConfig.copy(
+                        logoBitmap = logo,
+                        logoTag = "app_logo",
+                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+                    )
+                )
+            }
+        )
+
+        // Option 2: Custom Gallery Photo with In-App 1:1 Cropper
+        LogoOptionRow(
+            title = if (currentConfig.logoTag == "custom") "Custom Logo (Tap to Re-Crop)" else "Custom Logo (Pick & Crop 1:1)",
+            subtitle = "Select any photo & crop in exact square",
+            icon = Icons.Default.Crop,
+            isSelected = currentConfig.logoTag == "custom",
+            onClick = onPickGallery
         )
 
         // Type-Specific Branded Logo Badge
@@ -495,7 +583,7 @@ private fun TypeAwareCenterLogoTab(
                     isSelected = currentConfig.logoTag == "upi_badge",
                     onClick = {
                         val upiBmp = createTextBadgeBitmap("UPI", 0xFF00796B.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge"))
+                        onStyleChanged(currentConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
                     }
                 )
             }
@@ -507,7 +595,7 @@ private fun TypeAwareCenterLogoTab(
                     isSelected = currentConfig.logoTag == "wa_badge",
                     onClick = {
                         val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge"))
+                        onStyleChanged(currentConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
                     }
                 )
             }
@@ -519,7 +607,7 @@ private fun TypeAwareCenterLogoTab(
                     isSelected = currentConfig.logoTag == "wifi_badge",
                     onClick = {
                         val wifiBmp = createTextBadgeBitmap("WIFI", 0xFF0288D1.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge"))
+                        onStyleChanged(currentConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
                     }
                 )
             }
@@ -531,31 +619,19 @@ private fun TypeAwareCenterLogoTab(
                     isSelected = currentConfig.logoTag == "web_badge",
                     onClick = {
                         val webBmp = createTextBadgeBitmap("WEB", 0xFF3F51B5.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = webBmp, logoTag = "web_badge"))
+                        onStyleChanged(currentConfig.copy(logoBitmap = webBmp, logoTag = "web_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
                     }
                 )
             }
         }
 
-        // Option 2: QR Hub Official Gold Logo
+        // Option 4: None
         LogoOptionRow(
-            title = "QR Hub Official Logo",
-            subtitle = "Branded Gold Crown Icon",
-            icon = Icons.Default.QrCodeScanner,
-            isSelected = currentConfig.logoTag == "app_logo",
-            onClick = {
-                val logo = try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
-                onStyleChanged(currentConfig.copy(logoBitmap = logo, logoTag = "app_logo"))
-            }
-        )
-
-        // Option 3: Custom Gallery Photo Pick
-        LogoOptionRow(
-            title = if (currentConfig.logoTag == "custom") "Custom Image Selected" else "Pick Logo from Gallery",
-            subtitle = "Upload custom brand/business logo",
-            icon = Icons.Default.AddPhotoAlternate,
-            isSelected = currentConfig.logoTag == "custom",
-            onClick = onPickGallery
+            title = "No Center Logo",
+            subtitle = "Pure clean QR pattern without logo",
+            icon = Icons.Default.Close,
+            isSelected = currentConfig.logoBitmap == null,
+            onClick = { onStyleChanged(currentConfig.copy(logoBitmap = null, logoTag = "none")) }
         )
     }
 }
@@ -572,12 +648,12 @@ private fun createTextBadgeBitmap(text: String, bgColor: Int, textColor: Int, si
         style = Paint.Style.FILL
     }
     val rect = RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat())
-    val cornerRadius = sizePx * 0.28f
+    val cornerRadius = sizePx * 0.24f
     canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
 
     val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = textColor
-        textSize = sizePx * 0.40f
+        textSize = sizePx * 0.38f
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }

@@ -1165,12 +1165,26 @@ private fun GenerateQrFormScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // ── GENERATE BUTTON ──
+        val defaultAppLogo = remember {
+            try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
+        }
+
         var styleConfig by remember(qrType) {
             mutableStateOf(
                 if (qrType.uppercase() == "UPI") {
-                    QRStyleConfig(frameStyle = QRFrameStyle.PAYMENT_BADGE, frameText = "SCAN & PAY")
+                    QRStyleConfig(
+                        logoBitmap = defaultAppLogo,
+                        logoTag = "app_logo",
+                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
+                        frameStyle = QRFrameStyle.PAYMENT_BADGE,
+                        frameText = "SCAN & PAY"
+                    )
                 } else {
-                    QRStyleConfig()
+                    QRStyleConfig(
+                        logoBitmap = defaultAppLogo,
+                        logoTag = "app_logo",
+                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+                    )
                 }
             )
         }

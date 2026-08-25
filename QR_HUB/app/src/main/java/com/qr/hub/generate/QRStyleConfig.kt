@@ -24,6 +24,15 @@ enum class QREyeShape(val displayName: String) {
 }
 
 /**
+ * Center Logo Badge shapes
+ */
+enum class QRLogoShape(val displayName: String) {
+    ROUNDED_SQUIRCLE("Squircle"),
+    CIRCLE("Circle"),
+    SQUARE("Square")
+}
+
+/**
  * Gradient Type for QR Foreground
  */
 enum class QRGradientType {
@@ -62,6 +71,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.SQUARE,
             eyeShape = QREyeShape.SQUARE,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = Color.BLACK,
             bgColor = Color.WHITE,
             gradientType = QRGradientType.NONE,
@@ -76,6 +86,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.ROUNDED,
             eyeShape = QREyeShape.ROUNDED,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = 0xFFFFC837.toInt(),
             fgGradientEnd = 0xFFFF8008.toInt(),
             bgColor = 0xFF0B0906.toInt(),
@@ -91,6 +102,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.CIRCLE,
             eyeShape = QREyeShape.CIRCULAR,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = 0xFF00F2FE.toInt(),
             fgGradientEnd = 0xFF4FACFE.toInt(),
             bgColor = 0xFF050B14.toInt(),
@@ -106,6 +118,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.ROUNDED,
             eyeShape = QREyeShape.ROUNDED,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = 0xFF34D399.toInt(),
             fgGradientEnd = 0xFF059669.toInt(),
             bgColor = 0xFF06140D.toInt(),
@@ -121,6 +134,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.ROUNDED,
             eyeShape = QREyeShape.ROUNDED,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = 0xFFC084FC.toInt(),
             fgGradientEnd = 0xFF7C3AED.toInt(),
             bgColor = 0xFF0E0514.toInt(),
@@ -136,6 +150,7 @@ enum class QRPreset(
         config = QRStyleConfig(
             moduleShape = QRModuleShape.CIRCLE,
             eyeShape = QREyeShape.CIRCULAR,
+            logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = 0xFFFF4B2B.toInt(),
             fgGradientEnd = 0xFFFF416C.toInt(),
             bgColor = 0xFF140507.toInt(),
@@ -151,6 +166,7 @@ enum class QRPreset(
 data class QRStyleConfig(
     val moduleShape: QRModuleShape = QRModuleShape.SQUARE,
     val eyeShape: QREyeShape = QREyeShape.SQUARE,
+    val logoShape: QRLogoShape = QRLogoShape.ROUNDED_SQUIRCLE,
     val fgColor: Int = Color.BLACK,
     val fgGradientEnd: Int = Color.BLACK,
     val bgColor: Int = Color.WHITE,
@@ -158,5 +174,5 @@ data class QRStyleConfig(
     val frameStyle: QRFrameStyle = QRFrameStyle.NONE,
     val frameText: String = "SCAN ME",
     val logoBitmap: Bitmap? = null,
-    val logoTag: String = "none" // "none", "app_logo", "upi", "whatsapp", "custom"
+    val logoTag: String = "app_logo" // "none", "app_logo", "upi", "whatsapp", "custom"
 )

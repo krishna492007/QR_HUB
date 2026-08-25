@@ -12,7 +12,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 object QRStylingEngine {
 
     /**
-     * Render styled QR Bitmap with custom shapes, gradients, corner eyes, sleek circular logo badge, and frames.
+     * Render styled QR Bitmap with custom shapes, gradients, corner eyes, sleek square/squircle/circle logo badge, and frames.
      */
     fun renderStyledQR(
         content: String,
@@ -124,10 +124,15 @@ object QRStylingEngine {
             }
         }
 
-        // Center Logo Cutout Calculation (clean circular cutout, zero dots on logo)
+        // Center Logo Cutout Calculation (Clean cutout matching logo shape)
         val hasLogo = config.logoBitmap != null
         val matrixCenter = matrixSize / 2f
-        val logoCutoutRadiusModules = if (hasLogo) (matrixSize * 0.16f) else 0f
+        val logoSpanModules = if (hasLogo) (matrixSize * 0.25f).toInt().coerceAtLeast(5) else 0
+        val logoMinX = (matrixSize - logoSpanModules) / 2
+        val logoMaxX = logoMinX + logoSpanModules
+        val logoMinY = (matrixSize - logoSpanModules) / 2
+        val logoMaxY = logoMinY + logoSpanModules
+        val circleCutoutRadius = matrixSize * 0.16f
 
         // ── 4. DRAW DATA MODULES ──
         for (x in 0 until matrixSize) {
@@ -135,12 +140,17 @@ object QRStylingEngine {
                 // Skip Finder Patterns (drawn separately with eye geometry)
                 if (isFinderPattern(x, y, matrixSize)) continue
 
-                // Skip Center Logo Circular Cutout (Keeps logo area 100% clean of dots)
+                // Skip Center Logo Cutout based on LogoShape
                 if (hasLogo) {
-                    val distSq = (x + 0.5f - matrixCenter) * (x + 0.5f - matrixCenter) +
-                                 (y + 0.5f - matrixCenter) * (y + 0.5f - matrixCenter)
-                    if (distSq < (logoCutoutRadiusModules * logoCutoutRadiusModules)) {
-                        continue
+                    when (config.logoShape) {
+                        QRLogoShape.CIRCLE -> {
+                            val distSq = (x + 0.5f - matrixCenter) * (x + 0.5f - matrixCenter) +
+                                         (y + 0.5f - matrixCenter) * (y + 0.5f - matrixCenter)
+                            if (distSq < (circleCutoutRadius * circleCutoutRadius)) continue
+                        }
+                        QRLogoShape.ROUNDED_SQUIRCLE, QRLogoShape.SQUARE -> {
+                            if (x in logoMinX until logoMaxX && y in logoMinY until logoMaxY) continue
+                        }
                     }
                 }
 
@@ -160,15 +170,16 @@ object QRStylingEngine {
         drawFinderEye(canvas, offsetX + ((matrixSize - 7) * moduleSize), offsetY, moduleSize, config.eyeShape, fgPaint, bgPaint)
         drawFinderEye(canvas, offsetX, offsetY + ((matrixSize - 7) * moduleSize), moduleSize, config.eyeShape, fgPaint, bgPaint)
 
-        // ── 6. DRAW SEAMLESS CIRCULAR CENTER LOGO BADGE ──
+        // ── 6. DRAW SEAMLESS CENTER LOGO BADGE (SQUIRCLE / CIRCLE / SQUARE) ──
         config.logoBitmap?.let { logo ->
-            drawSeamlessCircularLogo(
+            drawSeamlessCenterLogo(
                 canvas = canvas,
                 offsetX = offsetX,
                 offsetY = offsetY,
                 matrixSize = matrixSize,
                 moduleSize = moduleSize,
-                cutoutRadiusModules = logoCutoutRadiusModules,
+                logoSpanModules = logoSpanModules,
+                logoShape = config.logoShape,
                 logo = logo,
                 bgColor = config.bgColor,
                 fgColor = config.fgColor
@@ -300,15 +311,16 @@ object QRStylingEngine {
     }
 
     /**
-     * Draw Google Pay / WhatsApp Style Seamless Circular Logo Badge
+     * Draw Seamless Center Logo Badge (Squircle / Circle / Square)
      */
-    private fun drawSeamlessCircularLogo(
+    private fun drawSeamlessCenterLogo(
         canvas: Canvas,
         offsetX: Float,
         offsetY: Float,
         matrixSize: Int,
         moduleSize: Float,
-        cutoutRadiusModules: Float,
+        logoSpanModules: Int,
+        logoShape: QRLogoShape,
         logo: Bitmap,
         bgColor: Int,
         fgColor: Int
@@ -317,24 +329,44 @@ object QRStylingEngine {
         val cx = offsetX + (qrTotalPx / 2f)
         val cy = offsetY + (qrTotalPx / 2f)
 
-        val badgeRadius = cutoutRadiusModules * moduleSize * 0.95f
+        val badgeSize = (logoSpanModules * moduleSize * 0.96f).coerceAtLeast(160f)
+        val halfSize = badgeSize / 2f
+        val badgeRect = RectF(cx - halfSize, cy - halfSize, cx + halfSize, cy + halfSize)
+        val squircleRadius = badgeSize * 0.22f
 
-        // 1. Clean Circular Background (Matching QR Background)
-        val bgCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = bgColor
             style = Paint.Style.FILL
         }
-        canvas.drawCircle(cx, cy, badgeRadius, bgCirclePaint)
 
-        // 2. Clip canvas to perfect circle and draw logo with 0 squarish corners
-        canvas.save()
-        val clipPath = Path().apply {
-            addCircle(cx, cy, badgeRadius * 0.96f, Path.Direction.CW)
+        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = fgColor
+            style = Paint.Style.STROKE
+            strokeWidth = moduleSize * 0.45f
+            alpha = 220
         }
+
+        val clipPath = Path()
+        when (logoShape) {
+            QRLogoShape.CIRCLE -> {
+                canvas.drawCircle(cx, cy, halfSize, bgPaint)
+                clipPath.addCircle(cx, cy, halfSize * 0.96f, Path.Direction.CW)
+            }
+            QRLogoShape.ROUNDED_SQUIRCLE -> {
+                canvas.drawRoundRect(badgeRect, squircleRadius, squircleRadius, bgPaint)
+                clipPath.addRoundRect(badgeRect, squircleRadius * 0.94f, squircleRadius * 0.94f, Path.Direction.CW)
+            }
+            QRLogoShape.SQUARE -> {
+                canvas.drawRect(badgeRect, bgPaint)
+                clipPath.addRect(badgeRect, Path.Direction.CW)
+            }
+        }
+
+        // Draw Logo Clipped cleanly inside badge with 90% scale
+        canvas.save()
         canvas.clipPath(clipPath)
 
-        // Draw logo centered inside the circle
-        val logoFitDiameter = badgeRadius * 1.85f
+        val logoFitDiameter = badgeSize * 0.90f
         val dstRect = RectF(
             cx - (logoFitDiameter / 2f),
             cy - (logoFitDiameter / 2f),
@@ -350,14 +382,12 @@ object QRStylingEngine {
         canvas.drawBitmap(logo, srcRect, dstRect, logoPaint)
         canvas.restore()
 
-        // 3. Single ultra-sleek accent ring around the circular logo badge
-        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = fgColor
-            style = Paint.Style.STROKE
-            strokeWidth = moduleSize * 0.45f
-            alpha = 220
+        // Draw Single Crisp Outer Accent Ring
+        when (logoShape) {
+            QRLogoShape.CIRCLE -> canvas.drawCircle(cx, cy, halfSize, ringPaint)
+            QRLogoShape.ROUNDED_SQUIRCLE -> canvas.drawRoundRect(badgeRect, squircleRadius, squircleRadius, ringPaint)
+            QRLogoShape.SQUARE -> canvas.drawRect(badgeRect, ringPaint)
         }
-        canvas.drawCircle(cx, cy, badgeRadius, ringPaint)
     }
 
     /**
