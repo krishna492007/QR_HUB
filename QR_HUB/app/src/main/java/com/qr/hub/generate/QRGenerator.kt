@@ -20,10 +20,17 @@ import java.net.URLEncoder
 object QRGenerator {
 
     /**
-     * Generate standard crisp Black & White QR bitmap from content string
+     * Generate standard crisp QR bitmap from content string
      */
-    fun generateQRBitmap(content: String, size: Int = 512): Bitmap {
+    fun generateQRBitmap(content: String, size: Int = 1024): Bitmap {
         return generateStandardQRBitmap(content, size)
+    }
+
+    /**
+     * Generate Custom Styled QR bitmap with shapes, gradients, corner eyes, logo, and frames
+     */
+    fun generateStyledQRBitmap(content: String, config: QRStyleConfig, size: Int = 1024): Bitmap {
+        return QRStylingEngine.renderStyledQR(content, config, size)
     }
 
     /**

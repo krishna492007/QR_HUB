@@ -1165,12 +1165,8 @@ private fun GenerateQrFormScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // ── GENERATE BUTTON ──
-        var logoBitmap by remember { mutableStateOf<Bitmap?>(null) }
-        LaunchedEffect(Unit) {
-            logoBitmap = withContext(Dispatchers.IO) {
-                try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
-            }
-        }
+        var styleConfig by remember { mutableStateOf(QRStyleConfig()) }
+        var customStyledBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
         Box(
             modifier = Modifier
@@ -1191,11 +1187,15 @@ private fun GenerateQrFormScreen(
                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                         scope.launch {
                             isGenerating = true
+                            val qrContent = getContent()
                             withContext(Dispatchers.Default) {
-                                onGenerate(logoBitmap)
+                                val bmp = QRStylingEngine.renderStyledQR(qrContent, styleConfig, 1024)
+                                withContext(Dispatchers.Main) {
+                                    customStyledBitmap = bmp
+                                }
+                                onGenerate(styleConfig.logoBitmap)
                             }
                             isGenerating = false
-                            val qrContent = getContent()
                             if (qrContent.isNotEmpty() && qrContent != lastSavedContent) {
                                 historyViewModel.saveGenerate(qrContent, qrType)
                                 lastSavedContent = qrContent
@@ -1237,7 +1237,8 @@ private fun GenerateQrFormScreen(
         BannerAdView(modifier = Modifier.padding(horizontal = 18.dp))
 
         // ── GENERATED QR DISPLAY ──
-        generatedBitmap?.let { bitmap ->
+        val displayBitmap = customStyledBitmap ?: generatedBitmap
+        displayBitmap?.let { bitmap ->
             Spacer(modifier = Modifier.height(20.dp))
 
             // QR Card with Ink & Amber styling
@@ -1254,25 +1255,25 @@ private fun GenerateQrFormScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // QR Label
                     Text(
-                        "Your QR Code",
+                        "Your Styled QR Code",
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextSecondary,
                         modifier = Modifier.padding(bottom = 14.dp)
                     )
 
-                    // QR Image on white background
+                    // QR Image container
                     Box(
                         modifier = Modifier
-                            .size(240.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White)
-                            .padding(10.dp),
+                            .size(250.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(styleConfig.bgColor))
+                            .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
                             bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Generated QR Code",
+                            contentDescription = "Generated Styled QR Code",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = androidx.compose.ui.layout.ContentScale.Fit
                         )
@@ -1343,6 +1344,25 @@ private fun GenerateQrFormScreen(
                     }
                 }
             }
+
+            // ── CUSTOMIZATION CONTROLS PANEL ──
+            Spacer(modifier = Modifier.height(16.dp))
+            QRCustomizationSection(
+                styleConfig = styleConfig,
+                onStyleChanged = { newConfig ->
+                    styleConfig = newConfig
+                    val raw = getContent()
+                    if (raw.isNotEmpty()) {
+                        scope.launch(Dispatchers.Default) {
+                            val updatedBmp = QRStylingEngine.renderStyledQR(raw, newConfig, 1024)
+                            withContext(Dispatchers.Main) {
+                                customStyledBitmap = updatedBmp
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 18.dp)
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
         }
