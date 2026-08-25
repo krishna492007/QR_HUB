@@ -5,9 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.graphics.RectF
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,16 +39,15 @@ import com.qr.hub.util.*
 import kotlin.math.min
 
 /**
- * Shape-Aware Interactive Image Cropper Dialog for Custom QR Center Logos (Squircle, Circle, Square)
+ * Shape-Aware Interactive Image Cropper Dialog matching the pre-selected logo shape (Squircle, Circle, Square)
  */
 @Composable
 fun ImageCropDialog(
     sourceBitmap: Bitmap,
-    initialShape: QRLogoShape = QRLogoShape.ROUNDED_SQUIRCLE,
+    shape: QRLogoShape,
     onDismiss: () -> Unit,
-    onCropApplied: (Bitmap, QRLogoShape) -> Unit
+    onCropApplied: (Bitmap) -> Unit
 ) {
-    var selectedShape by remember { mutableStateOf(initialShape) }
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var rotationDegrees by remember { mutableStateOf(0) }
@@ -86,7 +82,7 @@ fun ImageCropDialog(
                         Icon(Icons.Default.Crop, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Crop Logo to Shape",
+                            "Crop Logo (${shape.displayName})",
                             fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -98,40 +94,18 @@ fun ImageCropDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // ── SHAPE SELECTOR TABS (SQUIRCLE, CIRCLE, SQUARE) ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    QRLogoShape.values().forEach { shape ->
-                        val isSelected = selectedShape == shape
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) AmberDim else Ink750)
-                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(10.dp))
-                                .clickable { selectedShape = shape }
-                                .padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                shape.displayName,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) AmberSoft else TextSecondary
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    "Pinch to zoom and drag to center your logo in ${shape.displayName} shape",
+                    fontSize = 12.sp,
+                    color = TextSecondary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp, bottom = 14.dp)
+                )
 
                 // ── SHAPE-AWARE CROPPING VIEWPORT ──
-                val viewportShape = when (selectedShape) {
-                    QRLogoShape.ROUNDED_SQUIRCLE -> RoundedCornerShape(22.dp)
+                val viewportShape = when (shape) {
+                    QRLogoShape.ROUNDED_SQUIRCLE -> RoundedCornerShape(24.dp)
                     QRLogoShape.CIRCLE -> CircleShape
                     QRLogoShape.SQUARE -> RoundedCornerShape(0.dp)
                 }
@@ -246,9 +220,9 @@ fun ImageCropDialog(
                                     offsetY = offset.y,
                                     rotationDegrees = rotationDegrees,
                                     viewportSizePx = 250f,
-                                    shape = selectedShape
+                                    shape = shape
                                 )
-                                onCropApplied(cropped, selectedShape)
+                                onCropApplied(cropped)
                             },
                         contentAlignment = Alignment.Center
                     ) {

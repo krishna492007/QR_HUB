@@ -75,19 +75,18 @@ fun QRCustomizationSection(
         }
     }
 
-    // Show In-App Shape-Aware Cropper Dialog
+    // Show In-App Shape-Aware Cropper Dialog (matches pre-selected shape)
     if (showCropDialog && rawPickedBitmap != null) {
         ImageCropDialog(
             sourceBitmap = rawPickedBitmap!!,
-            initialShape = styleConfig.logoShape,
+            shape = styleConfig.logoShape,
             onDismiss = { showCropDialog = false },
-            onCropApplied = { croppedBmp, appliedShape ->
+            onCropApplied = { croppedBmp ->
                 showCropDialog = false
                 onStyleChanged(
                     styleConfig.copy(
                         logoBitmap = croppedBmp,
-                        logoTag = "custom",
-                        logoShape = appliedShape
+                        logoTag = "custom"
                     )
                 )
             }
