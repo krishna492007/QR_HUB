@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import androidx.compose.foundation.Image
@@ -12,6 +15,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -35,18 +39,19 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.qr.hub.util.*
-import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Sleek 1:1 Square Image Cropper Dialog for Custom QR Center Logos
+ * Shape-Aware Interactive Image Cropper Dialog for Custom QR Center Logos (Squircle, Circle, Square)
  */
 @Composable
 fun ImageCropDialog(
     sourceBitmap: Bitmap,
+    initialShape: QRLogoShape = QRLogoShape.ROUNDED_SQUIRCLE,
     onDismiss: () -> Unit,
-    onCropApplied: (Bitmap) -> Unit
+    onCropApplied: (Bitmap, QRLogoShape) -> Unit
 ) {
+    var selectedShape by remember { mutableStateOf(initialShape) }
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var rotationDegrees by remember { mutableStateOf(0) }
@@ -59,7 +64,7 @@ fun ImageCropDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xE6000000))
-                .padding(24.dp),
+                .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -68,7 +73,7 @@ fun ImageCropDialog(
                     .clip(RoundedCornerShape(24.dp))
                     .background(Ink900)
                     .border(1.dp, BorderLine, RoundedCornerShape(24.dp))
-                    .padding(20.dp),
+                    .padding(18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header
@@ -81,8 +86,8 @@ fun ImageCropDialog(
                         Icon(Icons.Default.Crop, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Crop Square Logo",
-                            fontSize = 16.sp,
+                            "Crop Logo to Shape",
+                            fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
@@ -93,22 +98,50 @@ fun ImageCropDialog(
                     }
                 }
 
-                Text(
-                    "Pinch to zoom and drag to center your logo in 1:1 square",
-                    fontSize = 12.sp,
-                    color = TextSecondary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp, bottom = 16.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // ── 1:1 SQUARE CROPPING VIEWPORT ──
+                // ── SHAPE SELECTOR TABS (SQUIRCLE, CIRCLE, SQUARE) ──
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    QRLogoShape.values().forEach { shape ->
+                        val isSelected = selectedShape == shape
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) AmberDim else Ink750)
+                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(10.dp))
+                                .clickable { selectedShape = shape }
+                                .padding(vertical = 7.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                shape.displayName,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) AmberSoft else TextSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // ── SHAPE-AWARE CROPPING VIEWPORT ──
+                val viewportShape = when (selectedShape) {
+                    QRLogoShape.ROUNDED_SQUIRCLE -> RoundedCornerShape(22.dp)
+                    QRLogoShape.CIRCLE -> CircleShape
+                    QRLogoShape.SQUARE -> RoundedCornerShape(0.dp)
+                }
+
                 Box(
                     modifier = Modifier
-                        .size(260.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .size(250.dp)
+                        .clip(viewportShape)
                         .background(Color.Black)
-                        .border(2.dp, AmberPrimary, RoundedCornerShape(16.dp))
+                        .border(2.5.dp, AmberPrimary, viewportShape)
                         .pointerInput(Unit) {
                             detectTransformGestures { _, pan, zoom, _ ->
                                 scale = (scale * zoom).coerceIn(0.8f, 5.0f)
@@ -143,7 +176,7 @@ fun ImageCropDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Zoom & Rotate Controls
                 Row(
@@ -151,14 +184,14 @@ fun ImageCropDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Zoom", fontSize = 12.5.sp, color = TextSecondary)
+                    Text("Zoom", fontSize = 12.sp, color = TextSecondary)
                     Slider(
                         value = scale,
                         onValueChange = { scale = it },
                         valueRange = 0.8f..4f,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 10.dp),
                         colors = SliderDefaults.colors(
                             thumbColor = AmberPrimary,
                             activeTrackColor = AmberPrimary,
@@ -177,7 +210,7 @@ fun ImageCropDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Action Buttons
                 Row(
@@ -188,21 +221,21 @@ fun ImageCropDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
+                            .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(Ink750)
                             .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
                             .clickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        Text("Cancel", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                     }
 
                     // Apply Crop
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
+                            .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(AmberCtaGradient)
                             .clickable {
@@ -212,16 +245,17 @@ fun ImageCropDialog(
                                     offsetX = offset.x,
                                     offsetY = offset.y,
                                     rotationDegrees = rotationDegrees,
-                                    viewportSizePx = 260f
+                                    viewportSizePx = 250f,
+                                    shape = selectedShape
                                 )
-                                onCropApplied(cropped)
+                                onCropApplied(cropped, selectedShape)
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Check, null, tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Check, null, tint = Color(0xFF20140A), modifier = Modifier.size(17.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Apply Crop", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                            Text("Apply Crop", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
                         }
                     }
                 }
@@ -231,7 +265,7 @@ fun ImageCropDialog(
 }
 
 /**
- * Crop the bitmap into an exact 512x512 1:1 square output bitmap matching user's transformation
+ * Crop the bitmap into an exact 512x512 output bitmap matching user's shape and transformation
  */
 private fun performCrop(
     source: Bitmap,
@@ -240,21 +274,30 @@ private fun performCrop(
     offsetY: Float,
     rotationDegrees: Int,
     viewportSizePx: Float,
+    shape: QRLogoShape,
     targetOutputSize: Int = 512
 ): Bitmap {
     val outBitmap = Bitmap.createBitmap(targetOutputSize, targetOutputSize, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(outBitmap)
 
-    val matrix = Matrix()
+    // Clip to shape
+    val clipPath = Path()
+    val outRect = RectF(0f, 0f, targetOutputSize.toFloat(), targetOutputSize.toFloat())
+    when (shape) {
+        QRLogoShape.CIRCLE -> clipPath.addCircle(targetOutputSize / 2f, targetOutputSize / 2f, targetOutputSize / 2f, Path.Direction.CW)
+        QRLogoShape.ROUNDED_SQUIRCLE -> clipPath.addRoundRect(outRect, targetOutputSize * 0.20f, targetOutputSize * 0.20f, Path.Direction.CW)
+        QRLogoShape.SQUARE -> clipPath.addRect(outRect, Path.Direction.CW)
+    }
 
-    // 1. Initial fit of source bitmap to viewport
+    canvas.save()
+    canvas.clipPath(clipPath)
+
+    val matrix = Matrix()
     val minDim = min(source.width, source.height).toFloat()
     val initialScale = viewportSizePx / minDim
 
     val srcCenterX = source.width / 2f
     val srcCenterY = source.height / 2f
-
-    // Scale mapping from viewport (e.g. 260px) to output resolution (512px)
     val outRatio = targetOutputSize / viewportSizePx
 
     matrix.postTranslate(-srcCenterX, -srcCenterY)
@@ -268,5 +311,7 @@ private fun performCrop(
     }
 
     canvas.drawBitmap(source, matrix, paint)
+    canvas.restore()
+
     return outBitmap
 }
