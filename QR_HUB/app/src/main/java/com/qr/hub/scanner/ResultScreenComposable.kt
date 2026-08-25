@@ -1012,16 +1012,88 @@ private fun TypeSpecificActions(
             }
 
             is ScannedQR.WiFi -> {
-                if (parsed.password.isNotEmpty()) {
-                    ExtraActionButton(
-                        icon = Icons.Default.VpnKey,
-                        label = "Copy Password",
-                        subtitle = parsed.password,
-                        color = AmberSoft
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Ink800),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("WiFi Password", parsed.password))
-                        Toast.makeText(context, "Password copied!", Toast.LENGTH_SHORT).show()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(AmberDim),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Wifi, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
+                                }
+                                Column {
+                                    Text(parsed.ssid, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = ResultTextPrimary)
+                                    Text("${parsed.encryption} Secured", fontSize = 11.sp, color = ResultTextSecondary)
+                                }
+                            }
+
+                            if (parsed.password.isNotEmpty()) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Ink750,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine),
+                                    modifier = Modifier.clickable {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("WiFi Password", parsed.password))
+                                        Toast.makeText(context, "Password '${parsed.password}' copied!", Toast.LENGTH_SHORT).show()
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, null, tint = AmberSoft, modifier = Modifier.size(12.dp))
+                                        Text("Copy", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                    }
+                                }
+                            }
+                        }
+
+                        // 1-Tap Connect Action
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(AmberCtaGradient)
+                                .clickable {
+                                    WifiAutoConnector.connectToWifi(context, parsed.ssid, parsed.password, parsed.encryption)
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Wifi, null, tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Connect to '${parsed.ssid}'",
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF20140A)
+                                )
+                            }
+                        }
                     }
                 }
             }
