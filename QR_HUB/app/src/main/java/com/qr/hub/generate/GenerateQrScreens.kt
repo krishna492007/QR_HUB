@@ -193,122 +193,34 @@ fun GenerateQrTypeSelectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp, bottom = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            .padding(top = 2.dp, bottom = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(11.dp)
                     ) {
                         // Left Card: Bulk QR Generator
                         val isBulkSelected = selectedType == QRType.Bulk
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isBulkSelected) AmberDim else Ink800)
-                                .border(1.dp, if (isBulkSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
-                                .clickable {
-                                    selectedType = if (isBulkSelected) null else QRType.Bulk
-                                }
-                                .padding(horizontal = 12.dp, vertical = 10.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isBulkSelected) AmberPrimary else AmberDim2),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.DynamicFeed,
-                                        null,
-                                        tint = if (isBulkSelected) Color(0xFF160E06) else AmberSoft,
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Bulk QR",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isBulkSelected) AmberSoft else TextPrimary,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        "CSV / Batch",
-                                        fontSize = 10.5.sp,
-                                        color = TextSecondary,
-                                        maxLines = 1
-                                    )
-                                }
-
-                                if (isBulkSelected) {
-                                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
-                                }
+                        GenerateWideTile(
+                            title = "Bulk QR",
+                            subtitle = "CSV / Batch",
+                            icon = Icons.Default.DynamicFeed,
+                            isSelected = isBulkSelected,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                selectedType = if (isBulkSelected) null else QRType.Bulk
                             }
-                        }
+                        )
 
                         // Right Card: 1D Product Barcode Generator
                         val isBarcodeSelected = selectedType == QRType.Barcode
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isBarcodeSelected) AmberDim else Ink800)
-                                .border(1.dp, if (isBarcodeSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
-                                .clickable {
-                                    selectedType = if (isBarcodeSelected) null else QRType.Barcode
-                                }
-                                .padding(horizontal = 12.dp, vertical = 10.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isBarcodeSelected) AmberPrimary else AmberDim2),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.ViewWeek,
-                                        null,
-                                        tint = if (isBarcodeSelected) Color(0xFF160E06) else AmberSoft,
-                                        modifier = Modifier.size(19.dp)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        "Barcode",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isBarcodeSelected) AmberSoft else TextPrimary,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        "Product / Mart",
-                                        fontSize = 10.5.sp,
-                                        color = TextSecondary,
-                                        maxLines = 1
-                                    )
-                                }
-
-                                if (isBarcodeSelected) {
-                                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
-                                }
+                        GenerateWideTile(
+                            title = "Barcode",
+                            subtitle = "Product / Mart",
+                            icon = Icons.Default.ViewWeek,
+                            isSelected = isBarcodeSelected,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                selectedType = if (isBarcodeSelected) null else QRType.Barcode
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -468,6 +380,115 @@ private fun GenerateTypeTile(
                 color = TextPrimary,
                 textAlign = TextAlign.Center
             )
+        }
+    }
+}
+
+@Composable
+private fun GenerateWideTile(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) AmberDim2 else BorderLine,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "WideTileBorder"
+    )
+    val tileScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.03f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "WideTileScale"
+    )
+    val iconBg by animateColorAsState(
+        targetValue = if (isSelected) AmberDim2 else Ink750,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "WideTileIconBg"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (isSelected) AmberSoft else TextPrimary,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "WideTileIconTint"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(tileScale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (isSelected) Brush.verticalGradient(listOf(AmberDim, Ink800))
+                else Brush.linearGradient(listOf(Ink800, Ink800))
+            )
+            .border(
+                width = 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedVisibility(
+            visible = isSelected,
+            enter = fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.85f),
+            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.85f)
+        ) {
+            CornerBrackets(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(6.dp),
+                color = AmberPrimary,
+                bracketSize = 10.dp,
+                strokeWidth = 2.dp,
+                cornerRadius = 4.dp
+            )
+        }
+
+        Column(
+            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconTint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = title,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = TextPrimary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 10.5.sp,
+                    color = AmberSoft,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
