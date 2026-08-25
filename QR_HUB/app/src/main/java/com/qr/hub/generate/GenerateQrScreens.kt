@@ -1173,17 +1173,23 @@ private fun GenerateQrFormScreen(
             mutableStateOf(
                 if (qrType.uppercase() == "UPI") {
                     QRStyleConfig(
-                        logoBitmap = defaultAppLogo,
-                        logoTag = "app_logo",
+                        moduleShape = QRModuleShape.ROUNDED,
+                        eyeShape = QREyeShape.ROUNDED,
                         logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
                         frameStyle = QRFrameStyle.PAYMENT_BADGE,
-                        frameText = "SCAN & PAY"
+                        frameText = "SCAN & PAY",
+                        logoBitmap = defaultAppLogo,
+                        logoTag = "app_logo"
                     )
                 } else {
                     QRStyleConfig(
+                        moduleShape = QRModuleShape.ROUNDED,
+                        eyeShape = QREyeShape.ROUNDED,
+                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
+                        frameStyle = QRFrameStyle.CARD_BORDER,
+                        frameText = "SCAN ME",
                         logoBitmap = defaultAppLogo,
-                        logoTag = "app_logo",
-                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+                        logoTag = "app_logo"
                     )
                 }
             )
@@ -1367,25 +1373,89 @@ private fun GenerateQrFormScreen(
                 }
             }
 
-            // ── CUSTOMIZATION CONTROLS PANEL ──
+            // ── EXPANDABLE CUSTOMIZATION CONTROLS PANEL ──
             Spacer(modifier = Modifier.height(16.dp))
-            QRCustomizationSection(
-                qrType = qrType,
-                styleConfig = styleConfig,
-                onStyleChanged = { newConfig ->
-                    styleConfig = newConfig
-                    val raw = getContent()
-                    if (raw.isNotEmpty()) {
-                        scope.launch(Dispatchers.Default) {
-                            val updatedBmp = QRStylingEngine.renderStyledQR(raw, newConfig, 1024)
-                            withContext(Dispatchers.Main) {
-                                customStyledBitmap = updatedBmp
-                            }
+
+            var isCustomizeExpanded by remember { mutableStateOf(false) }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Ink800)
+                    .border(1.dp, if (isCustomizeExpanded) AmberPrimary else BorderLine, RoundedCornerShape(18.dp))
+            ) {
+                Column {
+                    // Tap Header Bar
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isCustomizeExpanded = !isCustomizeExpanded }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AmberDim2),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Palette, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Customize QR Style",
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Text(
+                                if (isCustomizeExpanded) "Tap to collapse customization panel" else "Tap to customize Colors, Shapes, Eyes & Logos",
+                                fontSize = 11.5.sp,
+                                color = TextTertiary
+                            )
+                        }
+                        Icon(
+                            if (isCustomizeExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = AmberSoft,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    // Expandable Customization Options
+                    AnimatedVisibility(
+                        visible = isCustomizeExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                            HorizontalDivider(color = BorderLine, modifier = Modifier.padding(horizontal = 16.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            QRCustomizationSection(
+                                qrType = qrType,
+                                styleConfig = styleConfig,
+                                onStyleChanged = { newConfig ->
+                                    styleConfig = newConfig
+                                    val raw = getContent()
+                                    if (raw.isNotEmpty()) {
+                                        scope.launch(Dispatchers.Default) {
+                                            val updatedBmp = QRStylingEngine.renderStyledQR(raw, newConfig, 1024)
+                                            withContext(Dispatchers.Main) {
+                                                customStyledBitmap = updatedBmp
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 10.dp)
+                            )
                         }
                     }
-                },
-                modifier = Modifier.padding(horizontal = 18.dp)
-            )
+                }
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
         }

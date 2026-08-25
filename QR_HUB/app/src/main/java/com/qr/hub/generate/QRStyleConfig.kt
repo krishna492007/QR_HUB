@@ -69,13 +69,13 @@ enum class QRPreset(
         previewFg = Color.BLACK,
         previewBg = Color.WHITE,
         config = QRStyleConfig(
-            moduleShape = QRModuleShape.SQUARE,
-            eyeShape = QREyeShape.SQUARE,
+            moduleShape = QRModuleShape.ROUNDED,
+            eyeShape = QREyeShape.ROUNDED,
             logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
             fgColor = Color.BLACK,
             bgColor = Color.WHITE,
             gradientType = QRGradientType.NONE,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     ),
     ROYAL_GOLD(
@@ -91,7 +91,7 @@ enum class QRPreset(
             fgGradientEnd = 0xFFFF8008.toInt(),
             bgColor = 0xFF0B0906.toInt(),
             gradientType = QRGradientType.LINEAR_DIAGONAL,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     ),
     CYBERPUNK_NEON(
@@ -107,7 +107,7 @@ enum class QRPreset(
             fgGradientEnd = 0xFF4FACFE.toInt(),
             bgColor = 0xFF050B14.toInt(),
             gradientType = QRGradientType.LINEAR_VERTICAL,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     ),
     EMERALD_PRO(
@@ -123,7 +123,7 @@ enum class QRPreset(
             fgGradientEnd = 0xFF059669.toInt(),
             bgColor = 0xFF06140D.toInt(),
             gradientType = QRGradientType.LINEAR_DIAGONAL,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     ),
     DEEP_VELVET(
@@ -139,7 +139,7 @@ enum class QRPreset(
             fgGradientEnd = 0xFF7C3AED.toInt(),
             bgColor = 0xFF0E0514.toInt(),
             gradientType = QRGradientType.LINEAR_DIAGONAL,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     ),
     CRIMSON_RUBY(
@@ -155,7 +155,7 @@ enum class QRPreset(
             fgGradientEnd = 0xFFFF416C.toInt(),
             bgColor = 0xFF140507.toInt(),
             gradientType = QRGradientType.LINEAR_HORIZONTAL,
-            frameStyle = QRFrameStyle.NONE
+            frameStyle = QRFrameStyle.CARD_BORDER
         )
     )
 }
@@ -164,14 +164,14 @@ enum class QRPreset(
  * Comprehensive Styling Configuration for QR Codes
  */
 data class QRStyleConfig(
-    val moduleShape: QRModuleShape = QRModuleShape.SQUARE,
-    val eyeShape: QREyeShape = QREyeShape.SQUARE,
+    val moduleShape: QRModuleShape = QRModuleShape.ROUNDED,
+    val eyeShape: QREyeShape = QREyeShape.ROUNDED,
     val logoShape: QRLogoShape = QRLogoShape.ROUNDED_SQUIRCLE,
     val fgColor: Int = Color.BLACK,
     val fgGradientEnd: Int = Color.BLACK,
     val bgColor: Int = Color.WHITE,
     val gradientType: QRGradientType = QRGradientType.NONE,
-    val frameStyle: QRFrameStyle = QRFrameStyle.NONE,
+    val frameStyle: QRFrameStyle = QRFrameStyle.CARD_BORDER,
     val frameText: String = "SCAN ME",
     val logoBitmap: Bitmap? = null,
     val logoTag: String = "app_logo" // "none", "app_logo", "upi", "whatsapp", "custom"
