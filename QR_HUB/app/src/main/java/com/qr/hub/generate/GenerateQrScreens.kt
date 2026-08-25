@@ -1354,6 +1354,7 @@ private fun GenerateQrFormScreen(
             )
         }
         var customStyledBitmap by remember { mutableStateOf<Bitmap?>(null) }
+        var liveRenderJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
         Box(
             modifier = Modifier
@@ -1376,7 +1377,7 @@ private fun GenerateQrFormScreen(
                             isGenerating = true
                             val qrContent = getContent()
                             withContext(Dispatchers.Default) {
-                                val bmp = QRStylingEngine.renderStyledQR(qrContent, styleConfig, 1024)
+                                val bmp = QRStylingEngine.renderStyledQR(qrContent, styleConfig, 600)
                                 withContext(Dispatchers.Main) {
                                     customStyledBitmap = bmp
                                 }
@@ -1387,7 +1388,7 @@ private fun GenerateQrFormScreen(
                                 historyViewModel.saveGenerate(qrContent, qrType)
                                 lastSavedContent = qrContent
                             }
-                            kotlinx.coroutines.delay(200)
+                            kotlinx.coroutines.delay(100)
                             scrollState.animateScrollTo(scrollState.maxValue)
                         }
                     }
@@ -1487,7 +1488,12 @@ private fun GenerateQrFormScreen(
                                 .clickable {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
-                                        shareBitmap(context, bitmap, "qr_code.png")
+                                        downloadScope.launch(Dispatchers.Default) {
+                                            val fullBmp = QRStylingEngine.renderStyledQR(getContent(), styleConfig, 1024)
+                                            withContext(Dispatchers.Main) {
+                                                shareBitmap(context, fullBmp, "qr_code.png")
+                                            }
+                                        }
                                     }
                                 },
                             contentAlignment = Alignment.Center
@@ -1511,7 +1517,10 @@ private fun GenerateQrFormScreen(
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                                         downloadScope.launch {
                                             isDownloading = true
-                                            downloadBitmap(context, bitmap, "qr_${System.currentTimeMillis()}.png")
+                                            withContext(Dispatchers.Default) {
+                                                val fullBmp = QRStylingEngine.renderStyledQR(getContent(), styleConfig, 1024)
+                                                downloadBitmap(context, fullBmp, "qr_${System.currentTimeMillis()}.png")
+                                            }
                                             isDownloading = false
                                         }
                                     }
@@ -1601,8 +1610,9 @@ private fun GenerateQrFormScreen(
                                     styleConfig = newConfig
                                     val raw = getContent()
                                     if (raw.isNotEmpty()) {
-                                        scope.launch(Dispatchers.Default) {
-                                            val updatedBmp = QRStylingEngine.renderStyledQR(raw, newConfig, 1024)
+                                        liveRenderJob?.cancel()
+                                        liveRenderJob = scope.launch(Dispatchers.Default) {
+                                            val updatedBmp = QRStylingEngine.renderStyledQR(raw, newConfig, 600)
                                             withContext(Dispatchers.Main) {
                                                 customStyledBitmap = updatedBmp
                                             }

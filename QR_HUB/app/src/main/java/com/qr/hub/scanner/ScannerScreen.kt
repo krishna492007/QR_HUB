@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
@@ -397,8 +398,8 @@ private fun ScannerActiveView(
         // DARK OVERLAY WITH CUTOUT FOR SCAN AREA
         // ==========================================
         ScannerOverlay(
-            cornerAlpha = cornerAlpha,
-            laserProgress = laserProgress
+            cornerAlpha = { cornerAlpha },
+            laserProgress = { laserProgress }
         )
 
         // ==========================================
@@ -414,7 +415,8 @@ private fun ScannerActiveView(
             Row(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset(y = 170.dp),
+                    .offset(y = 170.dp)
+                    .graphicsLayer { alpha = instructionAlpha },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -422,13 +424,13 @@ private fun ScannerActiveView(
                     text = "Align the code inside the frame",
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Normal,
-                    color = TextSecondary.copy(alpha = instructionAlpha)
+                    color = TextSecondary
                 )
                 Text(
                     text = "// live",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = CyanAccent.copy(alpha = instructionAlpha)
+                    color = CyanAccent
                 )
             }
         }
@@ -866,12 +868,12 @@ private fun ScannerControlButton(
 }
 
 // ==========================================
-// SCANNER OVERLAY WITH ANIMATED CORNERS + LASER
+// SCANNER OVERLAY WITH ANIMATED CORNERS + LASER (0-Recomposition Draw-Phase Pipeline)
 // ==========================================
 @Composable
 private fun ScannerOverlay(
-    cornerAlpha: Float,
-    laserProgress: Float
+    cornerAlpha: () -> Float,
+    laserProgress: () -> Float
 ) {
     val density = LocalDensity.current
     val scanAreaPadding = 48.dp
@@ -880,6 +882,9 @@ private fun ScannerOverlay(
     val cornerRadius = 10.dp
 
     Canvas(modifier = Modifier.fillMaxSize()) {
+        val currentCornerAlpha = cornerAlpha()
+        val currentLaserProgress = laserProgress()
+
         val canvasW = size.width
         val canvasH = size.height
         val paddingPx = with(density) { scanAreaPadding.toPx() }
@@ -892,7 +897,6 @@ private fun ScannerOverlay(
         val scanRight = canvasW - paddingPx
         val scanTop = (canvasH - (scanRight - scanLeft)) / 2f
         val scanBottom = scanTop + (scanRight - scanLeft)
-        val scanRect = Rect(scanLeft, scanTop, scanRight, scanBottom)
 
         // ========================================
         // 1. SEMI-TRANSPARENT OVERLAY (darken outside scan area)
@@ -925,10 +929,10 @@ private fun ScannerOverlay(
         )
 
         // ========================================
-        // 3. ANIMATED ROUNDED CORNER BRACKETS (Amber Accent)
+        // 2. ANIMATED ROUNDED CORNER BRACKETS (Amber Accent)
         // ========================================
-        val accentColor = AmberPrimary.copy(alpha = cornerAlpha)
-        val glowColor = AmberDim2.copy(alpha = cornerAlpha * 0.4f)
+        val accentColor = AmberPrimary.copy(alpha = currentCornerAlpha)
+        val glowColor = AmberDim2.copy(alpha = currentCornerAlpha * 0.4f)
         val strokeStyle = Stroke(
             width = strokePx,
             cap = StrokeCap.Round,
@@ -981,10 +985,10 @@ private fun ScannerOverlay(
         drawPath(path = brPath, color = accentColor, style = strokeStyle)
 
         // ========================================
-        // 4. SCANNING LASER LINE (Cyan Glow Sweep)
+        // 3. SCANNING LASER LINE (Cyan Glow Sweep)
         // ========================================
-        val laserY = scanTop + (scanBottom - scanTop) * laserProgress
-        val laserPadding = strokePx * 2 // inset laser from edge
+        val laserY = scanTop + (scanBottom - scanTop) * currentLaserProgress
+        val laserPadding = strokePx * 2
 
         // Laser glow (wider, lower alpha)
         drawLine(
