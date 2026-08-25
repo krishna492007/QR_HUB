@@ -187,7 +187,7 @@ fun ScannerScreen(
             if (parsed is ScannedQR.UPI && UpiPreferenceManager.isQuickPayEnabled(context)) {
                 val defaultPkg = UpiPreferenceManager.getDefaultPackage(context)
                 if (!defaultPkg.isNullOrEmpty()) {
-                    saveQrBitmapToGallery(context, result.rawValue)
+                    QrGallerySaver.saveOnce(context, result.rawValue)
                     if (parsed.vpa.isNotBlank()) {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("UPI ID", parsed.vpa))
@@ -362,19 +362,24 @@ private fun ScannerActiveView(
         label = "instructionAlpha"
     )
 
+    var hasDetected by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         // Camera preview
         val handleBarcodeDetected: (String) -> Unit = { value ->
-            onVibrate()
-            onNavigateToResult(
-                ScannedQR.RawResult(
-                    rawValue = value,
-                    format = com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE,
-                    fromGallery = false
+            if (!hasDetected) {
+                hasDetected = true
+                onVibrate()
+                onNavigateToResult(
+                    ScannedQR.RawResult(
+                        rawValue = value,
+                        format = com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE,
+                        fromGallery = false
+                    )
                 )
-            )
+            }
         }
         CameraXPreview(
             modifier = Modifier.fillMaxSize(),

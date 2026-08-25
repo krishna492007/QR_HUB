@@ -102,7 +102,7 @@ fun ResultScreen(
     LaunchedEffect(result.rawValue) {
         historyViewModel.saveScan(result.rawValue, parsed)
         if (parsed is ScannedQR.UPI) {
-            saveQrBitmapToGallery(context, result.rawValue)
+            QrGallerySaver.saveOnce(context, result.rawValue)
         }
     }
 
@@ -1502,6 +1502,23 @@ data class UpiAppItem(
     val gradient: List<Color> = listOf(Color(0xFF6C63FF), Color(0xFFE94EFF))
 )
 
+object QrGallerySaver {
+    private var lastSavedRaw: String? = null
+    private var lastSavedTimestamp: Long = 0L
+
+    @Synchronized
+    fun saveOnce(context: Context, rawValue: String): Uri? {
+        val now = System.currentTimeMillis()
+        if (rawValue == lastSavedRaw && (now - lastSavedTimestamp) < 3500) {
+            // Already saved within the last 3.5 seconds, prevent duplicate
+            return null
+        }
+        lastSavedRaw = rawValue
+        lastSavedTimestamp = now
+        return saveQrBitmapToGallery(context, rawValue)
+    }
+}
+
 fun saveQrBitmapToGallery(context: Context, rawValue: String): Uri? {
     return try {
         val qrContent = rawValue.ifBlank { "upi://pay" }
@@ -1540,7 +1557,7 @@ fun launchUpiScanFlow(
 ) {
     try {
         val raw = parsed.rawUri.ifBlank { "upi://pay?pa=${parsed.vpa}&pn=${parsed.name}&cu=INR" }
-        saveQrBitmapToGallery(context, raw)
+        QrGallerySaver.saveOnce(context, raw)
 
         if (parsed.vpa.isNotBlank()) {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
