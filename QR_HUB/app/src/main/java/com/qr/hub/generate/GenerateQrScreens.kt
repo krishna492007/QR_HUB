@@ -156,16 +156,26 @@ fun GenerateQrTypeSelectionScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             // ============================================
-            // 3-COLUMN TYPE GRID
+            // 3-COLUMN TYPE GRID + FULL-WIDTH BULK CARD
             // ============================================
+            val standardTypes = remember {
+                listOf(
+                    QRType.Text, QRType.URL, QRType.UPI,
+                    QRType.WhatsApp, QRType.WAGroup, QRType.Phone,
+                    QRType.SMS, QRType.Email, QRType.Contact,
+                    QRType.WiFi, QRType.Location, QRType.Event
+                )
+            }
+
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(11.dp),
                 verticalArrangement = Arrangement.spacedBy(11.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(QRType.allTypes.size) { index ->
-                    val type = QRType.allTypes[index]
+                // 12 Standard Types (3 columns each)
+                items(standardTypes.size) { index ->
+                    val type = standardTypes[index]
                     val isSelected = selectedType == type
 
                     GenerateTypeTile(
@@ -175,6 +185,77 @@ fun GenerateQrTypeSelectionScreen(
                             selectedType = if (isSelected) null else type
                         }
                     )
+                }
+
+                // Spanning 3-Columns Wide Bulk QR Card at the Bottom
+                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                    val isSelected = selectedType == QRType.Bulk
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp, bottom = 4.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(if (isSelected) AmberDim else Ink800)
+                            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
+                            .clickable {
+                                selectedType = if (isSelected) null else QRType.Bulk
+                            }
+                            .padding(horizontal = 14.dp, vertical = 13.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) AmberPrimary else AmberDim2),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.DynamicFeed,
+                                    null,
+                                    tint = if (isSelected) Color(0xFF160E06) else AmberSoft,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Bulk QR Generator",
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) AmberSoft else TextPrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(AmberPrimary.copy(alpha = 0.2f))
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text("CSV / BATCH", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                    }
+                                }
+                                Text(
+                                    "Generate 100+ QRs & export as ZIP or PDF Sheet",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary,
+                                    maxLines = 1
+                                )
+                            }
+
+                            if (isSelected) {
+                                Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
+                            } else {
+                                Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
                 }
             }
 
