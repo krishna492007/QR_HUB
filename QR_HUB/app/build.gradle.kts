@@ -71,6 +71,7 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.google.android.gms:play-services-ads:23.6.0")
     implementation("com.unity3d.ads:unity-ads:4.12.5")
+    implementation("com.startapp:inapp-sdk:5.1.0")
     implementation("com.google.guava:guava:33.3.1-android")
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

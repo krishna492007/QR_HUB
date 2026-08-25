@@ -1,6 +1,5 @@
 package com.qr.hub.util.ads
 
-import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,15 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
 import com.qr.hub.util.Ink900
-import com.unity3d.services.banners.BannerView
-import com.unity3d.services.banners.UnityBannerSize
+import com.startapp.sdk.ads.banner.Banner
 
 /**
- * Jetpack Compose Composable for Banner Ads (Unity Ads primary with AdMob fallback)
+ * Jetpack Compose Composable for Start.io Banner Ad
  */
 @Composable
 fun BannerAdView(
@@ -37,18 +32,7 @@ fun BannerAdView(
                 .clip(RoundedCornerShape(8.dp))
                 .background(Ink900),
             factory = { context ->
-                val activity = context as? Activity
-                if (AdConfig.activeProvider == AdConfig.AdProvider.UNITY && activity != null) {
-                    BannerView(activity, AdConfig.UNITY_BANNER_PLACEMENT, UnityBannerSize(320, 50)).apply {
-                        load()
-                    }
-                } else {
-                    AdView(context).apply {
-                        setAdSize(AdSize.BANNER)
-                        this.adUnitId = AdConfig.ADMOB_BANNER_ID
-                        loadAd(AdRequest.Builder().build())
-                    }
-                }
+                Banner(context)
             }
         )
     }
