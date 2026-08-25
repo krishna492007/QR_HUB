@@ -1435,10 +1435,7 @@ private fun connectWifi(
     encryption: String,
     showToast: Boolean
 ) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText("WiFi Password", if (password.isNotEmpty()) password else "No password"))
-    context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
-    Toast.makeText(context, "Password copied — '$ssid' select karo aur paste karo!", Toast.LENGTH_LONG).show()
+    com.qr.hub.util.WifiAutoConnector.connectToWifi(context, ssid, password, encryption)
 }
 
 // =====================================================
