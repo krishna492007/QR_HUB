@@ -12,7 +12,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 object QRStylingEngine {
 
     /**
-     * Render styled QR Bitmap with custom shapes, gradients, corner eyes, lower-layer center logo, and frames.
+     * Render styled QR Bitmap with custom shapes, gradients, corner eyes, sleek circular logo badge, and frames.
      */
     fun renderStyledQR(
         content: String,
@@ -52,7 +52,7 @@ object QRStylingEngine {
         val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // ── 2. LAYER 1: DRAW BACKGROUND ──
+        // ── 2. DRAW BACKGROUND ──
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = config.bgColor
             style = Paint.Style.FILL
@@ -79,12 +79,7 @@ object QRStylingEngine {
         val offsetX = cardBorderPadding + (quietZoneModules * moduleSize)
         val offsetY = cardBorderPadding + (quietZoneModules * moduleSize)
 
-        // ── 3. LAYER 2: DRAW CENTER LOGO IN LOWER BASE LAYER ──
-        config.logoBitmap?.let { logo ->
-            drawCenterLogoInLowerLayer(canvas, offsetX, offsetY, matrixSize, moduleSize, logo, config.bgColor, config.fgColor)
-        }
-
-        // ── 4. SETUP FOREGROUND PAINT & SHADER ──
+        // ── 3. SETUP FOREGROUND PAINT & SHADER ──
         val fgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
         }
@@ -129,11 +124,25 @@ object QRStylingEngine {
             }
         }
 
-        // ── 5. LAYER 3: DRAW DATA MODULES OVER THE LOWER LAYER ──
+        // Center Logo Cutout Calculation (clean circular cutout, zero dots on logo)
+        val hasLogo = config.logoBitmap != null
+        val matrixCenter = matrixSize / 2f
+        val logoCutoutRadiusModules = if (hasLogo) (matrixSize * 0.16f) else 0f
+
+        // ── 4. DRAW DATA MODULES ──
         for (x in 0 until matrixSize) {
             for (y in 0 until matrixSize) {
                 // Skip Finder Patterns (drawn separately with eye geometry)
                 if (isFinderPattern(x, y, matrixSize)) continue
+
+                // Skip Center Logo Circular Cutout (Keeps logo area 100% clean of dots)
+                if (hasLogo) {
+                    val distSq = (x + 0.5f - matrixCenter) * (x + 0.5f - matrixCenter) +
+                                 (y + 0.5f - matrixCenter) * (y + 0.5f - matrixCenter)
+                    if (distSq < (logoCutoutRadiusModules * logoCutoutRadiusModules)) {
+                        continue
+                    }
+                }
 
                 if (bitMatrix[x, y]) {
                     val left = offsetX + (x * moduleSize)
@@ -146,12 +155,27 @@ object QRStylingEngine {
             }
         }
 
-        // ── 6. LAYER 4: DRAW THE 3 FINDER PATTERN CORNER EYES ──
+        // ── 5. DRAW THE 3 FINDER PATTERN CORNER EYES ──
         drawFinderEye(canvas, offsetX, offsetY, moduleSize, config.eyeShape, fgPaint, bgPaint)
         drawFinderEye(canvas, offsetX + ((matrixSize - 7) * moduleSize), offsetY, moduleSize, config.eyeShape, fgPaint, bgPaint)
         drawFinderEye(canvas, offsetX, offsetY + ((matrixSize - 7) * moduleSize), moduleSize, config.eyeShape, fgPaint, bgPaint)
 
-        // ── 7. LAYER 5: DRAW BOTTOM FRAME ("SCAN ME" / "SCAN & PAY") ──
+        // ── 6. DRAW SEAMLESS CIRCULAR CENTER LOGO BADGE ──
+        config.logoBitmap?.let { logo ->
+            drawSeamlessCircularLogo(
+                canvas = canvas,
+                offsetX = offsetX,
+                offsetY = offsetY,
+                matrixSize = matrixSize,
+                moduleSize = moduleSize,
+                cutoutRadiusModules = logoCutoutRadiusModules,
+                logo = logo,
+                bgColor = config.bgColor,
+                fgColor = config.fgColor
+            )
+        }
+
+        // ── 7. DRAW BOTTOM FRAME ("SCAN ME" / "SCAN & PAY") ──
         if (hasBottomFrame) {
             val text = when (config.frameStyle) {
                 QRFrameStyle.PAYMENT_BADGE -> config.frameText.ifEmpty { "SCAN & PAY" }
@@ -276,14 +300,15 @@ object QRStylingEngine {
     }
 
     /**
-     * Draw Center Logo in Lower/Background Layer (beneath the QR modules)
+     * Draw Google Pay / WhatsApp Style Seamless Circular Logo Badge
      */
-    private fun drawCenterLogoInLowerLayer(
+    private fun drawSeamlessCircularLogo(
         canvas: Canvas,
         offsetX: Float,
         offsetY: Float,
         matrixSize: Int,
         moduleSize: Float,
+        cutoutRadiusModules: Float,
         logo: Bitmap,
         bgColor: Int,
         fgColor: Int
@@ -292,41 +317,47 @@ object QRStylingEngine {
         val cx = offsetX + (qrTotalPx / 2f)
         val cy = offsetY + (qrTotalPx / 2f)
 
-        // Prominent 30% logo card size in lower layer
-        val logoSize = qrTotalPx * 0.30f
-        val logoRect = RectF(cx - (logoSize / 2f), cy - (logoSize / 2f), cx + (logoSize / 2f), cy + (logoSize / 2f))
-        val cornerRadius = logoSize * 0.24f
+        val badgeRadius = cutoutRadiusModules * moduleSize * 0.95f
 
-        // 1. Lower Layer Background Card
-        val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 1. Clean Circular Background (Matching QR Background)
+        val bgCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = bgColor
             style = Paint.Style.FILL
         }
-        canvas.drawRoundRect(logoRect, cornerRadius, cornerRadius, cardPaint)
+        canvas.drawCircle(cx, cy, badgeRadius, bgCirclePaint)
 
-        // 2. Draw Logo in lower layer with rounded clip
+        // 2. Clip canvas to perfect circle and draw logo with 0 squarish corners
         canvas.save()
         val clipPath = Path().apply {
-            addRoundRect(logoRect, cornerRadius, cornerRadius, Path.Direction.CW)
+            addCircle(cx, cy, badgeRadius * 0.96f, Path.Direction.CW)
         }
         canvas.clipPath(clipPath)
 
+        // Draw logo centered inside the circle
+        val logoFitDiameter = badgeRadius * 1.85f
+        val dstRect = RectF(
+            cx - (logoFitDiameter / 2f),
+            cy - (logoFitDiameter / 2f),
+            cx + (logoFitDiameter / 2f),
+            cy + (logoFitDiameter / 2f)
+        )
         val srcRect = Rect(0, 0, logo.width, logo.height)
+
         val logoPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = true
             isDither = true
         }
-        canvas.drawBitmap(logo, srcRect, logoRect, logoPaint)
+        canvas.drawBitmap(logo, srcRect, dstRect, logoPaint)
         canvas.restore()
 
-        // 3. Crisp Border Outline in lower layer
-        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // 3. Single ultra-sleek accent ring around the circular logo badge
+        val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = fgColor
-            alpha = 90
             style = Paint.Style.STROKE
-            strokeWidth = moduleSize * 0.4f
+            strokeWidth = moduleSize * 0.45f
+            alpha = 220
         }
-        canvas.drawRoundRect(logoRect, cornerRadius, cornerRadius, borderPaint)
+        canvas.drawCircle(cx, cy, badgeRadius, ringPaint)
     }
 
     /**
