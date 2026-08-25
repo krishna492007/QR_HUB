@@ -68,6 +68,7 @@ private val AccentPink = AmberPrimary
 
 sealed class QRType(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Bulk : QRType("Bulk QR", Icons.Default.DynamicFeed)
+    object Barcode : QRType("Barcode", Icons.Default.ViewWeek)
     object Text : QRType("Text", Icons.Default.TextFields)
     object URL : QRType("URL", Icons.Default.Link)
     object UPI : QRType("UPI", Icons.Default.AccountBalance)
@@ -82,7 +83,7 @@ sealed class QRType(val label: String, val icon: androidx.compose.ui.graphics.ve
     object Event : QRType("Event", Icons.Default.Event)
 
     companion object {
-        val allTypes = listOf(Bulk, Text, URL, UPI, WhatsApp, WAGroup, Phone, SMS, Email, Contact, WiFi, Location, Event)
+        val allTypes = listOf(Bulk, Barcode, Text, URL, UPI, WhatsApp, WAGroup, Phone, SMS, Email, Contact, WiFi, Location, Event)
     }
 }
 
@@ -187,72 +188,125 @@ fun GenerateQrTypeSelectionScreen(
                     )
                 }
 
-                // Spanning 3-Columns Wide Bulk QR Card at the Bottom
+                // 2 Horizontally Aligned Wide Cards at Bottom (Bulk QR & Product Barcode)
                 item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                    val isSelected = selectedType == QRType.Bulk
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp, bottom = 4.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) AmberDim else Ink800)
-                            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
-                            .clickable {
-                                selectedType = if (isSelected) null else QRType.Bulk
-                            }
-                            .padding(horizontal = 14.dp, vertical = 13.dp)
+                            .padding(top = 4.dp, bottom = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) AmberPrimary else AmberDim2),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.DynamicFeed,
-                                    null,
-                                    tint = if (isSelected) Color(0xFF160E06) else AmberSoft,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        "Bulk QR Generator",
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) AmberSoft else TextPrimary
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(AmberPrimary.copy(alpha = 0.2f))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("CSV / BATCH", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
-                                    }
+                        // Left Card: Bulk QR Generator
+                        val isBulkSelected = selectedType == QRType.Bulk
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isBulkSelected) AmberDim else Ink800)
+                                .border(1.dp, if (isBulkSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
+                                .clickable {
+                                    selectedType = if (isBulkSelected) null else QRType.Bulk
                                 }
-                                Text(
-                                    "Generate 100+ QRs & export as ZIP or PDF Sheet",
-                                    fontSize = 11.sp,
-                                    color = TextSecondary,
-                                    maxLines = 1
-                                )
-                            }
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isBulkSelected) AmberPrimary else AmberDim2),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.DynamicFeed,
+                                        null,
+                                        tint = if (isBulkSelected) Color(0xFF160E06) else AmberSoft,
+                                        modifier = Modifier.size(19.dp)
+                                    )
+                                }
 
-                            if (isSelected) {
-                                Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
-                            } else {
-                                Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Bulk QR",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isBulkSelected) AmberSoft else TextPrimary,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        "CSV / Batch",
+                                        fontSize = 10.5.sp,
+                                        color = TextSecondary,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                if (isBulkSelected) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        }
+
+                        // Right Card: 1D Product Barcode Generator
+                        val isBarcodeSelected = selectedType == QRType.Barcode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isBarcodeSelected) AmberDim else Ink800)
+                                .border(1.dp, if (isBarcodeSelected) AmberPrimary else BorderLine, RoundedCornerShape(16.dp))
+                                .clickable {
+                                    selectedType = if (isBarcodeSelected) null else QRType.Barcode
+                                }
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isBarcodeSelected) AmberPrimary else AmberDim2),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.ViewWeek,
+                                        null,
+                                        tint = if (isBarcodeSelected) Color(0xFF160E06) else AmberSoft,
+                                        modifier = Modifier.size(19.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Barcode",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isBarcodeSelected) AmberSoft else TextPrimary,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        "Product / Mart",
+                                        fontSize = 10.5.sp,
+                                        color = TextSecondary,
+                                        maxLines = 1
+                                    )
+                                }
+
+                                if (isBarcodeSelected) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
+                                }
                             }
                         }
                     }
@@ -476,6 +530,7 @@ fun CornerBrackets(
 
 private fun getTypeCardColor(type: QRType): Color = when (type) {
     QRType.Bulk -> AmberPrimary
+    QRType.Barcode -> AmberPrimary
     QRType.Text -> Color(0xFFFFA726)
     QRType.URL -> Color(0xFF42A5F5)
     QRType.UPI -> Color(0xFF66BB6A)
