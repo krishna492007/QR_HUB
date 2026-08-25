@@ -490,21 +490,35 @@ fun GenerateBarcodeScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             // ── MULTI-PAGE STICKER SHEET CONFIGURATION ──
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Print Sticker Sheet (A4 PDF)", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text(
-                                        "$totalCopies Stickers = $calculatedPages A4 Page(s)",
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AmberSoft
-                                    )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Print Sticker Sheet", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                    Text("A4 Self-Adhesive Sticker Paper", fontSize = 11.sp, color = TextTertiary)
                                 }
-                                Text("Select A4 Sticker Paper Format & Quantity to Print", fontSize = 11.sp, color = TextSecondary)
+
+                                // Clean Pill Badge for A4 Page Count
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(AmberDim)
+                                        .border(1.dp, AmberPrimary.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Description, null, tint = AmberSoft, modifier = Modifier.size(13.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            "$calculatedPages A4 Page${if (calculatedPages > 1) "s" else ""}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = AmberSoft
+                                        )
+                                    }
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
@@ -526,21 +540,29 @@ fun GenerateBarcodeScreen(
                                                     .background(if (isPicked) AmberDim else Ink750)
                                                     .border(1.dp, if (isPicked) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
                                                     .clickable { selectedSheetFormat = format }
-                                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                                                    .padding(horizontal = 10.dp, vertical = 9.dp)
                                             ) {
                                                 Column {
-                                                    Text(
-                                                        format.title,
-                                                        fontSize = 11.5.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = if (isPicked) AmberSoft else TextPrimary
-                                                    )
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            format.title,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = if (isPicked) AmberSoft else TextPrimary
+                                                        )
+                                                        if (isPicked) {
+                                                            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(14.dp))
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         format.useCase,
                                                         fontSize = 10.sp,
-                                                        color = TextTertiary,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
+                                                        color = if (isPicked) TextSecondary else TextTertiary
                                                     )
                                                 }
                                             }
@@ -551,14 +573,42 @@ fun GenerateBarcodeScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // Copies Input + Quick Buttons
+                            // Section Title & Counter
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Total Copies:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Total Quantity / Copies", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                                Text("$totalCopies Stickers", fontSize = 11.5.sp, color = AmberSoft, fontWeight = FontWeight.Bold)
+                            }
 
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Quantity Stepper & Quick-Select Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Stepper [-]
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Ink750)
+                                        .border(1.dp, BorderLine, RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            val cur = copiesInputText.toIntOrNull() ?: 24
+                                            val next = (cur - 12).coerceAtLeast(1)
+                                            copiesInputText = next.toString()
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Remove, null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                                }
+
+                                // Direct Input Box
                                 OutlinedTextField(
                                     value = copiesInputText,
                                     onValueChange = {
@@ -566,8 +616,13 @@ fun GenerateBarcodeScreen(
                                         copiesInputText = filtered
                                     },
                                     singleLine = true,
+                                    textStyle = androidx.compose.ui.text.TextStyle(
+                                        textAlign = TextAlign.Center,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    ),
                                     modifier = Modifier
-                                        .width(90.dp)
+                                        .width(76.dp)
                                         .height(48.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedBorderColor = AmberPrimary,
@@ -578,29 +633,45 @@ fun GenerateBarcodeScreen(
                                     shape = RoundedCornerShape(10.dp)
                                 )
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                                // Stepper [+]
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Ink750)
+                                        .border(1.dp, BorderLine, RoundedCornerShape(10.dp))
+                                        .clickable {
+                                            val cur = copiesInputText.toIntOrNull() ?: 24
+                                            val next = cur + 12
+                                            copiesInputText = next.toString()
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Add, null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                                }
 
-                                // Quick Increment Chips
+                                // Quick Preset Pills
                                 Row(
                                     modifier = Modifier
                                         .weight(1f)
                                         .horizontalScroll(rememberScrollState()),
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    listOf("24", "50", "100", "200").forEach { quickCount ->
+                                    listOf("24", "48", "100", "200").forEach { quickCount ->
+                                        val isSelected = copiesInputText == quickCount
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .background(if (copiesInputText == quickCount) AmberDim else Ink750)
-                                                .border(1.dp, if (copiesInputText == quickCount) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
-                                                .clickable { copiesInputText = quickCount }
-                                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                                .background(if (isSelected) AmberDim else Ink750)
+                                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
+                                            .clickable { copiesInputText = quickCount }
+                                            .padding(horizontal = 9.dp, vertical = 9.dp)
                                         ) {
                                             Text(
                                                 "$quickCount pcs",
                                                 fontSize = 11.sp,
-                                                fontWeight = if (copiesInputText == quickCount) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (copiesInputText == quickCount) AmberSoft else TextSecondary
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) AmberSoft else TextSecondary
                                             )
                                         }
                                     }
@@ -642,7 +713,7 @@ fun GenerateBarcodeScreen(
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        if (isGeneratingStickerSheet) "Generating PDF Sheet..." else "Export $totalCopies Stickers ($calculatedPages Pages PDF)",
+                                        if (isGeneratingStickerSheet) "Generating PDF Sheet..." else "Export $totalCopies Stickers ($calculatedPages Page${if (calculatedPages > 1) "s" else ""} PDF)",
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF20140A)
