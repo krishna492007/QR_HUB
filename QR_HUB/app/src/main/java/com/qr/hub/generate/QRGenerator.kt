@@ -168,16 +168,18 @@ object QRGenerator {
     }
 
     /**
-     * Build WiFi configuration string
+     * Build WiFi configuration string using standard Android format (S:SSID;T:WPA;P:PASS;H:false;;)
      */
     fun buildWifiContent(
         ssid: String,
         password: String = "",
-        encryption: String = "WPA"
+        encryption: String = "WPA",
+        hidden: Boolean = false
     ): String {
-        val enc = if (encryption.isEmpty()) "None" else encryption.uppercase()
-        val pass = if (enc == "None") "" else ";P:$password"
-        return "WIFI:T:$enc;S:$ssid${pass};;"
+        val enc = if (encryption.isEmpty() || encryption.equals("none", ignoreCase = true)) "nopass" else encryption.uppercase()
+        val passPart = if (enc == "nopass" || password.isEmpty()) "" else ";P:$password"
+        val hiddenPart = if (hidden) ";H:true" else ";H:false"
+        return "WIFI:S:$ssid;T:$enc$passPart$hiddenPart;;"
     }
 
     /**
