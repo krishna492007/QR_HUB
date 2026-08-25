@@ -54,12 +54,20 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.math.min
 
 enum class BarcodeType(val displayName: String, val format: BarcodeFormat, val hint: String, val sample: String) {
     CODE_128("Code-128", BarcodeFormat.CODE_128, "Text / Numbers for Products & Logistics", "PROD-2025-A1"),
     EAN_13("EAN-13", BarcodeFormat.EAN_13, "13 Digits Retail & Mart Barcode", "8901234567890"),
     UPC_A("UPC-A", BarcodeFormat.UPC_A, "12 Digits Global Retail Barcode", "012345678905"),
     CODE_39("Code-39", BarcodeFormat.CODE_39, "Alphanumeric Warehouse & Inventory", "ITEM-9988")
+}
+
+enum class SheetFormat(val countPerPage: Int, val cols: Int, val rows: Int, val title: String, val useCase: String) {
+    LABELS_24(24, 3, 8, "24 Labels (3x8)", "Standard Retail & Marts (Best)"),
+    LABELS_12(12, 2, 6, "12 Labels (2x6)", "Boxes & Shipping Parcels"),
+    LABELS_40(40, 4, 10, "40 Labels (4x10)", "Medicines & Cosmetics"),
+    LABELS_65(65, 5, 13, "65 Labels (5x13)", "Jewellery & Micro Tags")
 }
 
 data class BatchBarcodeItem(
@@ -77,15 +85,23 @@ fun GenerateBarcodeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var activeTab by remember { mutableStateOf(0) } // 0 = Single & Sticker Sheet, 1 = Bulk Barcodes
+    var activeTab by remember { mutableStateOf(0) } // 0 = Single & Multi-Copy Sheet, 1 = Bulk CSV
     var selectedBarcodeType by remember { mutableStateOf(BarcodeType.CODE_128) }
+    var selectedSheetFormat by remember { mutableStateOf(SheetFormat.LABELS_24) }
 
     // ── Single Mode States ──
     var singleInputText by remember { mutableStateOf("") }
     var singleBarcodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var singleErrorMessage by remember { mutableStateOf<String?>(null) }
     var isSavingSingle by remember { mutableStateOf(false) }
-    var selectedStickerCopies by remember { mutableStateOf(24) } // 12, 24, 40
+
+    // Copies state for Multi-Page Sticker Printing
+    var copiesInputText by remember { mutableStateOf("24") }
+    val totalCopies = copiesInputText.toIntOrNull() ?: 24
+    val calculatedPages = remember(totalCopies, selectedSheetFormat) {
+        if (totalCopies <= 0) 1
+        else (totalCopies + selectedSheetFormat.countPerPage - 1) / selectedSheetFormat.countPerPage
+    }
     var isGeneratingStickerSheet by remember { mutableStateOf(false) }
 
     // ── Bulk Mode States ──
@@ -156,11 +172,11 @@ fun GenerateBarcodeScreen(
             Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text("Product Barcode Studio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Text("Generate & Print Sticker Sheets for Shops & Marts", fontSize = 11.5.sp, color = TextSecondary)
+                Text("Generate & Print A4 Sticker Sheets for Shops & Marts", fontSize = 11.5.sp, color = TextSecondary)
             }
         }
 
-        // ── MODE TABS (Single & Sticker vs Bulk CSV) ──
+        // ── MODE TABS (Single & Sticker Sheet vs Bulk CSV) ──
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,7 +205,7 @@ fun GenerateBarcodeScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "Single & Sticker Sheet",
+                        "Single & Stickers",
                         fontSize = 12.sp,
                         fontWeight = if (activeTab == 0) FontWeight.Bold else FontWeight.Medium,
                         color = if (activeTab == 0) Color(0xFF160E06) else TextSecondary
@@ -216,7 +232,7 @@ fun GenerateBarcodeScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        "Bulk Barcodes (CSV)",
+                        "Bulk List (CSV)",
                         fontSize = 12.sp,
                         fontWeight = if (activeTab == 1) FontWeight.Bold else FontWeight.Medium,
                         color = if (activeTab == 1) Color(0xFF160E06) else TextSecondary
@@ -225,7 +241,7 @@ fun GenerateBarcodeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // ── SCROLLABLE CONTENT ──
         Column(
@@ -234,7 +250,7 @@ fun GenerateBarcodeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp)
         ) {
-            // ── FORMAT SELECTOR (Shared across both tabs) ──
+            // ── FORMAT SELECTOR ──
             Text("Select Barcode Standard", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -370,7 +386,7 @@ fun GenerateBarcodeScreen(
                     }
                 }
 
-                // Barcode Preview & Sticker Sheet Exporter
+                // Barcode Preview & Multi-Page Sticker Sheet Exporter
                 if (singleBarcodeBitmap != null) {
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -396,7 +412,7 @@ fun GenerateBarcodeScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(140.dp)
+                                    .height(130.dp)
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(Color.White)
                                     .padding(10.dp),
@@ -469,67 +485,149 @@ fun GenerateBarcodeScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(18.dp))
                             HorizontalDivider(color = BorderLine)
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // ── MULTI-COPY STICKER SHEET SECTION ──
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text("Print Sticker Sheet (A4 PDF)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text("Print 12, 24 or 40 labels on single A4 sheet", fontSize = 11.sp, color = TextSecondary)
+                            // ── MULTI-PAGE STICKER SHEET CONFIGURATION ──
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Print Sticker Sheet (A4 PDF)", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                    Text(
+                                        "$totalCopies Stickers = $calculatedPages A4 Page(s)",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AmberSoft
+                                    )
                                 }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Sticker Copies Selector Pills
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                listOf(12 to "12 Labels (2x6)", 24 to "24 Labels (3x8)", 40 to "40 Labels (4x10)").forEach { (count, label) ->
-                                    val isPicked = selectedStickerCopies == count
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(if (isPicked) AmberDim else Ink750)
-                                            .border(1.dp, if (isPicked) AmberPrimary else BorderLine, RoundedCornerShape(10.dp))
-                                            .clickable { selectedStickerCopies = count }
-                                            .padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            label,
-                                            fontSize = 10.5.sp,
-                                            fontWeight = if (isPicked) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isPicked) AmberSoft else TextSecondary,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
+                                Text("Select A4 Sticker Paper Format & Quantity to Print", fontSize = 11.sp, color = TextSecondary)
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Print Sticker Sheet CTA
+                            // 4 Standard Sheet Formats
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                val chunked = SheetFormat.values().toList().chunked(2)
+                                chunked.forEach { rowFormats ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        rowFormats.forEach { format ->
+                                            val isPicked = selectedSheetFormat == format
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(if (isPicked) AmberDim else Ink750)
+                                                    .border(1.dp, if (isPicked) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
+                                                    .clickable { selectedSheetFormat = format }
+                                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                                            ) {
+                                                Column {
+                                                    Text(
+                                                        format.title,
+                                                        fontSize = 11.5.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isPicked) AmberSoft else TextPrimary
+                                                    )
+                                                    Text(
+                                                        format.useCase,
+                                                        fontSize = 10.sp,
+                                                        color = TextTertiary,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Copies Input + Quick Buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Total Copies:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                OutlinedTextField(
+                                    value = copiesInputText,
+                                    onValueChange = {
+                                        val filtered = it.filter { ch -> ch.isDigit() }.take(4)
+                                        copiesInputText = filtered
+                                    },
+                                    singleLine = true,
+                                    modifier = Modifier
+                                        .width(90.dp)
+                                        .height(48.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = AmberPrimary,
+                                        unfocusedBorderColor = BorderLine,
+                                        focusedTextColor = TextPrimary,
+                                        unfocusedTextColor = TextPrimary
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Quick Increment Chips
+                                Row(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .horizontalScroll(rememberScrollState()),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    listOf("24", "50", "100", "200").forEach { quickCount ->
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(if (copiesInputText == quickCount) AmberDim else Ink750)
+                                                .border(1.dp, if (copiesInputText == quickCount) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
+                                                .clickable { copiesInputText = quickCount }
+                                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                "$quickCount pcs",
+                                                fontSize = 11.sp,
+                                                fontWeight = if (copiesInputText == quickCount) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (copiesInputText == quickCount) AmberSoft else TextSecondary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Export Multi-Page Sticker Sheet CTA
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(46.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .height(48.dp)
+                                    .clip(RoundedCornerShape(14.dp))
                                     .background(AmberCtaGradient)
-                                    .clickable(enabled = !isGeneratingStickerSheet) {
+                                    .clickable(enabled = !isGeneratingStickerSheet && totalCopies > 0) {
                                         val activity = context as? Activity
                                         AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                                             scope.launch {
                                                 isGeneratingStickerSheet = true
-                                                exportRepeatedStickerSheetPdf(context, singleBarcodeBitmap!!, singleInputText, selectedStickerCopies)
+                                                exportMultiPageStickerSheetPdf(
+                                                    context = context,
+                                                    barcodeBitmap = singleBarcodeBitmap!!,
+                                                    label = singleInputText,
+                                                    totalCopies = totalCopies,
+                                                    format = selectedSheetFormat
+                                                )
                                                 isGeneratingStickerSheet = false
                                             }
                                         }
@@ -540,11 +638,11 @@ fun GenerateBarcodeScreen(
                                     if (isGeneratingStickerSheet) {
                                         CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
                                     } else {
-                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(17.dp))
+                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        if (isGeneratingStickerSheet) "Generating PDF..." else "Export $selectedStickerCopies Labels Sheet (A4 PDF)",
+                                        if (isGeneratingStickerSheet) "Generating PDF Sheet..." else "Export $totalCopies Stickers ($calculatedPages Pages PDF)",
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF20140A)
@@ -557,7 +655,7 @@ fun GenerateBarcodeScreen(
             }
 
             // =========================================================================
-            // TAB 1: BULK BARCODES (CSV / MULTI-LINE)
+            // TAB 1: BULK BARCODES (CSV / MULTI-LINE LIST)
             // =========================================================================
             if (activeTab == 1) {
                 Box(
@@ -631,12 +729,12 @@ fun GenerateBarcodeScreen(
                             )
 
                             Text(
-                                "Load Sample Sequence",
+                                "Load 10 Sample Items",
                                 fontSize = 11.5.sp,
                                 color = AmberPrimary,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.clickable {
-                                    bulkTextInput = "ITEM-101-WATCH\nITEM-102-EARBUD\nITEM-103-SPEAKER\nITEM-104-CHARGER\nITEM-105-POWERBANK\nITEM-106-ADAPTER"
+                                    bulkTextInput = "ITEM-101-WATCH\nITEM-102-EARBUD\nITEM-103-SPEAKER\nITEM-104-CHARGER\nITEM-105-POWERBANK\nITEM-106-ADAPTER\nITEM-107-MOUSE\nITEM-108-KEYBOARD\nITEM-109-STAND\nITEM-110-CABLE"
                                 }
                             )
                         }
@@ -696,21 +794,26 @@ fun GenerateBarcodeScreen(
                     }
                 }
 
-                // Bulk Results & Export Section
+                // Bulk Results & Multi-Page Export Section
                 if (generatedBulkItems.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(18.dp))
+
+                    val bulkPagesCount = (generatedBulkItems.size + selectedSheetFormat.countPerPage - 1) / selectedSheetFormat.countPerPage
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "Generated (${generatedBulkItems.size} Barcodes)",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
+                        Column {
+                            Text(
+                                "Generated (${generatedBulkItems.size} Barcodes)",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Text("$bulkPagesCount Page(s) A4 Sheet", fontSize = 11.sp, color = AmberSoft)
+                        }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             // ZIP Export
@@ -747,7 +850,7 @@ fun GenerateBarcodeScreen(
                                     .clickable(enabled = !isExportingBulkPdf) {
                                         scope.launch {
                                             isExportingBulkPdf = true
-                                            exportBulkBarcodesAsPrintablePdf(context, generatedBulkItems)
+                                            exportBulkBarcodesAsPrintablePdf(context, generatedBulkItems, selectedSheetFormat)
                                             isExportingBulkPdf = false
                                         }
                                     }
@@ -849,7 +952,6 @@ private suspend fun generateProductBarcode(
         val outputBitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(outputBitmap)
 
-        // White Background
         canvas.drawColor(AndroidColor.WHITE)
 
         val matrixWidth = bitMatrix.width
@@ -865,7 +967,6 @@ private suspend fun generateProductBarcode(
         val stripeBitmap = Bitmap.createBitmap(pixels, matrixWidth, matrixHeight, Bitmap.Config.ARGB_8888)
         canvas.drawBitmap(stripeBitmap, null, Rect(0, 10, widthPx, 190), null)
 
-        // Draw Human-Readable Numbers / Text underneath
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = AndroidColor.BLACK
             textSize = 28f
@@ -884,33 +985,35 @@ private suspend fun generateProductBarcode(
 }
 
 /**
- * Exports repeated copies of a single barcode on an A4 Sticker Sheet (12, 24, or 40 stickers)
+ * Multi-Page A4 Sticker Sheet PDF for Case 1: Same Barcode with N Copies (e.g. 100 copies = 5 pages)
  */
-private suspend fun exportRepeatedStickerSheetPdf(
+private suspend fun exportMultiPageStickerSheetPdf(
     context: Context,
     barcodeBitmap: Bitmap,
     label: String,
-    totalCopies: Int
+    totalCopies: Int,
+    format: SheetFormat
 ) = withContext(Dispatchers.IO) {
     try {
         val pdfDocument = PdfDocument()
-        val pageWidth = 595 // A4 width
-        val pageHeight = 842 // A4 height
+        val pageWidth = 595 // A4 standard width points
+        val pageHeight = 842 // A4 standard height points
 
-        val (cols, rows) = when (totalCopies) {
-            12 -> Pair(2, 6)
-            40 -> Pair(4, 10)
-            else -> Pair(3, 8) // 24
-        }
+        val cols = format.cols
+        val rows = format.rows
+        val perPage = format.countPerPage
 
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas = page.canvas
+        val totalPages = (totalCopies + perPage - 1) / perPage
 
         val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.DKGRAY
-            textSize = 12f
+            textSize = 11f
             typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+
+        val pageNumPaint = Paint(headerPaint).apply {
+            textAlign = Paint.Align.RIGHT
+            textSize = 10f
         }
 
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -919,18 +1022,31 @@ private suspend fun exportRepeatedStickerSheetPdf(
             strokeWidth = 0.8f
         }
 
-        canvas.drawText("QR HUB - Barcode Sticker Sheet ($totalCopies Labels)", 30f, 30f, headerPaint)
-
-        val marginX = 30f
-        val marginY = 45f
+        val marginX = 25f
+        val marginY = 40f
         val availableWidth = pageWidth - (marginX * 2)
-        val availableHeight = pageHeight - marginY - 30f
+        val availableHeight = pageHeight - marginY - 25f
 
         val cellWidth = availableWidth / cols
         val cellHeight = availableHeight / rows
 
-        for (r in 0 until rows) {
-            for (c in 0 until cols) {
+        var printedCount = 0
+
+        for (p in 0 until totalPages) {
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, p + 1).create()
+            val page = pdfDocument.startPage(pageInfo)
+            val canvas = page.canvas
+
+            // Page Header
+            canvas.drawText("QR HUB - Barcode Sticker Sheet ($totalCopies Copies)", marginX, 26f, headerPaint)
+            canvas.drawText("Page ${p + 1} of $totalPages", (pageWidth - marginX), 26f, pageNumPaint)
+
+            val remainingForThisPage = min(perPage, totalCopies - printedCount)
+
+            for (i in 0 until remainingForThisPage) {
+                val c = i % cols
+                val r = i / cols
+
                 val x = marginX + (c * cellWidth)
                 val y = marginY + (r * cellHeight)
 
@@ -948,12 +1064,13 @@ private suspend fun exportRepeatedStickerSheetPdf(
                     (y + cellHeight - paddingV).toInt()
                 )
                 canvas.drawBitmap(barcodeBitmap, null, destRect, null)
+                printedCount++
             }
+
+            pdfDocument.finishPage(page)
         }
 
-        pdfDocument.finishPage(page)
-
-        val pdfFile = File(context.cacheDir, "Barcode_Sticker_Sheet_${totalCopies}_${System.currentTimeMillis()}.pdf")
+        val pdfFile = File(context.cacheDir, "Barcode_Sheet_${totalCopies}Copies_${System.currentTimeMillis()}.pdf")
         val fos = FileOutputStream(pdfFile)
         pdfDocument.writeTo(fos)
         pdfDocument.close()
@@ -977,21 +1094,33 @@ private suspend fun exportRepeatedStickerSheetPdf(
 }
 
 /**
- * Creates multi-page A4 Printable PDF Sheet for Bulk Barcodes
+ * Multi-Page A4 Printable PDF Sheet for Bulk Barcodes (Case 2: 100 Different Barcodes)
  */
-private suspend fun exportBulkBarcodesAsPrintablePdf(context: Context, items: List<BatchBarcodeItem>) = withContext(Dispatchers.IO) {
+private suspend fun exportBulkBarcodesAsPrintablePdf(
+    context: Context,
+    items: List<BatchBarcodeItem>,
+    format: SheetFormat
+) = withContext(Dispatchers.IO) {
     try {
         val pdfDocument = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
-        val itemsPerPage = 12 // 2 columns x 6 rows
 
-        val pagesCount = (items.size + itemsPerPage - 1) / itemsPerPage
+        val cols = format.cols
+        val rows = format.rows
+        val perPage = format.countPerPage
+
+        val totalPages = (items.size + perPage - 1) / perPage
 
         val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.DKGRAY
-            textSize = 13f
+            textSize = 11f
             typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+
+        val pageNumPaint = Paint(headerPaint).apply {
+            textAlign = Paint.Align.RIGHT
+            textSize = 10f
         }
 
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1000,41 +1129,50 @@ private suspend fun exportBulkBarcodesAsPrintablePdf(context: Context, items: Li
             strokeWidth = 0.8f
         }
 
-        for (p in 0 until pagesCount) {
+        val marginX = 25f
+        val marginY = 40f
+        val availableWidth = pageWidth - (marginX * 2)
+        val availableHeight = pageHeight - marginY - 25f
+
+        val cellWidth = availableWidth / cols
+        val cellHeight = availableHeight / rows
+
+        for (p in 0 until totalPages) {
             val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, p + 1).create()
             val page = pdfDocument.startPage(pageInfo)
             val canvas = page.canvas
 
-            canvas.drawText("QR HUB - Bulk Barcode Catalog Sheet", 35f, 35f, headerPaint)
-            val pageNumPaint = Paint(headerPaint).apply { textAlign = Paint.Align.RIGHT; textSize = 10f }
-            canvas.drawText("Page ${p + 1} of $pagesCount", (pageWidth - 35).toFloat(), 35f, pageNumPaint)
+            canvas.drawText("QR HUB - Bulk Barcode Catalog Sheet (${items.size} Items)", marginX, 26f, headerPaint)
+            canvas.drawText("Page ${p + 1} of $totalPages", (pageWidth - marginX), 26f, pageNumPaint)
 
-            val startIndex = p * itemsPerPage
-            val pageItems = items.subList(startIndex, (startIndex + itemsPerPage).coerceAtMost(items.size))
-
-            val marginX = 35f
-            val marginY = 50f
-            val colWidth = 250f
-            val rowHeight = 120f
+            val startIndex = p * perPage
+            val pageItems = items.subList(startIndex, min(startIndex + perPage, items.size))
 
             pageItems.forEachIndexed { i, item ->
-                val col = i % 2
-                val row = i / 2
+                val c = i % cols
+                val r = i / cols
 
-                val x = marginX + (col * (colWidth + 25f))
-                val y = marginY + (row * (rowHeight + 10f))
+                val x = marginX + (c * cellWidth)
+                val y = marginY + (r * cellHeight)
 
-                val cardRect = RectF(x, y, x + colWidth, y + rowHeight)
-                canvas.drawRoundRect(cardRect, 8f, 8f, borderPaint)
+                val rect = RectF(x + 2f, y + 2f, x + cellWidth - 2f, y + cellHeight - 2f)
+                canvas.drawRoundRect(rect, 4f, 4f, borderPaint)
 
-                val destRect = Rect((x + 12f).toInt(), (y + 12f).toInt(), (x + colWidth - 12f).toInt(), (y + rowHeight - 12f).toInt())
+                val paddingH = cellWidth * 0.08f
+                val paddingV = cellHeight * 0.12f
+                val destRect = Rect(
+                    (x + paddingH).toInt(),
+                    (y + paddingV).toInt(),
+                    (x + cellWidth - paddingH).toInt(),
+                    (y + cellHeight - paddingV).toInt()
+                )
                 canvas.drawBitmap(item.bitmap, null, destRect, null)
             }
 
             pdfDocument.finishPage(page)
         }
 
-        val pdfFile = File(context.cacheDir, "Bulk_Barcodes_${System.currentTimeMillis()}.pdf")
+        val pdfFile = File(context.cacheDir, "Bulk_Barcodes_${items.size}Items_${System.currentTimeMillis()}.pdf")
         val fos = FileOutputStream(pdfFile)
         pdfDocument.writeTo(fos)
         pdfDocument.close()
