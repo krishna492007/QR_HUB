@@ -47,8 +47,18 @@ class HistoryRepository(context: Context) {
         historyDao.clearAll()
     }
 
+    private var lastSavedRaw: String? = null
+    private var lastSavedTime: Long = 0L
+
     // Helper to save scanned QR result
     suspend fun saveScan(rawValue: String, parsed: ScannedQR) {
+        val now = System.currentTimeMillis()
+        if (rawValue == lastSavedRaw && (now - lastSavedTime) < 3000) {
+            return // Prevent duplicate database insertion within 3 seconds
+        }
+        lastSavedRaw = rawValue
+        lastSavedTime = now
+
         val type = when (parsed) {
             is ScannedQR.Text -> "TEXT"
             is ScannedQR.QRURL -> "URL"

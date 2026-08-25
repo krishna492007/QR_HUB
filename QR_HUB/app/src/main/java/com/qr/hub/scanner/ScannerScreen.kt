@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.qr.hub.model.ScannedQR
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.qr.hub.viewmodel.HistoryViewModel
 import com.qr.hub.util.*
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -79,6 +81,7 @@ fun ScannerScreen(
     onPrivacyPolicyClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val historyViewModel: HistoryViewModel = viewModel()
     var cameraState by remember { mutableStateOf(CameraState.LOADING) }
     var flashOn by remember { mutableStateOf(false) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
@@ -184,6 +187,8 @@ fun ScannerScreen(
     LaunchedEffect(scannedResult) {
         scannedResult?.let { result ->
             val parsed = detectType(result.rawValue)
+            historyViewModel.saveScan(result.rawValue, parsed)
+
             if (parsed is ScannedQR.UPI && UpiPreferenceManager.isQuickPayEnabled(context)) {
                 val defaultPkg = UpiPreferenceManager.getDefaultPackage(context)
                 if (!defaultPkg.isNullOrEmpty()) {
