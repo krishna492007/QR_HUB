@@ -478,142 +478,208 @@ private data class FrameOption(
 )
 
 /**
- * Type-Aware Center Logo Options with Logo Shape Selector (Squircle, Circle, Square)
+ * Type-Aware Center Logo Options with Compact Horizontal Cards & Shape Selector
  */
 @Composable
 private fun TypeAwareCenterLogoTab(
     qrType: String,
-    currentConfig: QRStyleConfig,
+    styleConfig: QRStyleConfig,
     onStyleChanged: (QRStyleConfig) -> Unit,
     onPickGallery: () -> Unit
 ) {
     val context = LocalContext.current
     val upperType = qrType.uppercase()
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
         // ── 1. LOGO SHAPE SELECTOR (SQUIRCLE, CIRCLE, SQUARE) ──
-        if (currentConfig.logoBitmap != null) {
+        if (styleConfig.logoBitmap != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Shape:", fontSize = 11.5.sp, color = TextSecondary)
+                Text("Shape:", fontSize = 11.sp, color = TextSecondary)
                 QRLogoShape.values().forEach { shape ->
-                    val isSelected = currentConfig.logoShape == shape
+                    val isSelected = styleConfig.logoShape == shape
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
                             .background(if (isSelected) AmberDim else Ink750)
                             .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
-                            .clickable { onStyleChanged(currentConfig.copy(logoShape = shape)) }
-                            .padding(vertical = 6.dp),
+                            .clickable { onStyleChanged(styleConfig.copy(logoShape = shape)) }
+                            .padding(vertical = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             shape.displayName,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) AmberSoft else TextPrimary
                         )
                     }
                 }
             }
-
-            HorizontalDivider(color = BorderLine, modifier = Modifier.padding(vertical = 2.dp))
         }
 
-        // ── 2. LOGO CHOICES (COMPACT ROWS) ──
-
-        // Option 1: Official App Logo (Default Branded Choice)
-        LogoOptionRow(
-            title = "QR Hub Official Logo (Default)",
-            subtitle = "Gold Square App Crown Icon",
-            icon = Icons.Default.QrCodeScanner,
-            isSelected = currentConfig.logoTag == "app_logo",
-            onClick = {
-                val logo = try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
-                onStyleChanged(
-                    currentConfig.copy(
-                        logoBitmap = logo,
-                        logoTag = "app_logo",
-                        logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+        // ── 2. LOGO OPTIONS IN HORIZONTAL SCROLL ROW ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Option 1: Official App Logo (Default)
+            CompactLogoCard(
+                title = "QR Hub",
+                subtitle = "App Gold Logo",
+                icon = Icons.Default.QrCodeScanner,
+                isSelected = styleConfig.logoTag == "app_logo",
+                onClick = {
+                    val logo = try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
+                    onStyleChanged(
+                        styleConfig.copy(
+                            logoBitmap = logo,
+                            logoTag = "app_logo",
+                            logoShape = QRLogoShape.ROUNDED_SQUIRCLE
+                        )
                     )
-                )
-            }
-        )
+                }
+            )
 
-        // Option 2: Custom Gallery Photo with In-App 1:1 Cropper
-        LogoOptionRow(
-            title = if (currentConfig.logoTag == "custom") "Custom Logo (Tap to Re-Crop)" else "Custom Logo (Pick & Crop 1:1)",
-            subtitle = "Select any photo & crop in exact square",
-            icon = Icons.Default.Crop,
-            isSelected = currentConfig.logoTag == "custom",
-            onClick = onPickGallery
-        )
+            // Option 2: Custom Gallery Logo (Pick & Crop 1:1)
+            CompactLogoCard(
+                title = if (styleConfig.logoTag == "custom") "Custom (Re-crop)" else "Custom Logo",
+                subtitle = "Pick & Crop 1:1",
+                icon = Icons.Default.Crop,
+                isSelected = styleConfig.logoTag == "custom",
+                onClick = onPickGallery
+            )
 
-        // Type-Specific Branded Logo Badge
-        when (upperType) {
-            "UPI" -> {
-                LogoOptionRow(
-                    title = "UPI / BHIM Pay Badge",
-                    subtitle = "Official UPI Payment Logo Badge",
-                    icon = Icons.Default.CurrencyRupee,
-                    isSelected = currentConfig.logoTag == "upi_badge",
-                    onClick = {
-                        val upiBmp = createTextBadgeBitmap("UPI", 0xFF00796B.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                    }
-                )
+            // Type-Specific Badges
+            when (upperType) {
+                "UPI" -> {
+                    CompactLogoCard(
+                        title = "UPI / BHIM",
+                        subtitle = "Payment Badge",
+                        icon = Icons.Default.CurrencyRupee,
+                        isSelected = styleConfig.logoTag == "upi_badge",
+                        onClick = {
+                            val upiBmp = createTextBadgeBitmap("UPI", 0xFF00796B.toInt(), 0xFFFFFFFF.toInt())
+                            onStyleChanged(styleConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
+                        }
+                    )
+                }
+                "WHATSAPP", "WAGROUP" -> {
+                    CompactLogoCard(
+                        title = "WhatsApp",
+                        subtitle = "Chat Badge",
+                        icon = Icons.AutoMirrored.Filled.Chat,
+                        isSelected = styleConfig.logoTag == "wa_badge",
+                        onClick = {
+                            val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
+                            onStyleChanged(styleConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
+                        }
+                    )
+                }
+                "WIFI" -> {
+                    CompactLogoCard(
+                        title = "WiFi Signal",
+                        subtitle = "Network Badge",
+                        icon = Icons.Default.Wifi,
+                        isSelected = styleConfig.logoTag == "wifi_badge",
+                        onClick = {
+                            val wifiBmp = createTextBadgeBitmap("WIFI", 0xFF0288D1.toInt(), 0xFFFFFFFF.toInt())
+                            onStyleChanged(styleConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
+                        }
+                    )
+                }
+                "URL" -> {
+                    CompactLogoCard(
+                        title = "Website",
+                        subtitle = "Web Link Badge",
+                        icon = Icons.Default.Link,
+                        isSelected = styleConfig.logoTag == "web_badge",
+                        onClick = {
+                            val webBmp = createTextBadgeBitmap("WEB", 0xFF3F51B5.toInt(), 0xFFFFFFFF.toInt())
+                            onStyleChanged(styleConfig.copy(logoBitmap = webBmp, logoTag = "web_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
+                        }
+                    )
+                }
             }
-            "WHATSAPP", "WAGROUP" -> {
-                LogoOptionRow(
-                    title = "WhatsApp Logo Badge",
-                    subtitle = "Official Green Chat Badge",
-                    icon = Icons.AutoMirrored.Filled.Chat,
-                    isSelected = currentConfig.logoTag == "wa_badge",
-                    onClick = {
-                        val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                    }
-                )
-            }
-            "WIFI" -> {
-                LogoOptionRow(
-                    title = "WiFi Signal Badge",
-                    subtitle = "WiFi Network Connection Badge",
-                    icon = Icons.Default.Wifi,
-                    isSelected = currentConfig.logoTag == "wifi_badge",
-                    onClick = {
-                        val wifiBmp = createTextBadgeBitmap("WIFI", 0xFF0288D1.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                    }
-                )
-            }
-            "URL" -> {
-                LogoOptionRow(
-                    title = "Web Link Badge",
-                    subtitle = "Website Navigation Badge",
-                    icon = Icons.Default.Link,
-                    isSelected = currentConfig.logoTag == "web_badge",
-                    onClick = {
-                        val webBmp = createTextBadgeBitmap("WEB", 0xFF3F51B5.toInt(), 0xFFFFFFFF.toInt())
-                        onStyleChanged(currentConfig.copy(logoBitmap = webBmp, logoTag = "web_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                    }
-                )
-            }
+
+            // Option 3: None (No Logo)
+            CompactLogoCard(
+                title = "No Logo",
+                subtitle = "Clean Pattern",
+                icon = Icons.Default.Close,
+                isSelected = styleConfig.logoBitmap == null,
+                onClick = { onStyleChanged(styleConfig.copy(logoBitmap = null, logoTag = "none")) }
+            )
         }
+    }
+}
 
-        // Option 4: None
-        LogoOptionRow(
-            title = "No Center Logo",
-            subtitle = "Pure clean QR pattern without logo",
-            icon = Icons.Default.Close,
-            isSelected = currentConfig.logoBitmap == null,
-            onClick = { onStyleChanged(currentConfig.copy(logoBitmap = null, logoTag = "none")) }
-        )
+@Composable
+private fun CompactLogoCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(135.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (isSelected) AmberDim else Ink750)
+            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(10.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(if (isSelected) AmberPrimary else Ink800),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        null,
+                        tint = if (isSelected) Color(0xFF160E06) else TextPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                if (isSelected) {
+                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(16.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) AmberSoft else TextPrimary,
+                maxLines = 1
+            )
+            Text(
+                subtitle,
+                fontSize = 10.5.sp,
+                color = TextTertiary,
+                maxLines = 1
+            )
+        }
     }
 }
 
@@ -644,59 +710,4 @@ private fun createTextBadgeBitmap(text: String, bgColor: Int, textColor: Int, si
     canvas.drawText(text, sizePx / 2f, textY, textPaint)
 
     return bitmap
-}
-
-@Composable
-private fun LogoOptionRow(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) AmberDim else Ink750)
-            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isSelected) AmberPrimary else Ink800),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                null,
-                tint = if (isSelected) Color(0xFF160E06) else TextPrimary,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isSelected) AmberSoft else TextPrimary
-            )
-            Text(
-                subtitle,
-                fontSize = 11.sp,
-                color = TextTertiary
-            )
-        }
-
-        if (isSelected) {
-            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
-        }
-    }
 }
