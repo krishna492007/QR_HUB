@@ -43,7 +43,7 @@ object QRStylingEngine {
         val hasBottomFrame = config.frameStyle == QRFrameStyle.BOTTOM_BADGE || config.frameStyle == QRFrameStyle.PAYMENT_BADGE
         val hasCardBorder = config.frameStyle == QRFrameStyle.CARD_BORDER
 
-        val bannerHeight = if (hasBottomFrame) (qrRenderSize * 0.16f) else 0f
+        val bannerHeight = if (hasBottomFrame) (qrRenderSize * 0.18f) else 0f
         val cardBorderPadding = if (hasCardBorder) (qrRenderSize * 0.04f) else 0f
 
         val bitmapWidth = (qrRenderSize + (cardBorderPadding * 2)).toInt()
@@ -126,7 +126,7 @@ object QRStylingEngine {
 
         // Center Logo Safe Exclusion Zone (in matrix coordinates)
         val hasLogo = config.logoBitmap != null
-        val logoMatrixSpan = if (hasLogo) (matrixSize * 0.22f).toInt().coerceAtLeast(5) else 0
+        val logoMatrixSpan = if (hasLogo) (matrixSize * 0.26f).toInt().coerceAtLeast(5) else 0
         val logoMinX = (matrixSize - logoMatrixSpan) / 2
         val logoMaxX = logoMinX + logoMatrixSpan
         val logoMinY = (matrixSize - logoMatrixSpan) / 2
@@ -165,7 +165,7 @@ object QRStylingEngine {
         // ── 7. DRAW BOTTOM FRAME ("SCAN ME" / "SCAN & PAY") ──
         if (hasBottomFrame) {
             val text = when (config.frameStyle) {
-                QRFrameStyle.PAYMENT_BADGE -> "SCAN & PAY"
+                QRFrameStyle.PAYMENT_BADGE -> config.frameText.ifEmpty { "SCAN & PAY" }
                 else -> config.frameText.ifEmpty { "SCAN ME" }
             }
             drawBottomFrameBadge(canvas, bitmapWidth.toFloat(), bitmapHeight.toFloat(), bannerHeight, text, config.fgColor, config.bgColor)
@@ -287,7 +287,7 @@ object QRStylingEngine {
     }
 
     /**
-     * Draw Center Logo with protective rounded quiet card
+     * Draw Center Logo with prominent size and protective rounded card
      */
     private fun drawCenterLogo(
         canvas: Canvas,
@@ -303,34 +303,44 @@ object QRStylingEngine {
         val cx = offsetX + (qrTotalPx / 2f)
         val cy = offsetY + (qrTotalPx / 2f)
 
-        val cardSize = qrTotalPx * 0.22f
+        // Prominent 26% logo card size for clear branding without scan errors
+        val cardSize = qrTotalPx * 0.26f
         val logoCardRect = RectF(cx - (cardSize / 2f), cy - (cardSize / 2f), cx + (cardSize / 2f), cy + (cardSize / 2f))
-        val cornerRadius = cardSize * 0.28f
+        val cornerRadius = cardSize * 0.26f
 
-        // 1. Protective Background Card
+        // 1. Protective Background Card (pure white or contrasting background)
         val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = bgColor
             style = Paint.Style.FILL
         }
         canvas.drawRoundRect(logoCardRect, cornerRadius, cornerRadius, cardPaint)
 
-        // 2. Subtle Accent Border
+        // 2. Crisp Border Outline
         val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = fgColor
             style = Paint.Style.STROKE
-            strokeWidth = moduleSize * 0.4f
+            strokeWidth = moduleSize * 0.5f
         }
         canvas.drawRoundRect(logoCardRect, cornerRadius, cornerRadius, borderPaint)
 
-        // 3. Draw Logo Image inside Card (with 72% fit)
-        val logoFitSize = cardSize * 0.72f
+        // 3. Draw Logo Image inside Card with 88% scale (fills the card boldly!)
+        val logoFitSize = cardSize * 0.88f
         val logoDstRect = RectF(cx - (logoFitSize / 2f), cy - (logoFitSize / 2f), cx + (logoFitSize / 2f), cy + (logoFitSize / 2f))
         val srcRect = Rect(0, 0, logo.width, logo.height)
 
+        // Save canvas state to clip logo image neatly with rounded corners
+        canvas.save()
+        val clipPath = Path().apply {
+            addRoundRect(logoCardRect, cornerRadius * 0.85f, cornerRadius * 0.85f, Path.Direction.CW)
+        }
+        canvas.clipPath(clipPath)
+
         val logoPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = true
+            isDither = true
         }
         canvas.drawBitmap(logo, srcRect, logoDstRect, logoPaint)
+        canvas.restore()
     }
 
     /**
@@ -345,10 +355,10 @@ object QRStylingEngine {
         fgColor: Int,
         bgColor: Int
     ) {
-        val pillWidth = bitmapWidth * 0.65f
-        val pillHeight = bannerHeight * 0.60f
+        val pillWidth = (bitmapWidth * 0.72f).coerceAtLeast(280f)
+        val pillHeight = bannerHeight * 0.65f
         val pillLeft = (bitmapWidth - pillWidth) / 2f
-        val pillTop = bitmapHeight - bannerHeight + ((bannerHeight - pillHeight) / 2f) - 6f
+        val pillTop = bitmapHeight - bannerHeight + ((bannerHeight - pillHeight) / 2f) - 4f
         val pillRight = pillLeft + pillWidth
         val pillBottom = pillTop + pillHeight
         val pillRadius = pillHeight / 2f
@@ -368,6 +378,7 @@ object QRStylingEngine {
             textSize = pillHeight * 0.46f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
+            letterSpacing = 0.08f
         }
 
         // Vertical Centering for text

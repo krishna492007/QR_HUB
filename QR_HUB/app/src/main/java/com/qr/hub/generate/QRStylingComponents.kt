@@ -1,7 +1,12 @@
 package com.qr.hub.generate
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,13 +20,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -30,14 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.qr.hub.R
 import com.qr.hub.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
- * Interactive QR Code Customization UI Section with tabs for Presets, Shapes, Eyes, Frames, and Logos
+ * Interactive QR Code Customization UI Section with type-aware Frames and Logos
  */
 @Composable
 fun QRCustomizationSection(
+    qrType: String,
     styleConfig: QRStyleConfig,
     onStyleChanged: (QRStyleConfig) -> Unit,
     modifier: Modifier = Modifier
@@ -142,8 +146,8 @@ fun QRCustomizationSection(
                     0 -> PresetsTab(styleConfig, onStyleChanged)
                     1 -> DotShapesTab(styleConfig, onStyleChanged)
                     2 -> CornerEyesTab(styleConfig, onStyleChanged)
-                    3 -> FramesTab(styleConfig, onStyleChanged)
-                    4 -> CenterLogoTab(styleConfig, onStyleChanged, onPickGallery = { galleryLauncher.launch("image/*") })
+                    3 -> TypeAwareFramesTab(qrType, styleConfig, onStyleChanged)
+                    4 -> TypeAwareCenterLogoTab(qrType, styleConfig, onStyleChanged, onPickGallery = { galleryLauncher.launch("image/*") })
                 }
             }
         }
@@ -350,14 +354,59 @@ private fun CornerEyesTab(
     }
 }
 
+/**
+ * Type-Aware Frame Options (adapts dynamically to UPI, WhatsApp, WiFi, URL, etc.)
+ */
 @Composable
-private fun FramesTab(
+private fun TypeAwareFramesTab(
+    qrType: String,
     currentConfig: QRStyleConfig,
     onStyleChanged: (QRStyleConfig) -> Unit
 ) {
+    val upperType = qrType.uppercase()
+
+    val options = when (upperType) {
+        "UPI" -> listOf(
+            FrameOption(QRFrameStyle.PAYMENT_BADGE, "SCAN & PAY", "Recommended for UPI Payment QR", Icons.Default.CurrencyRupee),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "PAY VIA UPI", "Bold UPI action banner", Icons.Default.AccountBalance),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic scan banner", Icons.Default.CropPortrait),
+            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern rounded border", Icons.Default.Dashboard),
+            FrameOption(QRFrameStyle.NONE, "NONE", "No frame border", Icons.Default.Block)
+        )
+        "WHATSAPP", "WAGROUP" -> listOf(
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "CHAT ON WHATSAPP", "Direct chat action banner", Icons.AutoMirrored.Filled.Chat),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO CHAT", "Action banner for messaging", Icons.Default.Sms),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic scan banner", Icons.Default.CropPortrait),
+            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern rounded border", Icons.Default.Dashboard),
+            FrameOption(QRFrameStyle.NONE, "NONE", "No frame border", Icons.Default.Block)
+        )
+        "WIFI" -> listOf(
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "CONNECT TO WIFI", "Connect action banner", Icons.Default.Wifi),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO CONNECT", "Quick network connection", Icons.Default.SignalWifi4Bar),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic scan banner", Icons.Default.CropPortrait),
+            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern rounded border", Icons.Default.Dashboard),
+            FrameOption(QRFrameStyle.NONE, "NONE", "No frame border", Icons.Default.Block)
+        )
+        "URL" -> listOf(
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "VISIT WEBSITE", "Website open action banner", Icons.Default.Link),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO OPEN", "Link navigation banner", Icons.Default.OpenInBrowser),
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic scan banner", Icons.Default.CropPortrait),
+            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern rounded border", Icons.Default.Dashboard),
+            FrameOption(QRFrameStyle.NONE, "NONE", "No frame border", Icons.Default.Block)
+        )
+        else -> listOf(
+            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Bold bottom scan banner", Icons.Default.CropPortrait),
+            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern rounded card border", Icons.Default.Dashboard),
+            FrameOption(QRFrameStyle.NONE, "NONE", "Plain QR code without frame", Icons.Default.Block)
+        )
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        QRFrameStyle.values().forEach { frame ->
-            val isSelected = currentConfig.frameStyle == frame
+        options.forEach { opt ->
+            val isSelected = (opt.style == QRFrameStyle.NONE && currentConfig.frameStyle == QRFrameStyle.NONE) ||
+                    (opt.style == QRFrameStyle.CARD_BORDER && currentConfig.frameStyle == QRFrameStyle.CARD_BORDER) ||
+                    (opt.style != QRFrameStyle.NONE && opt.style != QRFrameStyle.CARD_BORDER && currentConfig.frameStyle != QRFrameStyle.NONE && currentConfig.frameStyle != QRFrameStyle.CARD_BORDER && currentConfig.frameText == opt.text)
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -368,23 +417,15 @@ private fun FramesTab(
                     .clickable {
                         onStyleChanged(
                             currentConfig.copy(
-                                frameStyle = frame,
-                                frameText = when (frame) {
-                                    QRFrameStyle.PAYMENT_BADGE -> "SCAN & PAY"
-                                    else -> "SCAN ME"
-                                }
+                                frameStyle = opt.style,
+                                frameText = opt.text
                             )
                         )
                     }
                     .padding(14.dp)
             ) {
                 Icon(
-                    when (frame) {
-                        QRFrameStyle.NONE -> Icons.Default.Block
-                        QRFrameStyle.BOTTOM_BADGE -> Icons.Default.CropPortrait
-                        QRFrameStyle.PAYMENT_BADGE -> Icons.Default.CurrencyRupee
-                        QRFrameStyle.CARD_BORDER -> Icons.Default.Dashboard
-                    },
+                    opt.icon,
                     null,
                     tint = if (isSelected) AmberPrimary else TextSecondary,
                     modifier = Modifier.size(22.dp)
@@ -394,18 +435,13 @@ private fun FramesTab(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        frame.displayName,
+                        opt.text,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isSelected) AmberSoft else TextPrimary
                     )
                     Text(
-                        when (frame) {
-                            QRFrameStyle.NONE -> "Plain QR code without extra border"
-                            QRFrameStyle.BOTTOM_BADGE -> "Adds bold 'SCAN ME' bottom banner"
-                            QRFrameStyle.PAYMENT_BADGE -> "Adds 'SCAN & PAY' badge for UPI"
-                            QRFrameStyle.CARD_BORDER -> "Adds sleek rounded card frame"
-                        },
+                        opt.subtitle,
                         fontSize = 12.sp,
                         color = TextTertiary
                     )
@@ -419,14 +455,25 @@ private fun FramesTab(
     }
 }
 
+private data class FrameOption(
+    val style: QRFrameStyle,
+    val text: String,
+    val subtitle: String,
+    val icon: ImageVector
+)
+
+/**
+ * Type-Aware Center Logo Options (adapts dynamically to UPI, WhatsApp, WiFi, etc.)
+ */
 @Composable
-private fun CenterLogoTab(
+private fun TypeAwareCenterLogoTab(
+    qrType: String,
     currentConfig: QRStyleConfig,
     onStyleChanged: (QRStyleConfig) -> Unit,
     onPickGallery: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val upperType = qrType.uppercase()
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Option 1: None
@@ -438,7 +485,59 @@ private fun CenterLogoTab(
             onClick = { onStyleChanged(currentConfig.copy(logoBitmap = null, logoTag = "none")) }
         )
 
-        // Option 2: QR Hub Official Logo
+        // Type-Specific Branded Logo Badge
+        when (upperType) {
+            "UPI" -> {
+                LogoOptionRow(
+                    title = "UPI / BHIM Pay Badge",
+                    subtitle = "Official UPI Payment Logo Badge",
+                    icon = Icons.Default.CurrencyRupee,
+                    isSelected = currentConfig.logoTag == "upi_badge",
+                    onClick = {
+                        val upiBmp = createTextBadgeBitmap("UPI", 0xFF00796B.toInt(), 0xFFFFFFFF.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge"))
+                    }
+                )
+            }
+            "WHATSAPP", "WAGROUP" -> {
+                LogoOptionRow(
+                    title = "WhatsApp Logo Badge",
+                    subtitle = "Official Green Chat Badge",
+                    icon = Icons.AutoMirrored.Filled.Chat,
+                    isSelected = currentConfig.logoTag == "wa_badge",
+                    onClick = {
+                        val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge"))
+                    }
+                )
+            }
+            "WIFI" -> {
+                LogoOptionRow(
+                    title = "WiFi Signal Badge",
+                    subtitle = "WiFi Network Connection Badge",
+                    icon = Icons.Default.Wifi,
+                    isSelected = currentConfig.logoTag == "wifi_badge",
+                    onClick = {
+                        val wifiBmp = createTextBadgeBitmap("WIFI", 0xFF0288D1.toInt(), 0xFFFFFFFF.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge"))
+                    }
+                )
+            }
+            "URL" -> {
+                LogoOptionRow(
+                    title = "Web Link Badge",
+                    subtitle = "Website Navigation Badge",
+                    icon = Icons.Default.Link,
+                    isSelected = currentConfig.logoTag == "web_badge",
+                    onClick = {
+                        val webBmp = createTextBadgeBitmap("WEB", 0xFF3F51B5.toInt(), 0xFFFFFFFF.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = webBmp, logoTag = "web_badge"))
+                    }
+                )
+            }
+        }
+
+        // Option 2: QR Hub Official Gold Logo
         LogoOptionRow(
             title = "QR Hub Official Logo",
             subtitle = "Branded Gold Crown Icon",
@@ -459,6 +558,35 @@ private fun CenterLogoTab(
             onClick = onPickGallery
         )
     }
+}
+
+/**
+ * Creates high-resolution centered text badge bitmap for type-specific logos
+ */
+private fun createTextBadgeBitmap(text: String, bgColor: Int, textColor: Int, sizePx: Int = 200): Bitmap {
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+
+    val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = bgColor
+        style = Paint.Style.FILL
+    }
+    val rect = RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat())
+    val cornerRadius = sizePx * 0.28f
+    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint)
+
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = textColor
+        textSize = sizePx * 0.40f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+
+    val fontMetrics = textPaint.fontMetrics
+    val textY = (sizePx / 2f) - ((fontMetrics.ascent + fontMetrics.descent) / 2f)
+    canvas.drawText(text, sizePx / 2f, textY, textPaint)
+
+    return bitmap
 }
 
 @Composable

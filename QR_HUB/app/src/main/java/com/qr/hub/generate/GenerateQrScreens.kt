@@ -1165,7 +1165,15 @@ private fun GenerateQrFormScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // ── GENERATE BUTTON ──
-        var styleConfig by remember { mutableStateOf(QRStyleConfig()) }
+        var styleConfig by remember(qrType) {
+            mutableStateOf(
+                if (qrType.uppercase() == "UPI") {
+                    QRStyleConfig(frameStyle = QRFrameStyle.PAYMENT_BADGE, frameText = "SCAN & PAY")
+                } else {
+                    QRStyleConfig()
+                }
+            )
+        }
         var customStyledBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
         Box(
@@ -1348,6 +1356,7 @@ private fun GenerateQrFormScreen(
             // ── CUSTOMIZATION CONTROLS PANEL ──
             Spacer(modifier = Modifier.height(16.dp))
             QRCustomizationSection(
+                qrType = qrType,
                 styleConfig = styleConfig,
                 onStyleChanged = { newConfig ->
                     styleConfig = newConfig
