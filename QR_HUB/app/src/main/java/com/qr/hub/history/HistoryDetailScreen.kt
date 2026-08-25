@@ -188,8 +188,7 @@ fun HistoryDetailScreen(
                             modifier = Modifier
                                 .size(260.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                                .padding(10.dp),
+                                .background(Color(styleConfig.bgColor)),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
