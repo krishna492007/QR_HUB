@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -39,7 +40,7 @@ import com.qr.hub.R
 import com.qr.hub.util.*
 
 /**
- * Compact, Low-Height QR Customization Panel (keeps QR Code Preview visible at all times)
+ * Compact, Low-Height QR Customization Panel with Brand Color Picker
  */
 @Composable
 fun QRCustomizationSection(
@@ -49,12 +50,16 @@ fun QRCustomizationSection(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("Presets", "Dot Shape", "Corner Eyes", "Frames", "Center Logo")
+    val tabs = listOf("Presets", "Colors", "Dot Shape", "Corner Eyes", "Frames", "Center Logo")
     val context = LocalContext.current
 
     // State for Image Crop Dialog
     var rawPickedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showCropDialog by remember { mutableStateOf(false) }
+
+    // State for Color Picker Dialog
+    var showColorPickerDialog by remember { mutableStateOf(false) }
+    var colorPickerTarget by remember { mutableStateOf(ColorTarget.FOREGROUND) }
 
     // Gallery Picker for custom logo
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -89,6 +94,19 @@ fun QRCustomizationSection(
                         logoTag = "custom"
                     )
                 )
+            }
+        )
+    }
+
+    // Show Custom Color Picker Dialog
+    if (showColorPickerDialog) {
+        CustomColorPickerDialog(
+            initialTarget = colorPickerTarget,
+            styleConfig = styleConfig,
+            onDismiss = { showColorPickerDialog = false },
+            onColorApplied = { updatedConfig ->
+                showColorPickerDialog = false
+                onStyleChanged(updatedConfig)
             }
         )
     }
@@ -137,10 +155,207 @@ fun QRCustomizationSection(
             ) { tabIndex ->
                 when (tabIndex) {
                     0 -> CompactPresetsTab(styleConfig, onStyleChanged)
-                    1 -> DotShapesTab(styleConfig, onStyleChanged)
-                    2 -> CornerEyesTab(styleConfig, onStyleChanged)
-                    3 -> CompactFramesTab(qrType, styleConfig, onStyleChanged)
-                    4 -> TypeAwareCenterLogoTab(qrType, styleConfig, onStyleChanged, onPickGallery = { galleryLauncher.launch("image/*") })
+                    1 -> CompactColorsTab(styleConfig, onStyleChanged, onOpenPicker = { target ->
+                        colorPickerTarget = target
+                        showColorPickerDialog = true
+                    })
+                    2 -> DotShapesTab(styleConfig, onStyleChanged)
+                    3 -> CornerEyesTab(styleConfig, onStyleChanged)
+                    4 -> CompactFramesTab(qrType, styleConfig, onStyleChanged)
+                    5 -> TypeAwareCenterLogoTab(qrType, styleConfig, onStyleChanged, onPickGallery = { galleryLauncher.launch("image/*") })
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Horizontal Scrollable Custom Brand Color Chips & Swatches (Compact ~84dp height)
+ */
+@Composable
+private fun CompactColorsTab(
+    currentConfig: QRStyleConfig,
+    onStyleChanged: (QRStyleConfig) -> Unit,
+    onOpenPicker: (ColorTarget) -> Unit
+) {
+    val quickColors = listOf(
+        0xFFFFB300.toInt(), // Royal Gold
+        0xFF00E5FF.toInt(), // Cyber Cyan
+        0xFF00E676.toInt(), // Neon Green
+        0xFFFF4081.toInt(), // Hot Pink
+        0xFF7C4DFF.toInt(), // Royal Purple
+        0xFFFF1744.toInt(), // Crimson
+        0xFFFF6D00.toInt(), // Orange
+        0xFFFFFFFF.toInt()  // Pure White
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // 1. Dots Color Chip
+        Box(
+            modifier = Modifier
+                .width(115.dp)
+                .height(84.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Ink750)
+                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                .clickable { onOpenPicker(ColorTarget.FOREGROUND) }
+                .padding(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(Color(currentConfig.fgColor))
+                            .border(1.5.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                    )
+                    Icon(Icons.Default.Edit, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                }
+                Column {
+                    Text("Dots Color", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("#${String.format("%06X", 0xFFFFFF and currentConfig.fgColor)}", fontSize = 10.5.sp, color = AmberSoft)
+                }
+            }
+        }
+
+        // 2. Gradient Accent Chip
+        val hasGradient = currentConfig.gradientType != QRGradientType.NONE && currentConfig.fgGradientEnd != currentConfig.fgColor
+        Box(
+            modifier = Modifier
+                .width(115.dp)
+                .height(84.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (hasGradient) AmberDim else Ink750)
+                .border(1.dp, if (hasGradient) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
+                .clickable { onOpenPicker(ColorTarget.GRADIENT) }
+                .padding(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                if (hasGradient) {
+                                    Brush.linearGradient(listOf(Color(currentConfig.fgColor), Color(currentConfig.fgGradientEnd)))
+                                } else {
+                                    Brush.linearGradient(listOf(Color(currentConfig.fgColor), Color(currentConfig.fgColor)))
+                                }
+                            )
+                            .border(1.2.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    )
+                    Icon(Icons.Default.Palette, null, tint = if (hasGradient) AmberSoft else TextTertiary, modifier = Modifier.size(14.dp))
+                }
+                Column {
+                    Text("Gradient", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(if (hasGradient) "Active" else "Solid", fontSize = 10.5.sp, color = if (hasGradient) AmberSoft else TextTertiary)
+                }
+            }
+        }
+
+        // 3. Background Color Chip
+        Box(
+            modifier = Modifier
+                .width(115.dp)
+                .height(84.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Ink750)
+                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                .clickable { onOpenPicker(ColorTarget.BACKGROUND) }
+                .padding(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color(currentConfig.bgColor))
+                            .border(1.5.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                    )
+                    Icon(Icons.Default.FormatColorFill, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                }
+                Column {
+                    Text("Background", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("#${String.format("%06X", 0xFFFFFF and currentConfig.bgColor)}", fontSize = 10.5.sp, color = AmberSoft)
+                }
+            }
+        }
+
+        // 4. Quick Swatches
+        quickColors.forEach { colorInt ->
+            val isSelected = currentConfig.fgColor == colorInt
+            Box(
+                modifier = Modifier
+                    .width(72.dp)
+                    .height(84.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isSelected) AmberDim else Ink750)
+                    .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
+                .clickable {
+                    onStyleChanged(
+                        currentConfig.copy(
+                            fgColor = colorInt,
+                            fgGradientEnd = colorInt,
+                            gradientType = QRGradientType.NONE
+                        )
+                    )
+                }
+                .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color(colorInt))
+                            .border(1.5.dp, if (isSelected) AmberPrimary else Color.White.copy(alpha = 0.3f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Default.Check,
+                                null,
+                                tint = if (colorInt == 0xFFFFFFFF.toInt()) Color.Black else Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "#${String.format("%06X", 0xFFFFFF and colorInt).take(4)}",
+                        fontSize = 10.sp,
+                        color = if (isSelected) AmberSoft else TextTertiary
+                    )
                 }
             }
         }
@@ -234,202 +449,29 @@ private fun CompactPresetsTab(
     }
 }
 
+/**
+ * Compact Dot Shapes Tab (Rounded, Square, Circle, Diamond)
+ */
 @Composable
 private fun DotShapesTab(
     currentConfig: QRStyleConfig,
     onStyleChanged: (QRStyleConfig) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        QRModuleShape.values().forEach { shape ->
-            val isSelected = currentConfig.moduleShape == shape
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) AmberDim else Ink750)
-                    .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
-                    .clickable { onStyleChanged(currentConfig.copy(moduleShape = shape)) }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Preview Icon
-                    Box(
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clip(
-                                when (shape) {
-                                    QRModuleShape.SQUARE -> RoundedCornerShape(0.dp)
-                                    QRModuleShape.ROUNDED -> RoundedCornerShape(5.dp)
-                                    QRModuleShape.CIRCLE -> CircleShape
-                                    QRModuleShape.DIAMOND -> RoundedCornerShape(3.dp)
-                                }
-                            )
-                            .background(if (isSelected) AmberPrimary else TextSecondary)
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        shape.displayName,
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) AmberSoft else TextSecondary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CornerEyesTab(
-    currentConfig: QRStyleConfig,
-    onStyleChanged: (QRStyleConfig) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        QREyeShape.values().forEach { eye ->
-            val isSelected = currentConfig.eyeShape == eye
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) AmberDim else Ink750)
-                    .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
-                    .clickable { onStyleChanged(currentConfig.copy(eyeShape = eye)) }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Finder eye preview icon
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(
-                                when (eye) {
-                                    QREyeShape.SQUARE -> RoundedCornerShape(2.dp)
-                                    QREyeShape.ROUNDED -> RoundedCornerShape(6.dp)
-                                    QREyeShape.CIRCULAR -> CircleShape
-                                }
-                            )
-                            .border(
-                                2.5.dp,
-                                if (isSelected) AmberPrimary else TextSecondary,
-                                when (eye) {
-                                    QREyeShape.SQUARE -> RoundedCornerShape(2.dp)
-                                    QREyeShape.ROUNDED -> RoundedCornerShape(6.dp)
-                                    QREyeShape.CIRCULAR -> CircleShape
-                                }
-                            )
-                            .padding(3.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(
-                                    when (eye) {
-                                        QREyeShape.SQUARE -> RoundedCornerShape(1.dp)
-                                        QREyeShape.ROUNDED -> RoundedCornerShape(2.dp)
-                                        QREyeShape.CIRCULAR -> CircleShape
-                                    }
-                                )
-                                .background(if (isSelected) AmberPrimary else TextSecondary)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Text(
-                        eye.displayName,
-                        fontSize = 11.5.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) AmberSoft else TextSecondary
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Compact Horizontal Scrollable Frames Tab (keeps height small)
- */
-@Composable
-private fun CompactFramesTab(
-    qrType: String,
-    currentConfig: QRStyleConfig,
-    onStyleChanged: (QRStyleConfig) -> Unit
-) {
-    val upperType = qrType.uppercase()
-
-    val options = when (upperType) {
-        "UPI" -> listOf(
-            FrameOption(QRFrameStyle.PAYMENT_BADGE, "SCAN & PAY", "UPI Payment", Icons.Default.CurrencyRupee),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "PAY VIA UPI", "UPI Banner", Icons.Default.AccountBalance),
-            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Card Frame", Icons.Default.Dashboard),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic Scan", Icons.Default.CropPortrait),
-            FrameOption(QRFrameStyle.NONE, "NONE", "No Frame", Icons.Default.Block)
-        )
-        "WHATSAPP", "WAGROUP" -> listOf(
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "CHAT ON WHATSAPP", "Direct Chat", Icons.AutoMirrored.Filled.Chat),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO CHAT", "Chat Action", Icons.Default.Sms),
-            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Card Frame", Icons.Default.Dashboard),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic Scan", Icons.Default.CropPortrait),
-            FrameOption(QRFrameStyle.NONE, "NONE", "No Frame", Icons.Default.Block)
-        )
-        "WIFI" -> listOf(
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "CONNECT TO WIFI", "Auto Connect", Icons.Default.Wifi),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO CONNECT", "Network Scan", Icons.Default.SignalWifi4Bar),
-            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Card Frame", Icons.Default.Dashboard),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic Scan", Icons.Default.CropPortrait),
-            FrameOption(QRFrameStyle.NONE, "NONE", "No Frame", Icons.Default.Block)
-        )
-        "URL" -> listOf(
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "VISIT WEBSITE", "Open Link", Icons.Default.Link),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN TO OPEN", "Browser Action", Icons.Default.OpenInBrowser),
-            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Card Frame", Icons.Default.Dashboard),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic Scan", Icons.Default.CropPortrait),
-            FrameOption(QRFrameStyle.NONE, "NONE", "No Frame", Icons.Default.Block)
-        )
-        else -> listOf(
-            FrameOption(QRFrameStyle.CARD_BORDER, "CARD BORDER", "Modern Card Frame", Icons.Default.Dashboard),
-            FrameOption(QRFrameStyle.BOTTOM_BADGE, "SCAN ME", "Classic Scan Banner", Icons.Default.CropPortrait),
-            FrameOption(QRFrameStyle.NONE, "NONE", "Plain QR Code", Icons.Default.Block)
-        )
-    }
-
-    Row(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        options.forEach { opt ->
-            val isSelected = (opt.style == QRFrameStyle.NONE && currentConfig.frameStyle == QRFrameStyle.NONE) ||
-                    (opt.style == QRFrameStyle.CARD_BORDER && currentConfig.frameStyle == QRFrameStyle.CARD_BORDER) ||
-                    (opt.style != QRFrameStyle.NONE && opt.style != QRFrameStyle.CARD_BORDER && currentConfig.frameStyle != QRFrameStyle.NONE && currentConfig.frameStyle != QRFrameStyle.CARD_BORDER && currentConfig.frameText == opt.text)
-
+        QRModuleShape.values().forEach { shape ->
+            val isSelected = currentConfig.moduleShape == shape
             Box(
                 modifier = Modifier
-                    .width(135.dp)
+                    .width(105.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (isSelected) AmberDim else Ink750)
                     .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
-                    .clickable {
-                        onStyleChanged(
-                            currentConfig.copy(
-                                frameStyle = opt.style,
-                                frameText = opt.text
-                            )
-                        )
-                    }
+                    .clickable { onStyleChanged(currentConfig.copy(moduleShape = shape)) }
                     .padding(10.dp)
             ) {
                 Column {
@@ -439,29 +481,85 @@ private fun CompactFramesTab(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            opt.icon,
-                            null,
+                            imageVector = when (shape) {
+                                QRModuleShape.ROUNDED -> Icons.Default.RoundedCorner
+                                QRModuleShape.SQUARE -> Icons.Default.Square
+                                QRModuleShape.CIRCLE -> Icons.Default.Circle
+                                QRModuleShape.DIAMOND -> Icons.Default.Diamond
+                            },
+                            contentDescription = null,
                             tint = if (isSelected) AmberPrimary else TextSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                         if (isSelected) {
-                            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(14.dp))
                         }
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
-                        opt.text,
+                        shape.displayName,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isSelected) AmberSoft else TextPrimary,
                         maxLines = 1
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact Corner Eyes Tab
+ */
+@Composable
+private fun CornerEyesTab(
+    currentConfig: QRStyleConfig,
+    onStyleChanged: (QRStyleConfig) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        QREyeShape.values().forEach { eye ->
+            val isSelected = currentConfig.eyeShape == eye
+            Box(
+                modifier = Modifier
+                    .width(115.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if (isSelected) AmberDim else Ink750)
+                    .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
+                    .clickable { onStyleChanged(currentConfig.copy(eyeShape = eye)) }
+                    .padding(10.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = when (eye) {
+                                QREyeShape.ROUNDED -> Icons.Default.RoundedCorner
+                                QREyeShape.SQUARE -> Icons.Default.CheckBoxOutlineBlank
+                                QREyeShape.CIRCULAR -> Icons.Default.Lens
+                            },
+                            contentDescription = null,
+                            tint = if (isSelected) AmberPrimary else TextSecondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        if (isSelected) {
+                            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(14.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        opt.subtitle,
-                        fontSize = 10.5.sp,
-                        color = TextTertiary,
+                        eye.displayName,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) AmberSoft else TextPrimary,
                         maxLines = 1
                     )
                 }
@@ -470,159 +568,90 @@ private fun CompactFramesTab(
     }
 }
 
-private data class FrameOption(
-    val style: QRFrameStyle,
-    val text: String,
-    val subtitle: String,
-    val icon: ImageVector
-)
-
 /**
- * Type-Aware Center Logo Options with Compact Horizontal Cards & Shape Selector
+ * Compact Horizontal Scrollable Frames Tab (~84dp height)
  */
 @Composable
-private fun TypeAwareCenterLogoTab(
+private fun CompactFramesTab(
     qrType: String,
-    styleConfig: QRStyleConfig,
-    onStyleChanged: (QRStyleConfig) -> Unit,
-    onPickGallery: () -> Unit
+    currentConfig: QRStyleConfig,
+    onStyleChanged: (QRStyleConfig) -> Unit
 ) {
-    val context = LocalContext.current
     val upperType = qrType.uppercase()
+    val isPayment = upperType.contains("UPI")
+    val isWifi = upperType.contains("WIFI")
+    val isWhatsApp = upperType.contains("WHATSAPP")
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val dynamicPrimaryTitle = when {
+        isPayment -> "SCAN & PAY (₹)"
+        isWhatsApp -> "CHAT ON WA"
+        isWifi -> "CONNECT WIFI"
+        else -> "SCAN ME"
+    }
 
-        // ── 1. LOGO SHAPE SELECTOR (SQUIRCLE, CIRCLE, SQUARE) ──
-        if (styleConfig.logoBitmap != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Shape:", fontSize = 11.sp, color = TextSecondary)
-                QRLogoShape.values().forEach { shape ->
-                    val isSelected = styleConfig.logoShape == shape
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) AmberDim else Ink750)
-                            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
-                            .clickable { onStyleChanged(styleConfig.copy(logoShape = shape)) }
-                            .padding(vertical = 5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            shape.displayName,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) AmberSoft else TextPrimary
-                        )
-                    }
-                }
+    val dynamicPrimaryText = when {
+        isPayment -> "SCAN & PAY"
+        isWhatsApp -> "CHAT ON WHATSAPP"
+        isWifi -> "CONNECT TO WIFI"
+        else -> "SCAN ME"
+    }
+
+    val dynamicPrimaryDesc = when {
+        isPayment -> "UPI Payment Badge"
+        isWhatsApp -> "WhatsApp CTA"
+        isWifi -> "WiFi Join Frame"
+        else -> "Classic Scan Banner"
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Frame 1: CARD BORDER
+        CompactFrameCard(
+            title = "CARD BORDER",
+            subtitle = "Modern Card Frame",
+            icon = Icons.Default.Dashboard,
+            isSelected = currentConfig.frameStyle == QRFrameStyle.CARD_BORDER,
+            onClick = {
+                onStyleChanged(currentConfig.copy(frameStyle = QRFrameStyle.CARD_BORDER, frameText = ""))
             }
-        }
+        )
 
-        // ── 2. LOGO OPTIONS IN HORIZONTAL SCROLL ROW ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Option 1: Official App Logo (Default)
-            CompactLogoCard(
-                title = "QR Hub",
-                subtitle = "App Gold Logo",
-                icon = Icons.Default.QrCodeScanner,
-                isSelected = styleConfig.logoTag == "app_logo",
-                onClick = {
-                    val logo = try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
-                    onStyleChanged(
-                        styleConfig.copy(
-                            logoBitmap = logo,
-                            logoTag = "app_logo",
-                            logoShape = QRLogoShape.ROUNDED_SQUIRCLE
-                        )
-                    )
-                }
-            )
-
-            // Option 2: Custom Gallery Logo (Pick & Crop 1:1)
-            CompactLogoCard(
-                title = if (styleConfig.logoTag == "custom") "Custom (Re-crop)" else "Custom Logo",
-                subtitle = "Pick & Crop 1:1",
-                icon = Icons.Default.Crop,
-                isSelected = styleConfig.logoTag == "custom",
-                onClick = onPickGallery
-            )
-
-            // Type-Specific Badges
-            when (upperType) {
-                "UPI" -> {
-                    CompactLogoCard(
-                        title = "UPI / BHIM",
-                        subtitle = "Payment Badge",
-                        icon = Icons.Default.CurrencyRupee,
-                        isSelected = styleConfig.logoTag == "upi_badge",
-                        onClick = {
-                            val upiBmp = createTextBadgeBitmap("UPI", 0xFF00796B.toInt(), 0xFFFFFFFF.toInt())
-                            onStyleChanged(styleConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                        }
-                    )
-                }
-                "WHATSAPP", "WAGROUP" -> {
-                    CompactLogoCard(
-                        title = "WhatsApp",
-                        subtitle = "Chat Badge",
-                        icon = Icons.AutoMirrored.Filled.Chat,
-                        isSelected = styleConfig.logoTag == "wa_badge",
-                        onClick = {
-                            val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
-                            onStyleChanged(styleConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                        }
-                    )
-                }
-                "WIFI" -> {
-                    CompactLogoCard(
-                        title = "WiFi Signal",
-                        subtitle = "Network Badge",
-                        icon = Icons.Default.Wifi,
-                        isSelected = styleConfig.logoTag == "wifi_badge",
-                        onClick = {
-                            val wifiBmp = createTextBadgeBitmap("WIFI", 0xFF0288D1.toInt(), 0xFFFFFFFF.toInt())
-                            onStyleChanged(styleConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                        }
-                    )
-                }
-                "URL" -> {
-                    CompactLogoCard(
-                        title = "Website",
-                        subtitle = "Web Link Badge",
-                        icon = Icons.Default.Link,
-                        isSelected = styleConfig.logoTag == "web_badge",
-                        onClick = {
-                            val webBmp = createTextBadgeBitmap("WEB", 0xFF3F51B5.toInt(), 0xFFFFFFFF.toInt())
-                            onStyleChanged(styleConfig.copy(logoBitmap = webBmp, logoTag = "web_badge", logoShape = QRLogoShape.ROUNDED_SQUIRCLE))
-                        }
-                    )
-                }
+        // Frame 2: DYNAMIC SMART BANNER
+        CompactFrameCard(
+            title = dynamicPrimaryTitle,
+            subtitle = dynamicPrimaryDesc,
+            icon = when {
+                isPayment -> Icons.Default.CurrencyRupee
+                isWhatsApp -> Icons.AutoMirrored.Filled.Chat
+                isWifi -> Icons.Default.Wifi
+                else -> Icons.Default.CropPortrait
+            },
+            isSelected = currentConfig.frameStyle == QRFrameStyle.BOTTOM_BADGE || currentConfig.frameStyle == QRFrameStyle.PAYMENT_BADGE,
+            onClick = {
+                val chosenStyle = if (isPayment) QRFrameStyle.PAYMENT_BADGE else QRFrameStyle.BOTTOM_BADGE
+                onStyleChanged(currentConfig.copy(frameStyle = chosenStyle, frameText = dynamicPrimaryText))
             }
+        )
 
-            // Option 3: None (No Logo)
-            CompactLogoCard(
-                title = "No Logo",
-                subtitle = "Clean Pattern",
-                icon = Icons.Default.Close,
-                isSelected = styleConfig.logoBitmap == null,
-                onClick = { onStyleChanged(styleConfig.copy(logoBitmap = null, logoTag = "none")) }
-            )
-        }
+        // Frame 3: NO FRAME
+        CompactFrameCard(
+            title = "NO FRAME",
+            subtitle = "Plain Clean QR",
+            icon = Icons.Default.Block,
+            isSelected = currentConfig.frameStyle == QRFrameStyle.NONE,
+            onClick = {
+                onStyleChanged(currentConfig.copy(frameStyle = QRFrameStyle.NONE, frameText = ""))
+            }
+        )
     }
 }
 
 @Composable
-private fun CompactLogoCard(
+private fun CompactFrameCard(
     title: String,
     subtitle: String,
     icon: ImageVector,
@@ -644,23 +673,235 @@ private fun CompactLogoCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    icon,
+                    null,
+                    tint = if (isSelected) AmberPrimary else TextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+                if (isSelected) {
+                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(15.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) AmberSoft else TextPrimary,
+                maxLines = 1
+            )
+            Text(
+                subtitle,
+                fontSize = 10.5.sp,
+                color = TextTertiary,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/**
+ * Compact Center Logo Options as Horizontal Scrollable Mini-Cards
+ */
+@Composable
+private fun TypeAwareCenterLogoTab(
+    qrType: String,
+    currentConfig: QRStyleConfig,
+    onStyleChanged: (QRStyleConfig) -> Unit,
+    onPickGallery: () -> Unit
+) {
+    val context = LocalContext.current
+    val upperType = qrType.uppercase()
+    val isUPI = upperType.contains("UPI")
+    val isWA = upperType.contains("WHATSAPP")
+    val isWifi = upperType.contains("WIFI")
+
+    val appLogoBitmap = remember {
+        try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
+    }
+
+    Column {
+        // Logo Shape Selection (Squircle, Circle, Square)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Shape:", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(end = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                QRLogoShape.values().forEach { shape ->
+                    val isShapeSelected = currentConfig.logoShape == shape
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isShapeSelected) AmberDim else Ink750)
+                            .border(1.dp, if (isShapeSelected) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
+                            .clickable { onStyleChanged(currentConfig.copy(logoShape = shape)) }
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            shape.displayName,
+                            fontSize = 11.5.sp,
+                            fontWeight = if (isShapeSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isShapeSelected) AmberSoft else TextSecondary
+                        )
+                    }
+                }
+            }
+        }
+
+        // Horizontal Logo Mini-Cards (~84dp height)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Option 1: Official QR Hub Logo (Gold Icon)
+            CompactLogoCard(
+                title = "QR Hub Logo",
+                subtitle = "Gold Brand Crown",
+                isSelected = currentConfig.logoTag == "app_logo",
+                iconContent = {
+                    appLogoBitmap?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "App Logo",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                    } ?: Icon(Icons.Default.QrCodeScanner, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
+                },
+                onClick = {
+                    onStyleChanged(
+                        currentConfig.copy(
+                            logoBitmap = appLogoBitmap,
+                            logoTag = "app_logo"
+                        )
+                    )
+                }
+            )
+
+            // Option 2: Custom Gallery Logo (Pinch & Crop)
+            val isCustom = currentConfig.logoTag == "custom"
+            CompactLogoCard(
+                title = "Custom Logo",
+                subtitle = if (isCustom) "Image Loaded" else "Pick & Crop 1:1",
+                isSelected = isCustom,
+                iconContent = {
+                    if (isCustom && currentConfig.logoBitmap != null) {
+                        Image(
+                            bitmap = currentConfig.logoBitmap.asImageBitmap(),
+                            contentDescription = "Custom Logo",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                    } else {
+                        Icon(Icons.Default.Crop, null, tint = AmberSoft, modifier = Modifier.size(20.dp))
+                    }
+                },
+                onClick = onPickGallery
+            )
+
+            // Option 3: Type-Aware Smart Badge
+            if (isUPI) {
+                CompactLogoCard(
+                    title = "UPI Badge",
+                    subtitle = "₹ Rupee Icon",
+                    isSelected = currentConfig.logoTag == "upi_badge",
+                    iconContent = {
+                        Text("₹", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AmberPrimary)
+                    },
+                    onClick = {
+                        val upiBmp = createTextBadgeBitmap("₹", 0xFF0B0906.toInt(), 0xFFFFB300.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = upiBmp, logoTag = "upi_badge"))
+                    }
+                )
+            } else if (isWA) {
+                CompactLogoCard(
+                    title = "WhatsApp",
+                    subtitle = "Chat Icon",
+                    isSelected = currentConfig.logoTag == "wa_badge",
+                    iconContent = {
+                        Icon(Icons.AutoMirrored.Filled.Chat, null, tint = Color(0xFF25D366), modifier = Modifier.size(20.dp))
+                    },
+                    onClick = {
+                        val waBmp = createTextBadgeBitmap("WA", 0xFF25D366.toInt(), 0xFFFFFFFF.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = waBmp, logoTag = "wa_badge"))
+                    }
+                )
+            } else if (isWifi) {
+                CompactLogoCard(
+                    title = "WiFi Icon",
+                    subtitle = "Network Badge",
+                    isSelected = currentConfig.logoTag == "wifi_badge",
+                    iconContent = {
+                        Icon(Icons.Default.Wifi, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
+                    },
+                    onClick = {
+                        val wifiBmp = createTextBadgeBitmap("WiFi", 0xFF0B0906.toInt(), 0xFFFFB300.toInt())
+                        onStyleChanged(currentConfig.copy(logoBitmap = wifiBmp, logoTag = "wifi_badge"))
+                    }
+                )
+            }
+
+            // Option 4: No Logo
+            CompactLogoCard(
+                title = "No Logo",
+                subtitle = "Plain Center",
+                isSelected = currentConfig.logoBitmap == null,
+                iconContent = {
+                    Icon(Icons.Default.Close, null, tint = TextTertiary, modifier = Modifier.size(20.dp))
+                },
+                onClick = {
+                    onStyleChanged(currentConfig.copy(logoBitmap = null, logoTag = ""))
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactLogoCard(
+    title: String,
+    subtitle: String,
+    isSelected: Boolean,
+    iconContent: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(130.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (isSelected) AmberDim else Ink750)
+            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(10.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(28.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(if (isSelected) AmberPrimary else Ink800),
+                        .background(if (isSelected) AmberPrimary.copy(alpha = 0.2f) else Ink800),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        icon,
-                        null,
-                        tint = if (isSelected) Color(0xFF160E06) else TextPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    iconContent()
                 }
 
                 if (isSelected) {
-                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(15.dp))
                 }
             }
 
