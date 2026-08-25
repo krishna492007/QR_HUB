@@ -1,29 +1,26 @@
 package com.qr.hub.util.ads
 
-import com.qr.hub.BuildConfig
-
 /**
- * Google AdMob Configuration & Ad Unit IDs
+ * Ad Configuration for Unity Ads (Live APK) & Google AdMob
  */
 object AdConfig {
-    // Official Live AdMob IDs
-    const val APP_ID = "ca-app-pub-7266647940952906~4589127679"
-    const val LIVE_BANNER_ID = "ca-app-pub-7266647940952906/5664708416"
-    const val LIVE_INTERSTITIAL_ID = "ca-app-pub-7266647940952906/4573998340"
+    // ----------------------------------------------------
+    // UNITY ADS (Instant Real Live Commercial Ads on APK)
+    // ----------------------------------------------------
+    const val UNITY_GAME_ID = "800361444"
+    const val UNITY_INTERSTITIAL_PLACEMENT = "Interstitial_Android"
+    const val UNITY_BANNER_PLACEMENT = "Banner_Android"
+    const val UNITY_TEST_MODE = false // Set to false for REAL LIVE COMMERCIAL ADS!
 
-    // Official Google Test Ad Unit IDs (used during debug so AdMob account is 100% safe from invalid traffic)
-    const val TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111"
-    const val TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
+    // ----------------------------------------------------
+    // GOOGLE ADMOB (For Google Play Store Release)
+    // ----------------------------------------------------
+    const val ADMOB_APP_ID = "ca-app-pub-7266647940952906~4589127679"
+    const val ADMOB_BANNER_ID = "ca-app-pub-7266647940952906/5664708416"
+    const val ADMOB_INTERSTITIAL_ID = "ca-app-pub-7266647940952906/4573998340"
 
-    /**
-     * Active Banner Ad Unit ID based on build mode
-     */
-    val bannerAdUnitId: String
-        get() = if (BuildConfig.DEBUG) TEST_BANNER_ID else LIVE_BANNER_ID
+    enum class AdProvider { UNITY, ADMOB }
 
-    /**
-     * Active Interstitial Ad Unit ID based on build mode
-     */
-    val interstitialAdUnitId: String
-        get() = if (BuildConfig.DEBUG) TEST_INTERSTITIAL_ID else LIVE_INTERSTITIAL_ID
+    // Active ad network: UNITY for direct live real ads right now!
+    var activeProvider: AdProvider = AdProvider.UNITY
 }

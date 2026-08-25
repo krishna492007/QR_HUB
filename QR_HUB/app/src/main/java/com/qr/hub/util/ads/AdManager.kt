@@ -10,68 +10,124 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.unity3d.ads.IUnityAdsInitializationListener
+import com.unity3d.ads.IUnityAdsLoadListener
+import com.unity3d.ads.IUnityAdsShowListener
+import com.unity3d.ads.UnityAds
+import com.unity3d.ads.UnityAdsShowOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Singleton AdManager for Google Mobile Ads (AdMob)
+ * Singleton AdManager supporting Unity Ads (Real Live Ads) & Google AdMob
  */
 object AdManager {
     private const val TAG = "QR_HUB_AdManager"
 
-    private var interstitialAd: InterstitialAd? = null
-    private var isAdLoading = false
-    private var isInitialized = false
+    private var isUnityInitialized = false
+    private var isAdMobInitialized = false
+    private var isUnityAdLoaded = false
 
-    // Action counter for smart frequency capping (e.g. show 1 ad every 3 user actions)
+    private var admobInterstitialAd: InterstitialAd? = null
+    private var isAdMobLoading = false
+
+    // Action counter for smart frequency capping (shows ad once every 2-3 actions)
     private val actionCounter = AtomicInteger(0)
 
     /**
-     * Initialize MobileAds SDK once on app launch
+     * Initialize Ad Networks on app startup
      */
     fun initialize(context: Context) {
-        if (isInitialized) return
-        isInitialized = true
+        val appContext = context.applicationContext
 
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                MobileAds.initialize(context) { status ->
-                    Log.d(TAG, "AdMob initialized successfully: ${status.adapterStatusMap}")
+            // 1. Initialize Unity Ads (Primary for instant real live ads on APK)
+            if (!isUnityInitialized) {
+                UnityAds.initialize(
+                    appContext,
+                    AdConfig.UNITY_GAME_ID,
+                    AdConfig.UNITY_TEST_MODE,
+                    object : IUnityAdsInitializationListener {
+                        override fun onInitializationComplete() {
+                            isUnityInitialized = true
+                            Log.d(TAG, "Unity Ads initialized successfully (Live Mode = ${!AdConfig.UNITY_TEST_MODE})")
+                            loadUnityInterstitial()
+                        }
+
+                        override fun onInitializationFailed(
+                            error: UnityAds.UnityAdsInitializationError,
+                            message: String
+                        ) {
+                            Log.e(TAG, "Unity Ads Init Failed: $error - $message")
+                        }
+                    }
+                )
+            }
+
+            // 2. Initialize Google Mobile Ads (AdMob)
+            if (!isAdMobInitialized) {
+                try {
+                    MobileAds.initialize(appContext) {
+                        isAdMobInitialized = true
+                        Log.d(TAG, "Google AdMob initialized")
+                    }
+                    loadAdMobInterstitial(appContext)
+                } catch (e: Exception) {
+                    Log.e(TAG, "AdMob init error: ${e.message}")
                 }
-                loadInterstitial(context)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error initializing AdMob: ${e.message}")
             }
         }
     }
 
     /**
-     * Preload Interstitial Ad in background
+     * Preload Unity Interstitial
      */
-    fun loadInterstitial(context: Context) {
-        if (interstitialAd != null || isAdLoading) return
-        isAdLoading = true
+    fun loadUnityInterstitial() {
+        UnityAds.load(
+            AdConfig.UNITY_INTERSTITIAL_PLACEMENT,
+            object : IUnityAdsLoadListener {
+                override fun onUnityAdsAdLoaded(placementId: String) {
+                    isUnityAdLoaded = true
+                    Log.d(TAG, "Unity Interstitial loaded: $placementId")
+                }
+
+                override fun onUnityAdsFailedToLoad(
+                    placementId: String,
+                    error: UnityAds.UnityAdsLoadError,
+                    message: String
+                ) {
+                    isUnityAdLoaded = false
+                    Log.w(TAG, "Unity Interstitial failed to load: $placementId ($error: $message)")
+                }
+            }
+        )
+    }
+
+    /**
+     * Preload AdMob Interstitial
+     */
+    fun loadAdMobInterstitial(context: Context) {
+        if (admobInterstitialAd != null || isAdMobLoading) return
+        isAdMobLoading = true
 
         val adRequest = AdRequest.Builder().build()
-        val adUnitId = AdConfig.interstitialAdUnitId
-
         InterstitialAd.load(
             context.applicationContext,
-            adUnitId,
+            AdConfig.ADMOB_INTERSTITIAL_ID,
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
-                    interstitialAd = ad
-                    isAdLoading = false
-                    Log.d(TAG, "Interstitial Ad loaded successfully")
+                    admobInterstitialAd = ad
+                    isAdMobLoading = false
+                    Log.d(TAG, "AdMob Interstitial loaded")
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                    interstitialAd = null
-                    isAdLoading = false
-                    Log.w(TAG, "Interstitial Ad failed to load: ${loadAdError.message}")
+                    admobInterstitialAd = null
+                    isAdMobLoading = false
+                    Log.w(TAG, "AdMob Interstitial failed: ${loadAdError.message}")
                 }
             }
         )
@@ -80,12 +136,12 @@ object AdManager {
     /**
      * Show full-screen interstitial ad with smart frequency capping.
      * @param activity Current activity
-     * @param interval Show ad once every `interval` actions (default: 3)
-     * @param onComplete Callback invoked when ad is closed or if ad is skipped/not ready
+     * @param interval Frequency interval (e.g. 2 actions)
+     * @param onComplete Callback invoked when ad is closed or if skipped
      */
     fun showInterstitialWithFrequency(
         activity: Activity?,
-        interval: Int = 3,
+        interval: Int = 2,
         onComplete: () -> Unit
     ) {
         if (activity == null) {
@@ -94,49 +150,91 @@ object AdManager {
         }
 
         val count = actionCounter.incrementAndGet()
-        // If count reached the frequency threshold and ad is loaded
-        if (count % interval == 0 && interstitialAd != null) {
+        if (count % interval == 0) {
             showInterstitial(activity, onComplete)
         } else {
-            // If ad not loaded, make sure we trigger background reload and proceed immediately
-            if (interstitialAd == null) {
-                loadInterstitial(activity)
-            }
+            // Trigger preloads if needed
+            if (!isUnityAdLoaded) loadUnityInterstitial()
+            if (admobInterstitialAd == null) loadAdMobInterstitial(activity)
             onComplete()
         }
     }
 
     /**
-     * Direct show full-screen interstitial ad
+     * Show full-screen interstitial ad (Unity Ads primary with AdMob fallback)
      */
     fun showInterstitial(
         activity: Activity,
         onComplete: () -> Unit
     ) {
-        val ad = interstitialAd
-        if (ad != null) {
-            ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+        // Priority 1: Unity Ads
+        if (AdConfig.activeProvider == AdConfig.AdProvider.UNITY && isUnityAdLoaded) {
+            val showOptions = UnityAdsShowOptions()
+            UnityAds.show(
+                activity,
+                AdConfig.UNITY_INTERSTITIAL_PLACEMENT,
+                showOptions,
+                object : IUnityAdsShowListener {
+                    override fun onUnityAdsShowFailure(
+                        placementId: String,
+                        error: UnityAds.UnityAdsShowError,
+                        message: String
+                    ) {
+                        Log.w(TAG, "Unity Show Failed: $message")
+                        isUnityAdLoaded = false
+                        loadUnityInterstitial()
+                        onComplete()
+                    }
+
+                    override fun onUnityAdsShowStart(placementId: String) {
+                        Log.d(TAG, "Unity Ad Show Start")
+                    }
+
+                    override fun onUnityAdsShowClick(placementId: String) {
+                        Log.d(TAG, "Unity Ad Clicked")
+                    }
+
+                    override fun onUnityAdsShowComplete(
+                        placementId: String,
+                        state: UnityAds.UnityAdsShowCompletionState
+                    ) {
+                        Log.d(TAG, "Unity Ad Completed: $state")
+                        isUnityAdLoaded = false
+                        loadUnityInterstitial()
+                        onComplete()
+                    }
+                }
+            )
+            return
+        }
+
+        // Priority 2: AdMob
+        val adMobAd = admobInterstitialAd
+        if (adMobAd != null) {
+            adMobAd.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
-                    interstitialAd = null
-                    loadInterstitial(activity)
+                    admobInterstitialAd = null
+                    loadAdMobInterstitial(activity)
                     onComplete()
                 }
 
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.w(TAG, "Ad failed to show: ${adError.message}")
-                    interstitialAd = null
-                    loadInterstitial(activity)
+                    admobInterstitialAd = null
+                    loadAdMobInterstitial(activity)
                     onComplete()
                 }
 
                 override fun onAdShowedFullScreenContent() {
-                    Log.d(TAG, "Interstitial Ad showed full screen")
+                    Log.d(TAG, "AdMob showed full screen")
                 }
             }
-            ad.show(activity)
-        } else {
-            loadInterstitial(activity)
-            onComplete()
+            adMobAd.show(activity)
+            return
         }
+
+        // If neither was ready, preload and proceed
+        loadUnityInterstitial()
+        loadAdMobInterstitial(activity)
+        onComplete()
     }
 }
