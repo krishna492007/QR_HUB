@@ -45,6 +45,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URLDecoder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -179,6 +182,73 @@ fun HistoryDetailScreen(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(badge.label, color = AmberSoft, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
+
+                    // ── SHARE / DOWNLOAD ACTION BUTTONS ──
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Share
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Ink750)
+                                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                                .clickable {
+                                    val activity = context as? Activity
+                                    AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                        shareQR(context, item.rawValue)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Outlined.Share, "Share", tint = DetailTextPrimary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = DetailTextPrimary)
+                            }
+                        }
+
+                        // Download
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(DetailCtaGradient)
+                                .clickable(enabled = !isDownloading && qrBitmap != null) {
+                                    qrBitmap?.let { bmp ->
+                                        val activity = context as? Activity
+                                        AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                            scope.launch {
+                                                isDownloading = true
+                                                saveQRToGallery(context, bmp, "QR_${item.id}")
+                                                isDownloading = false
+                                            }
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isDownloading) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(Icons.Default.Download, "Download", tint = Color(0xFF20140A), modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (isDownloading) "Saving..." else "Download",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF20140A)
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -259,105 +329,18 @@ fun HistoryDetailScreen(
                         else -> {}
                     }
 
-                    // Divider
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(BorderLine)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Timestamp
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AccessTime, null, tint = DetailTextMuted, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Saved: ${java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale.getDefault()).format(java.util.Date(item.timestamp))}",
-                            color = DetailTextMuted,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        // ── BOTTOM ACTION BAR ──
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Ink900)
-                .border(
-                    width = 1.dp,
-                    color = BorderLine,
-                    shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp)
-                )
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Share
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Ink750)
-                        .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
-                        .clickable {
-                            val activity = context as? Activity
-                            AdManager.showInterstitialWithFrequency(activity, interval = 2) {
-                                shareQR(context, item.rawValue)
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Share, "Share", tint = DetailTextPrimary, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = DetailTextPrimary)
-                    }
-                }
-
-                // Download
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(DetailCtaGradient)
-                        .clickable(enabled = !isDownloading && qrBitmap != null) {
-                            qrBitmap?.let { bmp ->
-                                val activity = context as? Activity
-                                AdManager.showInterstitialWithFrequency(activity, interval = 2) {
-                                    scope.launch {
-                                        isDownloading = true
-                                        saveQRToGallery(context, bmp, "QR_${item.id}")
-                                        isDownloading = false
-                                    }
-                                }
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isDownloading) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.Download, "Download", tint = Color(0xFF20140A), modifier = Modifier.size(20.dp))
+                    // Scanned timestamp
+                    if (item.timestamp > 0) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, null, tint = DetailTextMuted, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Saved: ${SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(item.timestamp))}",
+                                color = DetailTextMuted,
+                                fontSize = 11.5.sp
+                            )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (isDownloading) "Saving..." else "Download",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF20140A)
-                        )
                     }
                 }
             }
@@ -365,7 +348,7 @@ fun HistoryDetailScreen(
             // Banner Ad at bottom
             Spacer(modifier = Modifier.height(16.dp))
             BannerAdView()
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }
