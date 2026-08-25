@@ -396,6 +396,12 @@ fun HistoryDetailScreen(
                 }
             }
 
+            // ── URL SECURITY INSPECTOR CARD (IF URL) ──
+            if (item.type.equals("URL", ignoreCase = true) || item.rawValue.startsWith("http://", ignoreCase = true) || item.rawValue.startsWith("https://", ignoreCase = true)) {
+                Spacer(modifier = Modifier.height(14.dp))
+                com.qr.hub.util.security.UrlSecurityCard(url = item.rawValue)
+            }
+
             // Bottom Spacing
             Spacer(modifier = Modifier.height(48.dp))
         }

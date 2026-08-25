@@ -495,6 +495,8 @@ private fun ResultDetailCard(
 
             is ScannedQR.QRURL -> {
                 DetailField(Icons.Default.Link, "URL", parsed.url, typeColor, isLink = true)
+                Spacer(modifier = Modifier.height(10.dp))
+                com.qr.hub.util.security.UrlSecurityCard(url = parsed.url)
             }
 
             is ScannedQR.UPI -> {
