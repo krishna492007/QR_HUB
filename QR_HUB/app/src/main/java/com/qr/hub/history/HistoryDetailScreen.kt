@@ -4,11 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
-import com.qr.hub.util.ads.AdManager
-import com.qr.hub.util.ads.BannerAdView
+import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,9 +38,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qr.hub.R
 import com.qr.hub.data.model.HistoryItem
+import com.qr.hub.generate.*
 import com.qr.hub.model.ScannedQR
-import com.qr.hub.generate.QRGenerator
+import com.qr.hub.util.*
+import com.qr.hub.util.ads.AdManager
+import com.qr.hub.util.ads.BannerAdView
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -51,7 +55,6 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.qr.hub.util.*
 
 // Ink & Amber Design Tokens
 private val DetailBg = Ink950
@@ -71,15 +74,51 @@ fun HistoryDetailScreen(
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val parsed = remember(item.rawValue, item.type) { parseHistoryDetailItem(item) }
-    val qrBitmap by produceState<Bitmap?>(initialValue = null, item.rawValue) {
-        value = withContext(Dispatchers.Default) {
-            generateQRBitmap(context, item.rawValue, 1024)
-        }
+
+    val defaultAppLogo = remember {
+        try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
     }
 
-    val scope = rememberCoroutineScope()
+    var styleConfig by remember(item.rawValue, item.type) {
+        mutableStateOf(
+            if (item.type.uppercase().contains("UPI") || item.rawValue.startsWith("upi://", ignoreCase = true)) {
+                QRStyleConfig(
+                    moduleShape = QRModuleShape.ROUNDED,
+                    eyeShape = QREyeShape.ROUNDED,
+                    logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
+                    frameStyle = QRFrameStyle.PAYMENT_BADGE,
+                    frameText = "SCAN & PAY",
+                    logoBitmap = defaultAppLogo,
+                    logoTag = "app_logo"
+                )
+            } else {
+                QRStyleConfig(
+                    moduleShape = QRModuleShape.ROUNDED,
+                    eyeShape = QREyeShape.ROUNDED,
+                    logoShape = QRLogoShape.ROUNDED_SQUIRCLE,
+                    frameStyle = QRFrameStyle.CARD_BORDER,
+                    frameText = "SCAN ME",
+                    logoBitmap = defaultAppLogo,
+                    logoTag = "app_logo"
+                )
+            }
+        )
+    }
+
+    var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isDownloading by remember { mutableStateOf(false) }
+    var isCustomizeExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(item.rawValue, styleConfig) {
+        withContext(Dispatchers.Default) {
+            val styled = QRStylingEngine.renderStyledQR(item.rawValue, styleConfig, 1024)
+            withContext(Dispatchers.Main) {
+                qrBitmap = styled
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -148,9 +187,9 @@ fun HistoryDetailScreen(
                         Box(
                             modifier = Modifier
                                 .size(260.dp)
-                                .clip(RoundedCornerShape(14.dp))
+                                .clip(RoundedCornerShape(16.dp))
                                 .background(Color.White)
-                                .padding(12.dp),
+                                .padding(10.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -200,7 +239,9 @@ fun HistoryDetailScreen(
                                 .clickable {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
-                                        shareQR(context, item.rawValue)
+                                        qrBitmap?.let { bmp ->
+                                            shareQRBitmap(context, bmp)
+                                        } ?: shareQR(context, item.rawValue)
                                     }
                                 },
                             contentAlignment = Alignment.Center
@@ -252,300 +293,276 @@ fun HistoryDetailScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── DETAILS CARD ──
+            // ── EXPANDABLE CUSTOMIZE QR STYLE SECTION ──
+            Spacer(modifier = Modifier.height(14.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(18.dp))
                     .background(DetailCardBg)
-                    .border(1.dp, DetailCardBorder, RoundedCornerShape(16.dp))
-                    .padding(18.dp)
+                    .border(1.dp, if (isCustomizeExpanded) AmberPrimary else DetailCardBorder, RoundedCornerShape(18.dp))
             ) {
                 Column {
-                    Text("Details", color = DetailTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    val hideRawContent = when (parsed) {
-                        is ScannedQR.UPI, is ScannedQR.WhatsApp, is ScannedQR.Phone,
-                        is ScannedQR.SMS, is ScannedQR.WiFi, is ScannedQR.Event,
-                        is ScannedQR.QREmail, is ScannedQR.Contact -> true
-                        else -> false
-                    }
-                    if (!hideRawContent) {
-                        DetailRow(Icons.Default.ContentCopy, "Content", item.rawValue)
-                    }
-
-                    when (parsed) {
-                        is ScannedQR.UPI -> {
-                            if (parsed.name.isNotEmpty()) DetailRow(Icons.Default.Person, "Name", parsed.name)
-                            if (parsed.vpa.isNotEmpty()) DetailRow(Icons.Default.AccountBalance, "VPA", parsed.vpa)
-                            if (parsed.amount.isNotEmpty()) DetailRow(Icons.Default.CurrencyRupee, "Amount", "₹${parsed.amount}")
-                            if (parsed.note.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Notes, "Note", parsed.note)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isCustomizeExpanded = !isCustomizeExpanded }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AmberDim2),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Palette, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
                         }
-                        is ScannedQR.Phone -> DetailRow(Icons.Default.Phone, "Phone", parsed.number)
-                        is ScannedQR.SMS -> {
-                            DetailRow(Icons.Default.Phone, "Number", parsed.number)
-                            if (parsed.message.isNotEmpty()) DetailRow(Icons.Default.Sms, "Message", parsed.message)
-                        }
-                        is ScannedQR.QREmail -> {
-                            DetailRow(Icons.Default.Email, "Email", parsed.address)
-                            if (parsed.subject.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Subject, "Subject", parsed.subject)
-                            if (parsed.body.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Notes, "Body", parsed.body)
-                        }
-                        is ScannedQR.WiFi -> {
-                            DetailRow(Icons.Default.Wifi, "Network", parsed.ssid)
-                            if (parsed.password.isNotEmpty()) DetailRow(Icons.Default.Lock, "Password", parsed.password)
-                            val displayEncryption = when (parsed.encryption.lowercase()) {
-                                "None" -> "None"
-                                else -> parsed.encryption.uppercase()
-                            }
-                            DetailRow(Icons.Default.Security, "Encryption", displayEncryption)
-                        }
-                        is ScannedQR.WhatsApp -> {
-                            if (parsed.number.isNotEmpty()) DetailRow(Icons.Default.Phone, "Phone", parsed.number)
-                            if (parsed.groupId.isNotEmpty()) DetailRow(Icons.Default.Group, "Group ID", parsed.groupId)
-                            if (parsed.message.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Chat, "Message", parsed.message)
-                        }
-                        is ScannedQR.Location -> {
-                            DetailRow(Icons.Default.LocationOn, "Latitude", parsed.latitude.toString())
-                            DetailRow(Icons.Default.LocationOn, "Longitude", parsed.longitude.toString())
-                            if (parsed.label.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Label, "Label", parsed.label)
-                        }
-                        is ScannedQR.Contact -> {
-                            if (parsed.name.isNotEmpty()) DetailRow(Icons.Default.Person, "Name", parsed.name)
-                            if (parsed.phone.isNotEmpty()) DetailRow(Icons.Default.Phone, "Phone", parsed.phone)
-                            if (parsed.email.isNotEmpty()) DetailRow(Icons.Default.Email, "Email", parsed.email)
-                        }
-                        is ScannedQR.Event -> {
-                            if (parsed.summary.isNotEmpty()) DetailRow(Icons.Default.Event, "Title", parsed.summary)
-                            if (parsed.location.isNotEmpty()) DetailRow(Icons.Default.LocationOn, "Location", parsed.location)
-                            if (parsed.description.isNotEmpty()) DetailRow(Icons.AutoMirrored.Filled.Notes, "Description", parsed.description)
-                            if (parsed.startDate.isNotEmpty()) DetailRow(Icons.Default.Schedule, "Start", formatEventDate(parsed.startDate))
-                            if (parsed.endDate.isNotEmpty()) DetailRow(Icons.Default.Schedule, "End", formatEventDate(parsed.endDate))
-                        }
-                        else -> {}
-                    }
-
-                    // Scanned timestamp
-                    if (item.timestamp > 0) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Schedule, null, tint = DetailTextMuted, modifier = Modifier.size(13.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Saved: ${SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(item.timestamp))}",
-                                color = DetailTextMuted,
-                                fontSize = 11.5.sp
+                                "Customize QR Style",
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DetailTextPrimary
+                            )
+                            Text(
+                                if (isCustomizeExpanded) "Tap to collapse styling panel" else "Tap to customize Colors, Shapes, Eyes & Logos",
+                                fontSize = 11.5.sp,
+                                color = DetailTextMuted
+                            )
+                        }
+                        Icon(
+                            if (isCustomizeExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = AmberSoft,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = isCustomizeExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                            HorizontalDivider(color = DetailCardBorder, modifier = Modifier.padding(horizontal = 16.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
+                            QRCustomizationSection(
+                                qrType = item.type,
+                                styleConfig = styleConfig,
+                                onStyleChanged = { newConfig ->
+                                    styleConfig = newConfig
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp)
                             )
                         }
                     }
                 }
             }
 
-            // Banner Ad at bottom
             Spacer(modifier = Modifier.height(16.dp))
-            BannerAdView()
+
+            // ── DETAILS CARD ──
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(DetailCardBg)
+                    .border(1.dp, DetailCardBorder, RoundedCornerShape(20.dp))
+                    .padding(18.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, null, tint = DetailAccent, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            "Content Details",
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DetailTextPrimary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    DetailItem(
+                        icon = Icons.AutoMirrored.Filled.Notes,
+                        label = "Raw Data",
+                        value = item.rawValue
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    DetailItem(
+                        icon = Icons.Default.AccessTime,
+                        label = "Created",
+                        value = formatDate(item.timestamp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    DetailItem(
+                        icon = Icons.Default.Category,
+                        label = "QR Type",
+                        value = item.type
+                    )
+                }
+            }
+
+            // Bottom Spacing
             Spacer(modifier = Modifier.height(48.dp))
         }
+
+        // ── BANNER AD (START.IO ZERO DELAY MONETIZATION) ──
+        BannerAdView(modifier = Modifier.fillMaxWidth())
     }
 }
 
-// =====================================================
-// DETAIL ROW WITH ICON
-// =====================================================
+/**
+ * Share High-Resolution Styled QR Bitmap to external apps
+ */
+private fun shareQRBitmap(context: Context, bitmap: Bitmap) {
+    try {
+        val cachePath = File(context.cacheDir, "images")
+        cachePath.mkdirs()
+        val file = File(cachePath, "styled_qr_${System.currentTimeMillis()}.png")
+        val stream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        stream.close()
+
+        val contentUri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, contentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share QR Code"))
+    } catch (e: Exception) {
+        shareQR(context, "QR Code")
+    }
+}
 
 @Composable
-private fun DetailRow(icon: ImageVector, label: String, value: String) {
+private fun DetailItem(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
     Row(
-        modifier = Modifier.padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = DetailTextSecondary,
             modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(Ink750),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, tint = AmberSoft, modifier = Modifier.size(16.dp))
-        }
-        Spacer(modifier = Modifier.width(12.dp))
+                .padding(top = 2.dp)
+                .size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
         Column {
-            Text(label, color = DetailTextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.5.sp)
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(value, color = DetailTextPrimary, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, lineHeight = 21.sp)
+            Text(label, fontSize = 12.sp, color = DetailTextMuted)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                value,
+                fontSize = 13.5.sp,
+                color = DetailTextPrimary,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
 
-// =====================================================
-// FORMAT EVENT DATE (YYYYMMDDTHHMMSS → readable)
-// =====================================================
+private data class HistoryBadge(val label: String, val icon: ImageVector)
 
-private fun formatEventDate(raw: String): String {
-    return try {
-        // Format: 20260412T194500
-        val clean = raw.trim()
-        if (clean.length < 15) return clean
-        val year = clean.substring(0, 4)
-        val month = clean.substring(4, 6).toInt()
-        val day = clean.substring(6, 8)
-        val hour = clean.substring(9, 11)
-        val minute = clean.substring(11, 13)
-        val monthNames = listOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
-        val monthName = if (month in 1..12) monthNames[month - 1] else "?"
-        "$day $monthName $year, $hour:$minute"
-    } catch (_: Exception) { raw }
+private fun getHistoryBadge(item: ScannedQR): HistoryBadge = when (item) {
+    is ScannedQR.QRURL -> HistoryBadge("Website Link", Icons.Default.Language)
+    is ScannedQR.WiFi -> HistoryBadge("WiFi Network", Icons.Default.Wifi)
+    is ScannedQR.UPI -> HistoryBadge("UPI Payment", Icons.Default.AccountBalance)
+    is ScannedQR.Contact -> HistoryBadge("Contact Card", Icons.Default.Person)
+    is ScannedQR.Phone -> HistoryBadge("Phone Number", Icons.Default.Phone)
+    is ScannedQR.SMS -> HistoryBadge("SMS Message", Icons.Default.Sms)
+    is ScannedQR.QREmail -> HistoryBadge("Email Address", Icons.Default.Email)
+    is ScannedQR.Location -> HistoryBadge("Map Location", Icons.Default.Place)
+    is ScannedQR.WhatsApp -> HistoryBadge("WhatsApp", Icons.AutoMirrored.Filled.Chat)
+    is ScannedQR.Event -> HistoryBadge("Calendar Event", Icons.Default.Event)
+    is ScannedQR.Text -> HistoryBadge("Plain Text", Icons.AutoMirrored.Filled.Subject)
+    else -> HistoryBadge("QR Code", Icons.Default.QrCode)
 }
 
-// =====================================================
-// HELPER FUNCTIONS
-// =====================================================
-
-private fun generateQRBitmap(context: Context, content: String, size: Int): Bitmap? {
-    return try {
-        QRGenerator.generateStandardQRBitmap(content, size)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
+private fun formatDate(timestamp: Long): String {
+    val sdf = SimpleDateFormat("MMM dd, yyyy  hh:mm a", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
 
-private fun loadLogoFromDrawable(context: Context): Bitmap? {
-    return try {
-        android.graphics.BitmapFactory.decodeResource(context.resources, com.qr.hub.R.drawable.qrhub_logo)
-    } catch (e: Exception) { null }
-}
-
-private fun shareQR(context: Context, content: String) {
+private fun shareQR(context: Context, text: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, content)
+        putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, "Share QR"))
+    context.startActivity(Intent.createChooser(intent, "Share QR Content"))
 }
 
-private suspend fun saveQRToGallery(context: Context, bitmap: Bitmap, name: String) {
-    withContext(Dispatchers.IO) {
-        try {
-            val filename = "$name.png"
+private fun saveQRToGallery(context: Context, bitmap: Bitmap, name: String) {
+    try {
+        val filename = "${name}_${System.currentTimeMillis()}.png"
+        var fos: OutputStream? = null
+        var uri: Uri? = null
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
             val contentValues = android.content.ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/QR_HUB")
-                }
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/QRHub")
             }
-            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            } else {
-                @Suppress("DEPRECATION")
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val qrDir = File(dir, "QR_HUB"); qrDir.mkdirs()
-                Uri.fromFile(File(qrDir, filename))
-            }
-            uri?.let { context.contentResolver.openOutputStream(it)?.use { os: OutputStream -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, os) } }
-            withContext(Dispatchers.Main) { android.widget.Toast.makeText(context, "✅ Saved to Downloads/QR_HUB", android.widget.Toast.LENGTH_SHORT).show() }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) { android.widget.Toast.makeText(context, "Failed to save", android.widget.Toast.LENGTH_SHORT).show() }
+            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            fos = uri?.let { resolver.openOutputStream(it) }
+        } else {
+            val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/QRHub"
+            val file = File(imagesDir)
+            if (!file.exists()) file.mkdirs()
+            val image = File(imagesDir, filename)
+            fos = FileOutputStream(image)
         }
+
+        fos?.use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            android.widget.Toast.makeText(context, "Saved to Gallery!", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        android.widget.Toast.makeText(context, "Failed to save: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
     }
-}
-
-private data class HistoryBadge(
-    val icon: ImageVector,
-    val label: String,
-    val tint: Color
-)
-
-private fun getHistoryBadge(parsed: ScannedQR): HistoryBadge = when (parsed) {
-    is ScannedQR.Text -> HistoryBadge(Icons.Default.TextFields, "Text", AmberSoft)
-    is ScannedQR.QRURL -> HistoryBadge(Icons.Default.Link, "URL", CyanAccent)
-    is ScannedQR.UPI -> HistoryBadge(Icons.Default.AccountBalance, "UPI Payment", AmberSoft)
-    is ScannedQR.Phone -> HistoryBadge(Icons.Default.Phone, "Phone", CyanAccent)
-    is ScannedQR.Contact -> HistoryBadge(Icons.Default.Person, "Contact", AmberSoft)
-    is ScannedQR.SMS -> HistoryBadge(Icons.Default.Sms, "SMS", CyanAccent)
-    is ScannedQR.QREmail -> HistoryBadge(Icons.Default.Email, "Email", CyanAccent)
-    is ScannedQR.WiFi -> HistoryBadge(Icons.Default.Wifi, "WiFi", CyanAccent)
-    is ScannedQR.WhatsApp -> HistoryBadge(Icons.AutoMirrored.Filled.Chat, "WhatsApp", CyanAccent)
-    is ScannedQR.Location -> HistoryBadge(Icons.Default.LocationOn, "Location", AmberSoft)
-    is ScannedQR.Event -> HistoryBadge(Icons.Default.Event, "Event", AmberSoft)
-    is ScannedQR.PlusCode -> HistoryBadge(Icons.Default.Place, "Plus Code", AmberSoft)
-    is ScannedQR.GoogleMaps -> HistoryBadge(Icons.Default.Map, "Google Maps", CyanAccent)
-    is ScannedQR.Unknown -> HistoryBadge(Icons.Default.QrCode, "Unknown", DetailTextSecondary)
 }
 
 private fun parseHistoryDetailItem(item: HistoryItem): ScannedQR {
-    val raw = item.rawValue.trim()
-
-    return when (item.type.uppercase()) {
-        "URL", "QRURL" -> ScannedQR.QRURL(raw)
-        "TEXT" -> ScannedQR.Text(raw)
-        "UPI" -> ScannedQR.UPI(
-            vpa = queryParam(raw.substringAfter("?", ""), "pa"),
-            name = queryParam(raw.substringAfter("?", ""), "pn"),
-            amount = queryParam(raw.substringAfter("?", ""), "am"),
-            note = queryParam(raw.substringAfter("?", ""), "tn"),
-            currency = queryParam(raw.substringAfter("?", ""), "cu").ifEmpty { "INR" },
-            rawUri = raw
-        )
-        "PHONE" -> ScannedQR.Phone(raw.removePrefix("tel:").removePrefix("TEL:"))
-        "SMS" -> parseSms(raw)
-        "EMAIL", "QREMAIL" -> ScannedQR.QREmail(
-            address = raw.removePrefix("mailto:").substringBefore("?"),
-            subject = queryParam(raw.substringAfter("?", ""), "subject"),
-            body = queryParam(raw.substringAfter("?", ""), "body")
-        )
-        "WIFI" -> ScannedQR.WiFi(
-            ssid = wifiField(raw, "S"),
-            password = wifiField(raw, "P"),
-            encryption = wifiField(raw, "T").trim().ifEmpty { "None" }
-        )
-        "WHATSAPP" -> parseWhatsApp(raw)
-        "LOCATION" -> parseGeo(raw)
-        "PLUS_CODE" -> ScannedQR.PlusCode(raw, "")
-        "GOOGLE_MAPS" -> ScannedQR.GoogleMaps(raw)
-        "CONTACT", "VCARD" -> ScannedQR.Contact(
-            vCard = raw,
-            name = vCardField(raw, "FN").ifEmpty { vCardField(raw, "N").substringBefore(';') },
-            phone = vCardField(raw, "TEL"),
-            email = vCardField(raw, "EMAIL"),
-            org = vCardField(raw, "ORG"),
-            title = vCardField(raw, "TITLE")
-        )
-        "EVENT", "VEVENT" -> ScannedQR.Event(
-            raw = raw,
-            summary = icalField(raw, "SUMMARY"),
-            location = icalField(raw, "LOCATION"),
-            description = icalField(raw, "DESCRIPTION"),
-            startDate = icalField(raw, "DTSTART"),
-            endDate = icalField(raw, "DTEND")
-        )
-        else -> parseHistoryDetailFallback(raw)
-    }
-}
-
-private fun parseHistoryDetailFallback(raw: String): ScannedQR {
+    val raw = item.rawValue
     val lower = raw.lowercase()
+
     return when {
         lower.startsWith("http://") || lower.startsWith("https://") -> ScannedQR.QRURL(raw)
+        lower.startsWith("wifi:") || lower.startsWith("WIFI:") -> ScannedQR.WiFi(
+            ssid = wifiField(raw, "S"),
+            password = wifiField(raw, "P"),
+            encryption = wifiField(raw, "T").ifEmpty { "WPA" }
+        )
+        lower.startsWith("tel:") -> ScannedQR.Phone(raw.removePrefix("tel:").removePrefix("TEL:"))
+        lower.startsWith("smsto:") || lower.startsWith("sms:") -> parseSms(raw)
         lower.startsWith("mailto:") -> ScannedQR.QREmail(
-            address = raw.removePrefix("mailto:").substringBefore("?"),
+            address = raw.removePrefix("mailto:").removePrefix("MAILTO:").substringBefore("?"),
             subject = queryParam(raw.substringAfter("?", ""), "subject"),
             body = queryParam(raw.substringAfter("?", ""), "body")
         )
-        lower.startsWith("tel:") -> ScannedQR.Phone(raw.substring(4))
-        lower.startsWith("sms:") || lower.startsWith("smsto:") -> parseSms(raw)
-        lower.startsWith("wifi:") -> ScannedQR.WiFi(
-            ssid = wifiField(raw, "S"),
-            password = wifiField(raw, "P"),
-            encryption = wifiField(raw, "T").trim().ifEmpty { "None" }
-        )
-        lower.startsWith("upi://pay") -> ScannedQR.UPI(
+        lower.startsWith("upi://") -> ScannedQR.UPI(
             vpa = queryParam(raw.substringAfter("?", ""), "pa"),
             name = queryParam(raw.substringAfter("?", ""), "pn"),
             amount = queryParam(raw.substringAfter("?", ""), "am"),
