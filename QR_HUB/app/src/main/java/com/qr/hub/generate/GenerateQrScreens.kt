@@ -67,6 +67,7 @@ private val AccentPurple = AmberSoft
 private val AccentPink = AmberPrimary
 
 sealed class QRType(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    object Bulk : QRType("Bulk QR", Icons.Default.DynamicFeed)
     object Text : QRType("Text", Icons.Default.TextFields)
     object URL : QRType("URL", Icons.Default.Link)
     object UPI : QRType("UPI", Icons.Default.AccountBalance)
@@ -81,7 +82,7 @@ sealed class QRType(val label: String, val icon: androidx.compose.ui.graphics.ve
     object Event : QRType("Event", Icons.Default.Event)
 
     companion object {
-        val allTypes = listOf(Text, URL, UPI, WhatsApp, WAGroup, Phone, SMS, Email, Contact, WiFi, Location, Event)
+        val allTypes = listOf(Bulk, Text, URL, UPI, WhatsApp, WAGroup, Phone, SMS, Email, Contact, WiFi, Location, Event)
     }
 }
 
@@ -393,6 +394,7 @@ fun CornerBrackets(
 }
 
 private fun getTypeCardColor(type: QRType): Color = when (type) {
+    QRType.Bulk -> AmberPrimary
     QRType.Text -> Color(0xFFFFA726)
     QRType.URL -> Color(0xFF42A5F5)
     QRType.UPI -> Color(0xFF66BB6A)

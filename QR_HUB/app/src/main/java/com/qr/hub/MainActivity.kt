@@ -186,6 +186,7 @@ private fun GenerateQrFormContainer(
     onBack: () -> Unit
 ) {
     when (type) {
+        QRType.Bulk -> BatchQrGeneratorScreen(isDark = isDark, onBack = onBack)
         QRType.Text -> GenerateTextQrScreen(isDark = isDark, onBack = onBack)
         QRType.URL -> GenerateUrlQrScreen(isDark = isDark, onBack = onBack)
         QRType.UPI -> GenerateUpiQrScreen(isDark = isDark, onBack = onBack)
