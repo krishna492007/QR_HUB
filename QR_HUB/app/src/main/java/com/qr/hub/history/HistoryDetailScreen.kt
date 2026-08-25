@@ -163,20 +163,20 @@ fun HistoryDetailScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ── QR DISPLAY CARD ──
+            // ── QR DISPLAY CARD (EXACT MATCH WITH GENERATE SCREEN) ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
                     .background(DetailCardBg)
                     .border(1.dp, DetailCardBorder, RoundedCornerShape(20.dp))
-                    .padding(20.dp),
+                    .padding(18.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // QR Label
                     Text(
-                        "Your QR Code",
+                        "Your Styled QR Code",
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = DetailTextSecondary,
@@ -186,9 +186,10 @@ fun HistoryDetailScreen(
                     qrBitmap?.let { bmp ->
                         Box(
                             modifier = Modifier
-                                .size(260.dp)
+                                .size(250.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(styleConfig.bgColor)),
+                                .background(Color(styleConfig.bgColor))
+                                .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -199,30 +200,15 @@ fun HistoryDetailScreen(
                             )
                         }
                     } ?: Box(
-                        modifier = Modifier.size(260.dp),
+                        modifier = Modifier.size(250.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = DetailAccent, modifier = Modifier.size(32.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Type Badge
-                    val badge = getHistoryBadge(parsed)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(AmberDim)
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Icon(badge.icon, null, tint = AmberSoft, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(badge.label, color = AmberSoft, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     // ── SHARE / DOWNLOAD ACTION BUTTONS ──
-                    Spacer(modifier = Modifier.height(14.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -231,7 +217,7 @@ fun HistoryDetailScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp)
+                                .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(Ink750)
                                 .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
@@ -246,7 +232,7 @@ fun HistoryDetailScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Outlined.Share, "Share", tint = DetailTextPrimary, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Share, "Share", tint = DetailTextPrimary, modifier = Modifier.size(17.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = DetailTextPrimary)
                             }
@@ -256,7 +242,7 @@ fun HistoryDetailScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(50.dp)
+                                .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(DetailCtaGradient)
                                 .clickable(enabled = !isDownloading && qrBitmap != null) {
@@ -277,12 +263,12 @@ fun HistoryDetailScreen(
                                 if (isDownloading) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
                                 } else {
-                                    Icon(Icons.Default.Download, "Download", tint = Color(0xFF20140A), modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.Download, "Download", tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     if (isDownloading) "Saving..." else "Download",
-                                    fontSize = 15.sp,
+                                    fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF20140A)
                                 )
