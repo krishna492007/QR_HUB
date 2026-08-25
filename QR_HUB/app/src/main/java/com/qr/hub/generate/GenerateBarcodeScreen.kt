@@ -8,14 +8,19 @@ import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +39,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.zxing.BarcodeFormat
@@ -45,9 +51,9 @@ import com.qr.hub.util.ads.BannerAdView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStream
+import java.io.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 enum class BarcodeType(val displayName: String, val format: BarcodeFormat, val hint: String, val sample: String) {
     CODE_128("Code-128", BarcodeFormat.CODE_128, "Text / Numbers for Products & Logistics", "PROD-2025-A1"),
@@ -55,6 +61,12 @@ enum class BarcodeType(val displayName: String, val format: BarcodeFormat, val h
     UPC_A("UPC-A", BarcodeFormat.UPC_A, "12 Digits Global Retail Barcode", "012345678905"),
     CODE_39("Code-39", BarcodeFormat.CODE_39, "Alphanumeric Warehouse & Inventory", "ITEM-9988")
 }
+
+data class BatchBarcodeItem(
+    val index: Int,
+    val text: String,
+    val bitmap: Bitmap
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,17 +77,50 @@ fun GenerateBarcodeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    var activeTab by remember { mutableStateOf(0) } // 0 = Single & Sticker Sheet, 1 = Bulk Barcodes
     var selectedBarcodeType by remember { mutableStateOf(BarcodeType.CODE_128) }
-    var inputText by remember { mutableStateOf("") }
-    var barcodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isDownloading by remember { mutableStateOf(false) }
 
-    // Validation
-    val isValidInput = when (selectedBarcodeType) {
-        BarcodeType.EAN_13 -> inputText.length in 12..13 && inputText.all { it.isDigit() }
-        BarcodeType.UPC_A -> inputText.length in 11..12 && inputText.all { it.isDigit() }
-        BarcodeType.CODE_128, BarcodeType.CODE_39 -> inputText.trim().isNotEmpty()
+    // ── Single Mode States ──
+    var singleInputText by remember { mutableStateOf("") }
+    var singleBarcodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var singleErrorMessage by remember { mutableStateOf<String?>(null) }
+    var isSavingSingle by remember { mutableStateOf(false) }
+    var selectedStickerCopies by remember { mutableStateOf(24) } // 12, 24, 40
+    var isGeneratingStickerSheet by remember { mutableStateOf(false) }
+
+    // ── Bulk Mode States ──
+    var bulkTextInput by remember { mutableStateOf("") }
+    val bulkItemsList = remember(bulkTextInput) {
+        bulkTextInput.lines().map { it.trim() }.filter { it.isNotEmpty() }
+    }
+    var isGeneratingBulk by remember { mutableStateOf(false) }
+    var bulkProgress by remember { mutableStateOf(0f) }
+    var generatedBulkItems by remember { mutableStateOf<List<BatchBarcodeItem>>(emptyList()) }
+    var isExportingBulkZip by remember { mutableStateOf(false) }
+    var isExportingBulkPdf by remember { mutableStateOf(false) }
+
+    // CSV / TXT File Picker for Bulk
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val content = inputStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                if (content.isNotEmpty()) {
+                    bulkTextInput = content
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Validation for single input
+    val isSingleInputValid = when (selectedBarcodeType) {
+        BarcodeType.EAN_13 -> singleInputText.length in 12..13 && singleInputText.all { it.isDigit() }
+        BarcodeType.UPC_A -> singleInputText.length in 11..12 && singleInputText.all { it.isDigit() }
+        BarcodeType.CODE_128, BarcodeType.CODE_39 -> singleInputText.trim().isNotEmpty()
     }
 
     Column(
@@ -110,10 +155,77 @@ fun GenerateBarcodeScreen(
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column {
-                Text("Product Barcode Generator", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Text("Generate 1D Barcodes for Products & Marts", fontSize = 11.5.sp, color = TextSecondary)
+                Text("Product Barcode Studio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text("Generate & Print Sticker Sheets for Shops & Marts", fontSize = 11.5.sp, color = TextSecondary)
             }
         }
+
+        // ── MODE TABS (Single & Sticker vs Bulk CSV) ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 6.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Ink800)
+                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                .padding(4.dp)
+        ) {
+            // Tab 0: Single & Sticker Sheet
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (activeTab == 0) AmberPrimary else Color.Transparent)
+                    .clickable { activeTab = 0 }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.QrCode,
+                        null,
+                        tint = if (activeTab == 0) Color(0xFF160E06) else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Single & Sticker Sheet",
+                        fontSize = 12.sp,
+                        fontWeight = if (activeTab == 0) FontWeight.Bold else FontWeight.Medium,
+                        color = if (activeTab == 0) Color(0xFF160E06) else TextSecondary
+                    )
+                }
+            }
+
+            // Tab 1: Bulk Barcodes / CSV
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (activeTab == 1) AmberPrimary else Color.Transparent)
+                    .clickable { activeTab = 1 }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.DynamicFeed,
+                        null,
+                        tint = if (activeTab == 1) Color(0xFF160E06) else TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Bulk Barcodes (CSV)",
+                        fontSize = 12.sp,
+                        fontWeight = if (activeTab == 1) FontWeight.Bold else FontWeight.Medium,
+                        color = if (activeTab == 1) Color(0xFF160E06) else TextSecondary
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         // ── SCROLLABLE CONTENT ──
         Column(
@@ -122,9 +234,9 @@ fun GenerateBarcodeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp)
         ) {
-            // ── FORMAT SELECTOR ──
-            Text("Select Barcode Standard", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
-            Spacer(modifier = Modifier.height(8.dp))
+            // ── FORMAT SELECTOR (Shared across both tabs) ──
+            Text("Select Barcode Standard", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -140,15 +252,15 @@ fun GenerateBarcodeScreen(
                             .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
                             .clickable {
                                 selectedBarcodeType = type
-                                errorMessage = null
-                                barcodeBitmap = null
+                                singleErrorMessage = null
+                                singleBarcodeBitmap = null
                             }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 9.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             type.displayName,
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) AmberSoft else TextSecondary
                         )
@@ -156,205 +268,556 @@ fun GenerateBarcodeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // ── INPUT CARD ──
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
-                    .padding(18.dp)
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Product Code / Value", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-
-                        Text(
-                            "Sample",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AmberPrimary,
-                            modifier = Modifier.clickable {
-                                inputText = selectedBarcodeType.sample
-                            }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(selectedBarcodeType.hint, fontSize = 11.5.sp, color = TextTertiary)
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = {
-                            inputText = it
-                            errorMessage = null
-                        },
-                        placeholder = { Text(selectedBarcodeType.sample, color = TextTertiary, fontSize = 13.5.sp) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AmberPrimary,
-                            unfocusedBorderColor = BorderLine,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        ),
-                        shape = RoundedCornerShape(14.dp)
-                    )
-
-                    if (errorMessage != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(errorMessage!!, color = Color(0xFFFF5252), fontSize = 12.sp)
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Generate Button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (isValidInput) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
-                            .clickable(enabled = isValidInput) {
-                                scope.launch {
-                                    val bmp = generateProductBarcode(inputText, selectedBarcodeType.format)
-                                    if (bmp != null) {
-                                        barcodeBitmap = bmp
-                                        errorMessage = null
-                                    } else {
-                                        errorMessage = "Invalid characters or length for ${selectedBarcodeType.displayName}"
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.ViewWeek,
-                                null,
-                                tint = if (isValidInput) Color(0xFF20140A) else TextTertiary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Generate Barcode",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isValidInput) Color(0xFF20140A) else TextTertiary
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ── BARCODE PREVIEW CARD ──
-            if (barcodeBitmap != null) {
-                Spacer(modifier = Modifier.height(20.dp))
-
+            // =========================================================================
+            // TAB 0: SINGLE BARCODE & MULTI-COPY STICKER SHEET
+            // =========================================================================
+            if (activeTab == 0) {
+                // Input Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
                         .background(Ink800)
                         .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
-                        .padding(18.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(16.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Generated Barcode Label",
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextSecondary,
-                            modifier = Modifier.padding(bottom = 14.dp)
-                        )
-
-                        // Barcode Display Card
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(160.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White)
-                                .padding(12.dp),
-                            contentAlignment = Alignment.Center
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Image(
-                                bitmap = barcodeBitmap!!.asImageBitmap(),
-                                contentDescription = "Barcode",
-                                modifier = Modifier.fillMaxSize()
+                            Text("Product Code / Number", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+
+                            Text(
+                                "Sample",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = AmberPrimary,
+                                modifier = Modifier.clickable {
+                                    singleInputText = selectedBarcodeType.sample
+                                }
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(selectedBarcodeType.hint, fontSize = 11.sp, color = TextTertiary)
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                        // Share / Download
-                        Row(
+                        OutlinedTextField(
+                            value = singleInputText,
+                            onValueChange = {
+                                singleInputText = it
+                                singleErrorMessage = null
+                            },
+                            placeholder = { Text(selectedBarcodeType.sample, color = TextTertiary, fontSize = 13.sp) },
+                            singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AmberPrimary,
+                                unfocusedBorderColor = BorderLine,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        if (singleErrorMessage != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(singleErrorMessage!!, color = Color(0xFFFF5252), fontSize = 11.5.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Generate Button
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (isSingleInputValid) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
+                                .clickable(enabled = isSingleInputValid) {
+                                    scope.launch {
+                                        val bmp = generateProductBarcode(singleInputText, selectedBarcodeType.format)
+                                        if (bmp != null) {
+                                            singleBarcodeBitmap = bmp
+                                            singleErrorMessage = null
+                                        } else {
+                                            singleErrorMessage = "Invalid format or length for ${selectedBarcodeType.displayName}"
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            // Share
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.ViewWeek,
+                                    null,
+                                    tint = if (isSingleInputValid) Color(0xFF20140A) else TextTertiary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Generate Barcode",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSingleInputValid) Color(0xFF20140A) else TextTertiary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Barcode Preview & Sticker Sheet Exporter
+                if (singleBarcodeBitmap != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Ink800)
+                            .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "Generated Barcode Label",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+
+                            // White Barcode Display Box
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
+                                    .fillMaxWidth()
+                                    .height(140.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(Ink750)
-                                    .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
-                                    .clickable {
-                                        val activity = context as? Activity
-                                        AdManager.showInterstitialWithFrequency(activity, interval = 2) {
-                                            shareBarcodeImage(context, barcodeBitmap!!)
-                                        }
-                                    },
+                                    .background(Color.White)
+                                    .padding(10.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Share, null, tint = TextPrimary, modifier = Modifier.size(17.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                Image(
+                                    bitmap = singleBarcodeBitmap!!.asImageBitmap(),
+                                    contentDescription = "Barcode",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Single Save & Share Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Ink750)
+                                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            val activity = context as? Activity
+                                            AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                                shareBarcodeImage(context, singleBarcodeBitmap!!)
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Share, null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Share Single", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                    }
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(AmberDim)
+                                        .border(1.dp, AmberPrimary, RoundedCornerShape(12.dp))
+                                        .clickable(enabled = !isSavingSingle) {
+                                            val activity = context as? Activity
+                                            AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                                scope.launch {
+                                                    isSavingSingle = true
+                                                    saveBarcodeToGallery(context, singleBarcodeBitmap!!, "Barcode_${singleInputText}")
+                                                    isSavingSingle = false
+                                                }
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (isSavingSingle) {
+                                            CircularProgressIndicator(modifier = Modifier.size(15.dp), color = AmberSoft, strokeWidth = 1.5.dp)
+                                        } else {
+                                            Icon(Icons.Default.Download, null, tint = AmberSoft, modifier = Modifier.size(16.dp))
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Save Single", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                    }
                                 }
                             }
 
-                            // Download
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = BorderLine)
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // ── MULTI-COPY STICKER SHEET SECTION ──
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text("Print Sticker Sheet (A4 PDF)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                    Text("Print 12, 24 or 40 labels on single A4 sheet", fontSize = 11.sp, color = TextSecondary)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Sticker Copies Selector Pills
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(12 to "12 Labels (2x6)", 24 to "24 Labels (3x8)", 40 to "40 Labels (4x10)").forEach { (count, label) ->
+                                    val isPicked = selectedStickerCopies == count
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isPicked) AmberDim else Ink750)
+                                            .border(1.dp, if (isPicked) AmberPrimary else BorderLine, RoundedCornerShape(10.dp))
+                                            .clickable { selectedStickerCopies = count }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            label,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = if (isPicked) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isPicked) AmberSoft else TextSecondary,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Print Sticker Sheet CTA
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .clip(RoundedCornerShape(14.dp))
+                                    .fillMaxWidth()
+                                    .height(46.dp)
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(AmberCtaGradient)
-                                    .clickable(enabled = !isDownloading) {
+                                    .clickable(enabled = !isGeneratingStickerSheet) {
                                         val activity = context as? Activity
                                         AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                                             scope.launch {
-                                                isDownloading = true
-                                                saveBarcodeToGallery(context, barcodeBitmap!!, "Barcode_${inputText}")
-                                                isDownloading = false
+                                                isGeneratingStickerSheet = true
+                                                exportRepeatedStickerSheetPdf(context, singleBarcodeBitmap!!, singleInputText, selectedStickerCopies)
+                                                isGeneratingStickerSheet = false
                                             }
                                         }
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (isDownloading) {
-                                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                    if (isGeneratingStickerSheet) {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
                                     } else {
-                                        Icon(Icons.Default.Download, null, tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(17.dp))
                                     }
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        if (isDownloading) "Saving..." else "Download Label",
+                                        if (isGeneratingStickerSheet) "Generating PDF..." else "Export $selectedStickerCopies Labels Sheet (A4 PDF)",
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF20140A)
                                     )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // =========================================================================
+            // TAB 1: BULK BARCODES (CSV / MULTI-LINE)
+            // =========================================================================
+            if (activeTab == 1) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Ink800)
+                        .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Barcodes List (1 per line)", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(AmberDim)
+                                    .border(1.dp, AmberPrimary, RoundedCornerShape(8.dp))
+                                    .clickable { filePickerLauncher.launch("*/*") }
+                                    .padding(horizontal = 9.dp, vertical = 4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.UploadFile, null, tint = AmberSoft, modifier = Modifier.size(13.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Import CSV", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AmberSoft)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = bulkTextInput,
+                            onValueChange = { bulkTextInput = it },
+                            placeholder = {
+                                Text(
+                                    "Enter 1 code per line:\nPROD-001\nPROD-002\nPROD-003\n8901234567890",
+                                    fontSize = 12.5.sp,
+                                    color = TextTertiary
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = AmberPrimary,
+                                unfocusedBorderColor = BorderLine,
+                                focusedTextColor = TextPrimary,
+                                unfocusedTextColor = TextPrimary
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "${bulkItemsList.size} barcode(s) detected",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (bulkItemsList.isNotEmpty()) AmberSoft else TextTertiary
+                            )
+
+                            Text(
+                                "Load Sample Sequence",
+                                fontSize = 11.5.sp,
+                                color = AmberPrimary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.clickable {
+                                    bulkTextInput = "ITEM-101-WATCH\nITEM-102-EARBUD\nITEM-103-SPEAKER\nITEM-104-CHARGER\nITEM-105-POWERBANK\nITEM-106-ADAPTER"
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Generate All Button
+                        val canGenerateBulk = bulkItemsList.isNotEmpty() && !isGeneratingBulk
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (canGenerateBulk) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
+                                .clickable(enabled = canGenerateBulk) {
+                                    val activity = context as? Activity
+                                    AdManager.showInterstitialWithFrequency(activity, interval = 2) {
+                                        scope.launch {
+                                            isGeneratingBulk = true
+                                            bulkProgress = 0f
+                                            val list = mutableListOf<BatchBarcodeItem>()
+
+                                            withContext(Dispatchers.Default) {
+                                                bulkItemsList.forEachIndexed { idx, rawText ->
+                                                    val bmp = generateProductBarcode(rawText, selectedBarcodeType.format)
+                                                    if (bmp != null) {
+                                                        list.add(BatchBarcodeItem(idx + 1, rawText, bmp))
+                                                    }
+                                                    bulkProgress = (idx + 1).toFloat() / bulkItemsList.size
+                                                }
+                                            }
+
+                                            generatedBulkItems = list
+                                            isGeneratingBulk = false
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isGeneratingBulk) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Generating ${(bulkProgress * 100).toInt()}%...", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                                } else {
+                                    Icon(Icons.Default.Bolt, null, tint = if (canGenerateBulk) Color(0xFF20140A) else TextTertiary, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (bulkItemsList.isEmpty()) "Add Items to Generate" else "Generate All (${bulkItemsList.size} Barcodes)",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (canGenerateBulk) Color(0xFF20140A) else TextTertiary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bulk Results & Export Section
+                if (generatedBulkItems.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Generated (${generatedBulkItems.size} Barcodes)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // ZIP Export
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(AmberDim)
+                                    .border(1.dp, AmberPrimary, RoundedCornerShape(10.dp))
+                                    .clickable(enabled = !isExportingBulkZip) {
+                                        scope.launch {
+                                            isExportingBulkZip = true
+                                            exportBatchBarcodesAsZip(context, generatedBulkItems)
+                                            isExportingBulkZip = false
+                                        }
+                                    }
+                                    .padding(horizontal = 9.dp, vertical = 5.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (isExportingBulkZip) {
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = AmberSoft, strokeWidth = 1.5.dp)
+                                    } else {
+                                        Icon(Icons.Default.FolderZip, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("ZIP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                }
+                            }
+
+                            // PDF Sheet Export
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(AmberCtaGradient)
+                                    .clickable(enabled = !isExportingBulkPdf) {
+                                        scope.launch {
+                                            isExportingBulkPdf = true
+                                            exportBulkBarcodesAsPrintablePdf(context, generatedBulkItems)
+                                            isExportingBulkPdf = false
+                                        }
+                                    }
+                                    .padding(horizontal = 9.dp, vertical = 5.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    if (isExportingBulkPdf) {
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color(0xFF20140A), strokeWidth = 1.5.dp)
+                                    } else {
+                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(14.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("PDF Sheet", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 2-Column Grid of Generated Barcodes
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        val chunked = generatedBulkItems.chunked(2)
+                        chunked.forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                rowItems.forEach { item ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(Ink800)
+                                            .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(70.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(Color.White)
+                                                    .padding(4.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Image(
+                                                    bitmap = item.bitmap.asImageBitmap(),
+                                                    contentDescription = item.text,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            Text(
+                                                "#${item.index} ${item.text}",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = TextPrimary,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                                if (rowItems.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
@@ -389,22 +852,9 @@ private suspend fun generateProductBarcode(
         // White Background
         canvas.drawColor(AndroidColor.WHITE)
 
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = AndroidColor.BLACK
-        }
-
-        // Draw Barcode Stripes
         val matrixWidth = bitMatrix.width
         val matrixHeight = bitMatrix.height
-        for (x in 0 until matrixWidth) {
-            for (y in 0 until matrixHeight) {
-                if (bitMatrix.get(x, y)) {
-                    canvas.drawPoint(x.toFloat(), y.toFloat() + 10f, paint)
-                }
-            }
-        }
 
-        // Alternative safe bitmap write
         val pixels = IntArray(matrixWidth * matrixHeight)
         for (y in 0 until matrixHeight) {
             val offset = y * matrixWidth
@@ -430,6 +880,216 @@ private suspend fun generateProductBarcode(
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+/**
+ * Exports repeated copies of a single barcode on an A4 Sticker Sheet (12, 24, or 40 stickers)
+ */
+private suspend fun exportRepeatedStickerSheetPdf(
+    context: Context,
+    barcodeBitmap: Bitmap,
+    label: String,
+    totalCopies: Int
+) = withContext(Dispatchers.IO) {
+    try {
+        val pdfDocument = PdfDocument()
+        val pageWidth = 595 // A4 width
+        val pageHeight = 842 // A4 height
+
+        val (cols, rows) = when (totalCopies) {
+            12 -> Pair(2, 6)
+            40 -> Pair(4, 10)
+            else -> Pair(3, 8) // 24
+        }
+
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+
+        val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.DKGRAY
+            textSize = 12f
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.LTGRAY
+            style = Paint.Style.STROKE
+            strokeWidth = 0.8f
+        }
+
+        canvas.drawText("QR HUB - Barcode Sticker Sheet ($totalCopies Labels)", 30f, 30f, headerPaint)
+
+        val marginX = 30f
+        val marginY = 45f
+        val availableWidth = pageWidth - (marginX * 2)
+        val availableHeight = pageHeight - marginY - 30f
+
+        val cellWidth = availableWidth / cols
+        val cellHeight = availableHeight / rows
+
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val x = marginX + (c * cellWidth)
+                val y = marginY + (r * cellHeight)
+
+                // Sticker Border
+                val rect = RectF(x + 2f, y + 2f, x + cellWidth - 2f, y + cellHeight - 2f)
+                canvas.drawRoundRect(rect, 4f, 4f, borderPaint)
+
+                // Draw Barcode inside sticker
+                val paddingH = cellWidth * 0.08f
+                val paddingV = cellHeight * 0.12f
+                val destRect = Rect(
+                    (x + paddingH).toInt(),
+                    (y + paddingV).toInt(),
+                    (x + cellWidth - paddingH).toInt(),
+                    (y + cellHeight - paddingV).toInt()
+                )
+                canvas.drawBitmap(barcodeBitmap, null, destRect, null)
+            }
+        }
+
+        pdfDocument.finishPage(page)
+
+        val pdfFile = File(context.cacheDir, "Barcode_Sticker_Sheet_${totalCopies}_${System.currentTimeMillis()}.pdf")
+        val fos = FileOutputStream(pdfFile)
+        pdfDocument.writeTo(fos)
+        pdfDocument.close()
+        fos.close()
+
+        val contentUri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, contentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share Sticker Sheet PDF"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+/**
+ * Creates multi-page A4 Printable PDF Sheet for Bulk Barcodes
+ */
+private suspend fun exportBulkBarcodesAsPrintablePdf(context: Context, items: List<BatchBarcodeItem>) = withContext(Dispatchers.IO) {
+    try {
+        val pdfDocument = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
+        val itemsPerPage = 12 // 2 columns x 6 rows
+
+        val pagesCount = (items.size + itemsPerPage - 1) / itemsPerPage
+
+        val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.DKGRAY
+            textSize = 13f
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.LTGRAY
+            style = Paint.Style.STROKE
+            strokeWidth = 0.8f
+        }
+
+        for (p in 0 until pagesCount) {
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, p + 1).create()
+            val page = pdfDocument.startPage(pageInfo)
+            val canvas = page.canvas
+
+            canvas.drawText("QR HUB - Bulk Barcode Catalog Sheet", 35f, 35f, headerPaint)
+            val pageNumPaint = Paint(headerPaint).apply { textAlign = Paint.Align.RIGHT; textSize = 10f }
+            canvas.drawText("Page ${p + 1} of $pagesCount", (pageWidth - 35).toFloat(), 35f, pageNumPaint)
+
+            val startIndex = p * itemsPerPage
+            val pageItems = items.subList(startIndex, (startIndex + itemsPerPage).coerceAtMost(items.size))
+
+            val marginX = 35f
+            val marginY = 50f
+            val colWidth = 250f
+            val rowHeight = 120f
+
+            pageItems.forEachIndexed { i, item ->
+                val col = i % 2
+                val row = i / 2
+
+                val x = marginX + (col * (colWidth + 25f))
+                val y = marginY + (row * (rowHeight + 10f))
+
+                val cardRect = RectF(x, y, x + colWidth, y + rowHeight)
+                canvas.drawRoundRect(cardRect, 8f, 8f, borderPaint)
+
+                val destRect = Rect((x + 12f).toInt(), (y + 12f).toInt(), (x + colWidth - 12f).toInt(), (y + rowHeight - 12f).toInt())
+                canvas.drawBitmap(item.bitmap, null, destRect, null)
+            }
+
+            pdfDocument.finishPage(page)
+        }
+
+        val pdfFile = File(context.cacheDir, "Bulk_Barcodes_${System.currentTimeMillis()}.pdf")
+        val fos = FileOutputStream(pdfFile)
+        pdfDocument.writeTo(fos)
+        pdfDocument.close()
+        fos.close()
+
+        val contentUri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            pdfFile
+        )
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, contentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share Bulk Barcodes PDF"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+/**
+ * Packages all bulk barcode bitmaps into a ZIP archive
+ */
+private suspend fun exportBatchBarcodesAsZip(context: Context, items: List<BatchBarcodeItem>) = withContext(Dispatchers.IO) {
+    try {
+        val zipFile = File(context.cacheDir, "Barcodes_Batch_${System.currentTimeMillis()}.zip")
+        val zos = ZipOutputStream(FileOutputStream(zipFile))
+
+        items.forEach { item ->
+            val cleanName = item.text.replace("[^a-zA-Z0-9_-]".toRegex(), "_").take(20)
+            val entryName = "Barcode_${item.index}_$cleanName.png"
+            zos.putNextEntry(ZipEntry(entryName))
+            val stream = ByteArrayOutputStream()
+            item.bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            zos.write(stream.toByteArray())
+            zos.closeEntry()
+        }
+        zos.close()
+
+        val contentUri = androidx.core.content.FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            zipFile
+        )
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/zip"
+            putExtra(Intent.EXTRA_STREAM, contentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share Barcodes ZIP Archive"))
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
@@ -463,7 +1123,6 @@ private fun saveBarcodeToGallery(context: Context, bitmap: Bitmap, name: String)
     try {
         val filename = "${name}_${System.currentTimeMillis()}.png"
         var fos: OutputStream? = null
-        var uri: Uri? = null
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
@@ -472,7 +1131,7 @@ private fun saveBarcodeToGallery(context: Context, bitmap: Bitmap, name: String)
                 put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/QRHub")
             }
-            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
             fos = uri?.let { resolver.openOutputStream(it) }
         } else {
             val imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString() + "/QRHub"
