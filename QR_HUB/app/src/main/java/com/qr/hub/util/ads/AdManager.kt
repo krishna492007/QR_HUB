@@ -37,6 +37,11 @@ object AdManager {
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
+                // Set Programmatic User Consent for Personalized Ads (No intrusive popup dialog)
+                try {
+                    StartAppSDK.setUserConsent(appContext, "pas", System.currentTimeMillis(), true)
+                } catch (_: Exception) {}
+
                 // Initialize Start.io with App ID
                 StartAppSDK.init(appContext, AdConfig.STARTAPP_APP_ID, false)
                 StartAppAd.disableSplash()
