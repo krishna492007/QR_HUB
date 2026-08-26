@@ -70,10 +70,19 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode" />
 
-        <!-- Start.io Application ID -->
+        <!-- Start.io Application ID and Suppression Controls -->
         <meta-data
             android:name="com.startapp.sdk.APPLICATION_ID"
             android:value="207708176" />
+        <meta-data
+            android:name="com.startapp.sdk.ENABLE_CONSENT_DIALOG"
+            android:value="false" />
+        <meta-data
+            android:name="com.startapp.sdk.RETURN_ADS"
+            android:value="false" />
+        <meta-data
+            android:name="com.startapp.sdk.SPLASH_ADS"
+            android:value="false" />
 
         <!-- Google Mobile Ads / AdMob App ID -->
         <meta-data
