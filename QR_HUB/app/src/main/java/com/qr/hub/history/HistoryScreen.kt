@@ -56,6 +56,7 @@ import java.util.*
 // REDESIGNED HISTORY SCREEN COLORS — Dynamic Ink & Ceramic
 // ============================================
 private data class HistoryColors(
+    val isDark: Boolean,
     val bg: Color,
     val cardBg: Color,
     val cardBorder: Color,
@@ -63,11 +64,16 @@ private data class HistoryColors(
     val textPrimary: Color,
     val textSecondary: Color,
     val textMuted: Color,
-    val selectionAccent: Color
+    val selectionAccent: Color,
+    val goldDim: Color,
+    val goldAccent: Color,
+    val tealDim: Color,
+    val tealAccent: Color
 )
 
 private val LocalHistoryColors = staticCompositionLocalOf {
     HistoryColors(
+        isDark = true,
         bg = Ink950,
         cardBg = Ink800,
         cardBorder = BorderLine,
@@ -75,7 +81,11 @@ private val LocalHistoryColors = staticCompositionLocalOf {
         textPrimary = TextPrimary,
         textSecondary = TextSecondary,
         textMuted = TextTertiary,
-        selectionAccent = AmberPrimary
+        selectionAccent = AmberPrimary,
+        goldDim = AmberDim,
+        goldAccent = AmberPrimary,
+        tealDim = CyanDim,
+        tealAccent = CyanAccent
     )
 }
 
@@ -99,6 +109,7 @@ fun HistoryScreen(
 ) {
     val historyColors = remember(isDark) {
         HistoryColors(
+            isDark = isDark,
             bg = appBg(isDark),
             cardBg = appCardBg(isDark),
             cardBorder = appBorder(isDark),
@@ -106,7 +117,11 @@ fun HistoryScreen(
             textPrimary = appTextPrimary(isDark),
             textSecondary = appTextSecondary(isDark),
             textMuted = appTextTertiary(isDark),
-            selectionAccent = appGoldPrimary(isDark)
+            selectionAccent = appGoldPrimary(isDark),
+            goldDim = appGoldDim(isDark),
+            goldAccent = appGoldPrimary(isDark),
+            tealDim = appTealDim(isDark),
+            tealAccent = appTealAccent(isDark)
         )
     }
 
@@ -802,19 +817,20 @@ private fun HistoryCard(
     val isScanned = item.isScanned
     val icon = getTypeIcon(item.type)
 
-    val iconBg = if (isScanned) CyanDim else AmberDim
-    val iconColor = if (isScanned) CyanAccent else AmberSoft
-    val statusBg = if (isScanned) CyanDim else AmberDim
-    val statusColor = if (isScanned) CyanAccent else AmberSoft
+    val colors = LocalHistoryColors.current
+    val iconBg = if (isScanned) colors.tealDim else colors.goldDim
+    val iconColor = if (isScanned) colors.tealAccent else colors.goldAccent
+    val statusBg = if (isScanned) colors.tealDim else colors.goldDim
+    val statusColor = if (isScanned) colors.tealAccent else colors.goldAccent
     val statusLabel = if (isScanned) "SCANNED" else "CREATED"
 
     val cardBgColor by animateColorAsState(
-        targetValue = if (isSelected) AmberDim.copy(alpha = 0.2f) else Ink800,
+        targetValue = if (isSelected) colors.goldDim else HistoryCardBg,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "CardBgColor"
     )
     val cardBorderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberDim2 else BorderLine,
+        targetValue = if (isSelected) appGoldDim2(colors.isDark) else HistoryCardBorder,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "CardBorderColor"
     )
@@ -932,7 +948,7 @@ private fun HistoryCard(
                 label = "HeartScale"
             )
             val heartColor by animateColorAsState(
-                targetValue = if (item.isFavorite) DangerRed else HistoryTextMuted,
+                targetValue = appHeartColor(colors.isDark, item.isFavorite),
                 animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
                 label = "HeartColor"
             )

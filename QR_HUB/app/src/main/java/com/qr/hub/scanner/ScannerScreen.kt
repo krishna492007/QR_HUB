@@ -688,9 +688,9 @@ private fun ScannerActiveView(
                 .navigationBarsPadding()
                 .padding(bottom = 24.dp, start = 18.dp, end = 18.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(Ink850.copy(alpha = 0.92f))
-                .border(1.dp, BorderLineStrong, RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(22.dp))
+                .background(if (isDark) Ink850.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.92f))
+                .border(1.dp, if (isDark) BorderLineStrong else CeramicBorderStrong, RoundedCornerShape(22.dp))
                 .padding(horizontal = 8.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -700,6 +700,7 @@ private fun ScannerActiveView(
                 icon = if (flashOn) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
                 label = "Flash",
                 isOn = flashOn,
+                isDark = isDark,
                 onClick = { onFlashToggle() }
             )
 
@@ -707,7 +708,7 @@ private fun ScannerActiveView(
                 modifier = Modifier
                     .width(1.dp)
                     .height(30.dp)
-                    .background(BorderLineStrong)
+                    .background(if (isDark) BorderLineStrong else CeramicBorderStrong)
             )
 
             // Gallery picker
@@ -715,6 +716,7 @@ private fun ScannerActiveView(
                 icon = Icons.Default.Image,
                 label = "Gallery",
                 isOn = false,
+                isDark = isDark,
                 onClick = {
                     photoPickerLauncher.launch(
                         PickVisualMediaRequest(
@@ -728,7 +730,7 @@ private fun ScannerActiveView(
                 modifier = Modifier
                     .width(1.dp)
                     .height(30.dp)
-                    .background(BorderLineStrong)
+                    .background(if (isDark) BorderLineStrong else CeramicBorderStrong)
             )
 
             // Camera switch
@@ -736,6 +738,7 @@ private fun ScannerActiveView(
                 icon = Icons.Default.Cameraswitch,
                 label = "Flip",
                 isOn = isFrontCamera,
+                isDark = isDark,
                 onClick = {
                     val newLens = if (lensFacing == CameraSelector.LENS_FACING_BACK)
                         CameraSelector.LENS_FACING_FRONT
@@ -753,20 +756,28 @@ private fun RedesignedScannerCtrl(
     icon: ImageVector,
     label: String,
     isOn: Boolean,
+    isDark: Boolean = true,
     onClick: () -> Unit
 ) {
+    val activeBg = if (isDark) AmberDim2 else CeramicGoldDim2
+    val inactiveBg = if (isDark) Ink750 else CeramicSurface2
+    val activeTint = if (isDark) AmberSoft else CeramicGold
+    val inactiveTint = if (isDark) TextPrimary else CeramicInk
+    val activeText = if (isDark) AmberSoft else CeramicGold
+    val inactiveText = if (isDark) TextSecondary else CeramicSlate
+
     val bgAnim by animateColorAsState(
-        targetValue = if (isOn) AmberDim2 else Ink750,
+        targetValue = if (isOn) activeBg else inactiveBg,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "CtrlBg"
     )
     val tintAnim by animateColorAsState(
-        targetValue = if (isOn) AmberSoft else TextPrimary,
+        targetValue = if (isOn) activeTint else inactiveTint,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "CtrlTint"
     )
     val textAnim by animateColorAsState(
-        targetValue = if (isOn) AmberSoft else TextSecondary,
+        targetValue = if (isOn) activeText else inactiveText,
         animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
         label = "CtrlText"
     )

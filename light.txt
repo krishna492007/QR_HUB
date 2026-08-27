@@ -1,0 +1,53 @@
+Dono dekh liye — screenshots se real app ka structure liya (4 tabs: Generate → Scan → History → Settings, exact content jaise "None (Always Ask)", history entries, settings rows), aur qr-hub-redesign.html se craft language liya (Space Grotesk + IBM Plex Mono, viewfinder brackets, phone-frame prototype).
+
+Naya light mode maine alag file mein banaya — purane file ka light theme "paper/ticket" concept tha, ye brief poora different "ceramic + gold" direction maang raha tha, to dono ko mix karna messy hota. Interactive hai, saare 4 tabs tap karke dekh sakte ho (tiles select karo, scan menu kholo, hearts toggle karo, settings switch dabao).
+
+1) Color Token Matrix
+
+Token	Hex / RGBA	Role
+--canvas	
+#FAF8F5	Screen background (+ 0.035 opacity grain dots)
+--surface	
+#FFFFFF	Cards, tiles, ticket
+--surface-2	
+#F3EFE9	Icon wraps, toggle track, resting CTA
+--surface-border	rgba(0,0,0,.06)	Card/tile hairline
+--gold	
+#C48A37	Primary accent — icons, borders, brackets, text-on-gold
+--amber	
+#E5B56A	Gradient top-stop (CTA, flash, tile wash)
+--teal	
+#22A897	Secondary accent — scanned badges, live dot
+--ink / --slate / --sand	
+#16161A / 
+#686873 / 
+#9C9CA6	Text primary/secondary/muted
+--rust	
+#B6472E	My addition — filled-favorite heart. Brief didn't spec a danger color, so I stayed in the warm-ceramic family instead of a cold red
+
+One literal-spec note: the tile's selected-state wash gradient uses rgba(217,162,87,.12) exactly as your brief wrote it — that's the old dark-theme amber RGB, not --gold converted. I kept it as-written since it reads as a deliberate softer under-tint distinct from the crisper --gold border/icon color, not a typo.
+
+2) Screens — all 4 built to spec:
+
+Generate: 3×3(+3) grid, resting tiles vs selected (gold wash + the 4 precision corner brackets you specified), floating gold CTA with the soft bottom fade.
+Scan: gold viewfinder brackets, a QR "ticket" card (procedurally generated finder-eye pattern in gold) sitting inside — mirrors your actual screenshot instead of a blank camera box — plus the ⋮ menu and Flash/Gallery/Flip bar.
+History: segmented tabs, scrollable filter chips, 5 real entries from your screenshot (WiFi/link/text/WhatsApp/UPI) with gold=Created / teal=Scanned coding.
+Settings: the 4th tab from your real app — grouped ceramic cards for Scanner & Payment, Legal & Privacy, Support & Community, gold toggle switch, "Built by Krishna" footer.
+
+3) Micro-interaction / state spec
+
+Component	Resting	Hover (desktop)	Press/Selected	Disabled
+Grid tile	White, hairline border	Gold-tinted border + lift shadow	Gold wash + border + 4 gold brackets; scale(.96) on tap	—
+CTA button	surface-2 bg, muted text	Deeper shadow when ready	Gold gradient, 
+#1A1208 text, glow shadow	Same as resting = the disabled look
+Chip / segment	White / plain text	—	Gold-dim bg, gold text, gold underline (segment)	—
+Toggle	Cream track, white thumb left	—	Gold gradient track, thumb slides right	n/a
+History card	White, soft shadow	Deeper shadow	Heart fills rust on tap	—
+Nav item	Sand icon/label	—	Gold icon/label + dot indicator	—
+
+Also added prefers-reduced-motion (kills the scanline/pulse animation) and visible focus rings for keyboard nav, per the quality-floor stuff.
+
+Agar chahiye to next step mein iske --gold / --teal / radii ko seedha Android colors.xml + Compose Theme.kt tokens mein convert kar deta hoon, taaki Kotlin side mein directly drop ho jaye.
+
+Qr hub light mode
+Code · HTML 

@@ -353,10 +353,16 @@ private fun BottomNavItem(
         Text(
             text = label,
             color = animatedTextColor,
-            fontSize = 11.sp,
+            fontSize = 10.5.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.3.sp
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Box(
+            modifier = Modifier
+                .size(3.5.dp)
+                .clip(CircleShape)
+                .background(if (selected) activeColor else Color.Transparent)
         )
     }
 }
