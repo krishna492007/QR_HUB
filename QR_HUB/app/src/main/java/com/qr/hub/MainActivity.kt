@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -104,14 +105,14 @@ fun AppNavigation() {
             is Screen.HistoryDetail -> currentScreen = Screen.HistoryTab
             is Screen.PrivacyPolicy -> currentScreen = Screen.AboutLegal
             is Screen.TermsOfService -> currentScreen = Screen.AboutLegal
-            is Screen.AboutLegal -> currentScreen = Screen.HistoryTab
+            is Screen.AboutLegal -> currentScreen = Screen.ScannerTab
             is Screen.ScannerTab -> (context as? android.app.Activity)?.finish()
             else -> currentScreen = Screen.ScannerTab // GenerateTab, HistoryTab
         }
     }
 
-    // Determine if bottom nav should be shown — hide on result, generate forms, history detail, and privacy policy
-    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.AboutLegal && currentScreen !is Screen.TermsOfService
+    // Determine if bottom nav should be shown — hide on result, generate forms, history detail, privacy policy, and terms
+    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.TermsOfService
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -170,7 +171,7 @@ fun AppNavigation() {
                             onBackClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.AboutLegal -> AboutLegalScreen(
-                            onBackClick = { currentScreen = Screen.HistoryTab },
+                            onBackClick = { currentScreen = Screen.ScannerTab },
                             onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy },
                             onTermsClick = { currentScreen = Screen.TermsOfService }
                         )
@@ -263,6 +264,14 @@ fun BottomNavigationBar(
                 label = "History",
                 selected = actualTab == Screen.HistoryTab,
                 onClick = { onTabSelected(Screen.HistoryTab) }
+            )
+
+            // Tab 4: Settings
+            BottomNavItem(
+                icon = Icons.Filled.Settings,
+                label = "Settings",
+                selected = actualTab == Screen.AboutLegal,
+                onClick = { onTabSelected(Screen.AboutLegal) }
             )
         }
     }
