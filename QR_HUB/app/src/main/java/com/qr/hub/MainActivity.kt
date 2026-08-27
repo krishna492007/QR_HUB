@@ -50,6 +50,7 @@ import com.qr.hub.generate.*
 import com.qr.hub.history.HistoryScreen
 import com.qr.hub.history.HistoryDetailScreen
 import com.qr.hub.privacy.PrivacyPolicyScreen
+import com.qr.hub.privacy.AboutLegalScreen
 import com.qr.hub.data.repository.HistoryRepository
 import com.qr.hub.model.ScannedQR
 import com.qr.hub.scanner.ResultScreen
@@ -67,6 +68,7 @@ sealed class Screen {
     object GenerateTab : Screen()
     object HistoryTab : Screen()
     object PrivacyPolicy : Screen()
+    object AboutLegal : Screen()
     data class Result(val data: ScannedQR.RawResult) : Screen()
     data class HistoryDetail(val itemId: Long) : Screen()
     // Generate QR sub-screens
@@ -98,14 +100,15 @@ fun AppNavigation() {
             is Screen.Result -> currentScreen = Screen.ScannerTab
             is Screen.GenerateForm -> currentScreen = Screen.GenerateTab
             is Screen.HistoryDetail -> currentScreen = Screen.HistoryTab
-            is Screen.PrivacyPolicy -> currentScreen = Screen.HistoryTab
+            is Screen.PrivacyPolicy -> currentScreen = Screen.AboutLegal
+            is Screen.AboutLegal -> currentScreen = Screen.HistoryTab
             is Screen.ScannerTab -> (context as? android.app.Activity)?.finish()
             else -> currentScreen = Screen.ScannerTab // GenerateTab, HistoryTab
         }
     }
 
     // Determine if bottom nav should be shown — hide on result, generate forms, history detail, and privacy policy
-    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy
+    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.AboutLegal
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -127,21 +130,21 @@ fun AppNavigation() {
                                 currentScreen = Screen.Result(data)
                             },
                             onBack = { (context as? ComponentActivity)?.finish() },
-                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy }
+                            onPrivacyPolicyClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.GenerateTab -> GenerateQrTypeSelectionScreen(
                             isDark = isDark,
                             onTypeSelected = { type ->
                                 currentScreen = Screen.GenerateForm(type)
                             },
-                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy }
+                            onPrivacyPolicyClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.HistoryTab -> HistoryScreen(
                             onItemClick = { item ->
                                 currentScreen = Screen.HistoryDetail(item.id)
                             },
                             onBackClick = { currentScreen = Screen.ScannerTab },
-                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy }
+                            onPrivacyPolicyClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.HistoryDetail -> {
                             val itemId = (screen as Screen.HistoryDetail).itemId
@@ -161,7 +164,11 @@ fun AppNavigation() {
                             )
                         }
                         is Screen.PrivacyPolicy -> PrivacyPolicyScreen(
-                            onBackClick = { currentScreen = Screen.HistoryTab }
+                            onBackClick = { currentScreen = Screen.AboutLegal }
+                        )
+                        is Screen.AboutLegal -> AboutLegalScreen(
+                            onBackClick = { currentScreen = Screen.HistoryTab },
+                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy }
                         )
                     }
                 }

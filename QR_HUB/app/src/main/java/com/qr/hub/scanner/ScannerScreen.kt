@@ -1,5 +1,6 @@
 package com.qr.hub.scanner
 
+import androidx.compose.ui.text.withStyle
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -619,63 +620,60 @@ private fun ScannerActiveView(
                         }
                     }
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
 
-                    // Privacy policy
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(
-                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(color = AmberDim2)
-                            ) {
-                                showMenu = false
-                                onPrivacyPolicyClick?.invoke()
-                            }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.PrivacyTip,
-                                contentDescription = null,
-                                tint = AmberSoft,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Text(
-                            "Privacy policy",
-                            color = TextPrimary,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
 
-                    // Footer
+
+                    // Premium Brand Footer
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                            .padding(top = 8.dp, bottom = 14.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "BUILT BY KRISHNA",
-                            color = TextTertiary,
-                            fontSize = 10.5.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 1.5.sp
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            // Gold accent divider line
+                            Box(
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .height(1.5.dp)
+                                    .background(
+                                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                            colors = listOf(
+                                                androidx.compose.ui.graphics.Color.Transparent,
+                                                AmberDim2,
+                                                AmberSoft,
+                                                AmberDim2,
+                                                androidx.compose.ui.graphics.Color.Transparent
+                                            )
+                                        ),
+                                        shape = RoundedCornerShape(1.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = androidx.compose.ui.text.buildAnnotatedString {
+                                    withStyle(
+                                        style = androidx.compose.ui.text.SpanStyle(
+                                            color = TextTertiary,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            letterSpacing = 2.sp
+                                        )
+                                    ) { append("BUILT BY ") }
+                                    withStyle(
+                                        style = androidx.compose.ui.text.SpanStyle(
+                                            color = AmberSoft,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 2.5.sp
+                                        )
+                                    ) { append("KRISHNA") }
+                                },
+                            )
+                        }
                     }
                 }
             }

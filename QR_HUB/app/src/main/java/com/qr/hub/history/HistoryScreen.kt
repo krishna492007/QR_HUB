@@ -1,5 +1,6 @@
 package com.qr.hub.history
 
+import androidx.compose.ui.text.withStyle
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -474,7 +475,7 @@ private fun HistoryHeader(
 
                     HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
 
-                    // Privacy Policy
+                    // About & Legal
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -497,14 +498,14 @@ private fun HistoryHeader(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.PrivacyTip,
+                                Icons.Default.Info,
                                 contentDescription = null,
                                 tint = AmberSoft,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                         Text(
-                            "Privacy policy",
+                            "About & Legal",
                             color = HistoryTextPrimary,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -514,21 +515,56 @@ private fun HistoryHeader(
 
                     HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
 
-                    // Footer
+                    // Premium Brand Footer
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                            .padding(top = 8.dp, bottom = 14.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "BUILT BY KRISHNA",
-                            color = HistoryTextMuted,
-                            fontSize = 10.5.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 1.5.sp
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            // Gold accent divider line
+                            Box(
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .height(1.5.dp)
+                                    .background(
+                                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                            colors = listOf(
+                                                androidx.compose.ui.graphics.Color.Transparent,
+                                                AmberDim2,
+                                                AmberSoft,
+                                                AmberDim2,
+                                                androidx.compose.ui.graphics.Color.Transparent
+                                            )
+                                        ),
+                                        shape = RoundedCornerShape(1.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = androidx.compose.ui.text.buildAnnotatedString {
+                                    withStyle(
+                                        style = androidx.compose.ui.text.SpanStyle(
+                                            color = HistoryTextMuted,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            letterSpacing = 2.sp
+                                        )
+                                    ) { append("BUILT BY ") }
+                                    withStyle(
+                                        style = androidx.compose.ui.text.SpanStyle(
+                                            color = AmberSoft,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 2.5.sp
+                                        )
+                                    ) { append("KRISHNA") }
+                                },
+                            )
+                        }
                     }
                 }
             }
