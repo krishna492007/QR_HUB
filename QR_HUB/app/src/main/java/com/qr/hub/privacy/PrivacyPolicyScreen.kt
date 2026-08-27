@@ -1,5 +1,8 @@
 package com.qr.hub.privacy
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,19 +13,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.qr.hub.R
 import com.qr.hub.util.*
 
 // ============================================
@@ -146,20 +150,14 @@ private fun DeveloperInfoCard() {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
+                Image(
+                    painter = painterResource(id = R.drawable.qrhub_logo),
+                    contentDescription = "QR HUB Logo",
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(AmberDim),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Security,
-                        contentDescription = null,
-                        tint = AmberSoft,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                        .border(1.dp, AmberDim2, RoundedCornerShape(14.dp))
+                )
 
                 Spacer(modifier = Modifier.width(14.dp))
 
@@ -284,32 +282,85 @@ private fun PrivacyPolicyContent() {
     )
 
     // Contact Section
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(AmberDim)
             .border(1.dp, AmberDim2, RoundedCornerShape(16.dp))
-            .padding(16.dp)
+            .padding(18.dp)
     ) {
         Column {
             Text(
                 text = "Contact Us",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
                 color = AmberSoft
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "If you have any questions about this Privacy Policy, please contact us at:\n\n$DEVELOPER_EMAIL",
+                text = "If you have any questions or feedback about this Privacy Policy, please reach out directly:",
                 fontSize = 13.sp,
                 color = PrivacyTextSecondary,
                 lineHeight = 19.sp
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Clickable Email Card
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Ink850)
+                    .border(1.dp, AmberDim2, RoundedCornerShape(12.dp))
+                    .clickable {
+                        try {
+                            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                data = Uri.parse("mailto:$DEVELOPER_EMAIL")
+                                putExtra(Intent.EXTRA_SUBJECT, "QR HUB - Privacy Policy Inquiry")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        } catch (_: Exception) {}
+                    }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF2A1F0D)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = null,
+                        tint = AmberSoft,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = DEVELOPER_EMAIL,
+                    color = AmberSoft,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = TextTertiary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "This privacy policy was last updated on August 2026.",

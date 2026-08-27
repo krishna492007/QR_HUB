@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.res.painterResource
+import com.qr.hub.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpCenter
@@ -288,22 +291,15 @@ fun AboutLegalScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // App icon placeholder circle
-                Box(
+                // App icon
+                Image(
+                    painter = painterResource(id = R.drawable.qrhub_logo),
+                    contentDescription = "QR HUB Logo",
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Ink800)
-                        .border(1.dp, AmberDim2, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.PrivacyTip,
-                        contentDescription = null,
-                        tint = AmberSoft,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, AmberDim2, RoundedCornerShape(14.dp))
+                )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
