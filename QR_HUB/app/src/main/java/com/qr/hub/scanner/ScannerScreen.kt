@@ -551,6 +551,46 @@ private fun ScannerActiveView(
 
                     HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
 
+                    // About & Legal
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = androidx.compose.material3.ripple(color = AmberDim2)
+                            ) {
+                                showMenu = false
+                                onPrivacyPolicyClick?.invoke()
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Ink750),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = AmberSoft,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Text(
+                            "About & Legal",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
+
                     // Quick auto-pay
                     Row(
                         modifier = Modifier

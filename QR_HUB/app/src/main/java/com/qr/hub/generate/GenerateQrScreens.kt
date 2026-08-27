@@ -33,12 +33,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -334,21 +339,77 @@ private fun GenerateTypeTile(
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconTint"
     )
+    val bracketAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1.0f else 0.0f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "BracketAlpha"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .scale(tileScale)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF221A12), Ink800))
+                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
                 else Brush.linearGradient(listOf(Ink800, Ink800))
             )
             .border(
                 width = 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             )
+            .drawWithContent {
+                drawContent()
+                if (bracketAlpha > 0f) {
+                    val s = 2.5.dp.toPx()
+                    val len = 12.dp.toPx()
+                    val r = 5.dp.toPx()
+                    val pad = 6.dp.toPx()
+                    val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = s,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                    val color = AmberPrimary.copy(alpha = bracketAlpha)
+
+                    // Top-Left (top: 6px, left: 6px)
+                    val pathTL = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(pad, pad + len)
+                        lineTo(pad, pad + r)
+                        quadraticTo(pad, pad, pad + r, pad)
+                        lineTo(pad + len, pad)
+                    }
+                    drawPath(pathTL, color, style = stroke)
+
+                    // Top-Right (top: 6px, right: 6px)
+                    val pathTR = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(size.width - pad - len, pad)
+                        lineTo(size.width - pad - r, pad)
+                        quadraticTo(size.width - pad, pad, size.width - pad, pad + r)
+                        lineTo(size.width - pad, pad + len)
+                    }
+                    drawPath(pathTR, color, style = stroke)
+
+                    // Bottom-Left (bottom: 6px, left: 6px)
+                    val pathBL = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(pad, size.height - pad - len)
+                        lineTo(pad, size.height - pad - r)
+                        quadraticTo(pad, size.height - pad, pad + r, size.height - pad)
+                        lineTo(pad + len, size.height - pad)
+                    }
+                    drawPath(pathBL, color, style = stroke)
+
+                    // Bottom-Right (bottom: 6px, right: 6px)
+                    val pathBR = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(size.width - pad - len, size.height - pad)
+                        lineTo(size.width - pad - r, size.height - pad)
+                        quadraticTo(size.width - pad, size.height - pad, size.width - pad, size.height - pad - r)
+                        lineTo(size.width - pad, size.height - pad - len)
+                    }
+                    drawPath(pathBR, color, style = stroke)
+                }
+            }
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null,
@@ -356,23 +417,6 @@ private fun GenerateTypeTile(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Corner brackets on selected state with smooth fade & scale in
-        AnimatedVisibility(
-            visible = isSelected,
-            enter = fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.8f),
-            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.8f)
-        ) {
-            CornerBrackets(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(5.dp),
-                color = AmberSoft,
-                bracketSize = 12.dp,
-                strokeWidth = 2.5.dp,
-                cornerRadius = 6.dp
-            )
-        }
-
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -444,21 +488,77 @@ private fun GenerateWideTile(
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconTint"
     )
+    val bracketAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 1.0f else 0.0f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "WideBracketAlpha"
+    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .scale(tileScale)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF221A12), Ink800))
+                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
                 else Brush.linearGradient(listOf(Ink800, Ink800))
             )
             .border(
                 width = 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(16.dp)
             )
+            .drawWithContent {
+                drawContent()
+                if (bracketAlpha > 0f) {
+                    val s = 2.5.dp.toPx()
+                    val len = 12.dp.toPx()
+                    val r = 5.dp.toPx()
+                    val pad = 6.dp.toPx()
+                    val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = s,
+                        cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                    )
+                    val color = AmberPrimary.copy(alpha = bracketAlpha)
+
+                    // Top-Left
+                    val pathTL = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(pad, pad + len)
+                        lineTo(pad, pad + r)
+                        quadraticTo(pad, pad, pad + r, pad)
+                        lineTo(pad + len, pad)
+                    }
+                    drawPath(pathTL, color, style = stroke)
+
+                    // Top-Right
+                    val pathTR = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(size.width - pad - len, pad)
+                        lineTo(size.width - pad - r, pad)
+                        quadraticTo(size.width - pad, pad, size.width - pad, pad + r)
+                        lineTo(size.width - pad, pad + len)
+                    }
+                    drawPath(pathTR, color, style = stroke)
+
+                    // Bottom-Left
+                    val pathBL = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(pad, size.height - pad - len)
+                        lineTo(pad, size.height - pad - r)
+                        quadraticTo(pad, size.height - pad, pad + r, size.height - pad)
+                        lineTo(pad + len, size.height - pad)
+                    }
+                    drawPath(pathBL, color, style = stroke)
+
+                    // Bottom-Right
+                    val pathBR = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(size.width - pad - len, size.height - pad)
+                        lineTo(size.width - pad - r, size.height - pad)
+                        quadraticTo(size.width - pad, size.height - pad, size.width - pad, size.height - pad - r)
+                        lineTo(size.width - pad, size.height - pad - len)
+                    }
+                    drawPath(pathBR, color, style = stroke)
+                }
+            }
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null,
@@ -466,22 +566,6 @@ private fun GenerateWideTile(
             ),
         contentAlignment = Alignment.Center
     ) {
-        AnimatedVisibility(
-            visible = isSelected,
-            enter = fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.8f),
-            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.8f)
-        ) {
-            CornerBrackets(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(5.dp),
-                color = AmberSoft,
-                bracketSize = 12.dp,
-                strokeWidth = 2.5.dp,
-                cornerRadius = 6.dp
-            )
-        }
-
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

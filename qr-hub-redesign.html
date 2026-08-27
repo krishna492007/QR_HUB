@@ -288,6 +288,39 @@
   .nav-item .n-indicator{width:3px; height:3px; border-radius:50%; background:transparent;}
   .nav-item.active .n-indicator{background:var(--amber);}
 
+  /* ================= ABOUT & LEGAL ================= */
+  .d-ico{
+    width:38px; height:38px; border-radius:11px; flex:0 0 auto;
+    background:var(--ink-750); color:var(--text-2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .d-ico svg{width:17px; height:17px;}
+  .d-ico.cyan-tint{background:var(--cyan-dim); color:var(--cyan);}
+  .d-ico.amber-tint{background:var(--amber-dim); color:var(--amber-soft);}
+
+  .about-card{
+    background:var(--ink-800); border:1px solid var(--line); border-radius:18px;
+    padding:0 15px; margin:4px 0 24px;
+  }
+  .about-row{
+    display:flex; align-items:center; gap:13px; padding:15px 0;
+    border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  .about-text{flex:1; min-width:0;}
+  .about-title{font-size:14px; font-weight:600; color:var(--text-1);}
+  .about-sub{font-size:11.5px; color:var(--text-3); margin-top:2px;}
+  .about-row .chev{width:14px; height:14px; color:var(--text-3); flex:0 0 auto;}
+
+  .about-footer{display:flex; flex-direction:column; align-items:center; gap:6px; padding-top:4px;}
+  .about-badge{
+    display:flex; align-items:center; gap:7px; font-family:'Space Grotesk';
+    font-weight:700; font-size:13px; color:var(--text-2); letter-spacing:.05em;
+  }
+  .about-badge svg{width:15px; height:15px; color:var(--amber);}
+  .about-version{font-size:10px; color:var(--text-3); letter-spacing:.06em;}
+  .about-credit{font-size:11px; color:var(--text-3); margin-top:2px;}
+  .about-credit span{color:var(--amber-soft); font-weight:600;}
+
   /* ---------- theme toggle ---------- */
   .theme-toggle{
     width:26px; height:26px; border-radius:50%; background:var(--ink-800);
@@ -482,7 +515,7 @@
         </div>
         <div class="hist-actions">
           <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
-          <div class="icon-btn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg></div>
+          <div class="icon-btn" onclick="pushScreen('about')"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg></div>
         </div>
       </div>
 
@@ -541,6 +574,61 @@
             </div>
           </div>
           <svg class="heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="this.classList.toggle('filled'); this.setAttribute('fill', this.classList.contains('filled')?'currentColor':'none')"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= ABOUT & LEGAL ================= -->
+    <div class="screen" id="screen-about">
+      <div class="scan-top" style="padding-top:14px;">
+        <div class="icon-btn" onclick="popToTab('history')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </div>
+        <div class="scan-title">About &amp; Legal</div>
+        <div style="width:38px;"></div>
+      </div>
+
+      <div style="padding:10px 20px 26px;">
+        <div class="about-card">
+          <div class="about-row">
+            <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+            <div class="about-text"><div class="about-title">Language</div><div class="about-sub">English</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="about-row">
+            <div class="d-ico cyan-tint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/></svg></div>
+            <div class="about-text"><div class="about-title">Privacy Policy</div><div class="about-sub">How your data is handled</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="about-row">
+            <div class="d-ico cyan-tint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-3-6 3V3z"/><path d="M9 8h6M9 12h6"/></svg></div>
+            <div class="about-text"><div class="about-title">Terms &amp; Conditions</div><div class="about-sub">Rules for using QR Hub</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="about-row">
+            <div class="d-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7v.5"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg></div>
+            <div class="about-text"><div class="about-title">Contact Us</div><div class="about-sub">Get in touch with the team</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="about-row">
+            <div class="d-ico amber-tint"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.6 5.7L21 8.6l-4.5 4.2L17.6 19 12 15.8 6.4 19l1.1-6.2L3 8.6l6.4-.9L12 2z"/></svg></div>
+            <div class="about-text"><div class="about-title">Rate Us</div><div class="about-sub">Leave a review on Play Store</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="about-row" style="border-bottom:none;">
+            <div class="d-ico amber-tint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M21 6H9a6 6 0 0 0-6 6"/><path d="M7 22l-4-4 4-4"/><path d="M3 18h12a6 6 0 0 0 6-6"/></svg></div>
+            <div class="about-text"><div class="about-title">Share App</div><div class="about-sub">Tell a friend about QR Hub</div></div>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        </div>
+
+        <div class="about-footer">
+          <div class="about-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 6-4 9.5-8 11-4-1.5-8-5-8-11V5l8-3z"/><path d="M9 12.5l2 2 4-4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            QR HUB
+          </div>
+          <div class="about-version mono">VERSION 1.0.0</div>
+          <div class="about-credit">Built by <span>Krishna</span></div>
         </div>
       </div>
     </div>
@@ -613,6 +701,20 @@
     });
     grid.appendChild(tile);
   });
+
+  // ---- push/pop navigation for detail screens (e.g. About & Legal) ----
+  function pushScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+id).classList.add('active');
+    document.querySelector('.bottomnav').style.display = 'none';
+    document.getElementById('scanMenu').classList.remove('open');
+  }
+  function popToTab(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+id).classList.add('active');
+    document.querySelector('.bottomnav').style.display = 'flex';
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.toggle('active', i.dataset.target===id));
+  }
 
   // ---- bottom nav switching ----
   document.querySelectorAll('.nav-item').forEach(item=>{

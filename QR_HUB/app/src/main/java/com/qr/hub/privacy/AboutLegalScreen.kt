@@ -53,7 +53,8 @@ private data class AboutMenuItem(
 @Composable
 fun AboutLegalScreen(
     onBackClick: () -> Unit,
-    onPrivacyPolicyClick: () -> Unit
+    onPrivacyPolicyClick: () -> Unit,
+    onTermsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -79,7 +80,7 @@ fun AboutLegalScreen(
             iconBg = Color(0xFF0D2A14),
             title = "Privacy Policy",
             subtitle = "How your data is handled",
-            onClick = { _, nav -> nav?.invoke() }
+            onClick = { _, _ -> onPrivacyPolicyClick() }
         ),
         AboutMenuItem(
             icon = Icons.Default.Description,
@@ -87,13 +88,7 @@ fun AboutLegalScreen(
             iconBg = Color(0xFF2A1F0D),
             title = "Terms & Conditions",
             subtitle = "Rules for using QR Hub",
-            onClick = { ctx, _ ->
-                try {
-                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://krishna492007.github.io/QR_HUB/terms")).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    })
-                } catch (_: Exception) {}
-            }
+            onClick = { _, _ -> onTermsClick() }
         ),
         AboutMenuItem(
             icon = Icons.AutoMirrored.Filled.HelpCenter,

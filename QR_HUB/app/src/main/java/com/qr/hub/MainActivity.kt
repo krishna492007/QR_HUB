@@ -51,6 +51,7 @@ import com.qr.hub.history.HistoryScreen
 import com.qr.hub.history.HistoryDetailScreen
 import com.qr.hub.privacy.PrivacyPolicyScreen
 import com.qr.hub.privacy.AboutLegalScreen
+import com.qr.hub.privacy.TermsScreen
 import com.qr.hub.data.repository.HistoryRepository
 import com.qr.hub.model.ScannedQR
 import com.qr.hub.scanner.ResultScreen
@@ -69,6 +70,7 @@ sealed class Screen {
     object HistoryTab : Screen()
     object PrivacyPolicy : Screen()
     object AboutLegal : Screen()
+    object TermsOfService : Screen()
     data class Result(val data: ScannedQR.RawResult) : Screen()
     data class HistoryDetail(val itemId: Long) : Screen()
     // Generate QR sub-screens
@@ -101,6 +103,7 @@ fun AppNavigation() {
             is Screen.GenerateForm -> currentScreen = Screen.GenerateTab
             is Screen.HistoryDetail -> currentScreen = Screen.HistoryTab
             is Screen.PrivacyPolicy -> currentScreen = Screen.AboutLegal
+            is Screen.TermsOfService -> currentScreen = Screen.AboutLegal
             is Screen.AboutLegal -> currentScreen = Screen.HistoryTab
             is Screen.ScannerTab -> (context as? android.app.Activity)?.finish()
             else -> currentScreen = Screen.ScannerTab // GenerateTab, HistoryTab
@@ -108,7 +111,7 @@ fun AppNavigation() {
     }
 
     // Determine if bottom nav should be shown — hide on result, generate forms, history detail, and privacy policy
-    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.AboutLegal
+    val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.AboutLegal && currentScreen !is Screen.TermsOfService
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -168,7 +171,11 @@ fun AppNavigation() {
                         )
                         is Screen.AboutLegal -> AboutLegalScreen(
                             onBackClick = { currentScreen = Screen.HistoryTab },
-                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy }
+                            onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy },
+                            onTermsClick = { currentScreen = Screen.TermsOfService }
+                        )
+                        is Screen.TermsOfService -> TermsScreen(
+                            onBackClick = { currentScreen = Screen.AboutLegal }
                         )
                     }
                 }
