@@ -111,7 +111,7 @@ fun GenerateQrTypeSelectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .dotfieldBackground()
+            .dotfieldBackground(isDark)
     ) {
         Column(
             modifier = Modifier
@@ -131,13 +131,13 @@ fun GenerateQrTypeSelectionScreen(
                 Box(
                     modifier = Modifier
                         .size(width = 14.dp, height = 1.5.dp)
-                        .background(AmberPrimary)
+                        .background(appGoldPrimary(isDark))
                 )
                 Text(
                     text = "CREATE",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AmberSoft,
+                    color = appGoldSoft(isDark),
                     letterSpacing = 2.sp
                 )
             }
@@ -148,14 +148,14 @@ fun GenerateQrTypeSelectionScreen(
                 text = "Generate a QR",
                 fontSize = 27.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
+                color = appTextPrimary(isDark),
                 letterSpacing = (-0.5).sp
             )
 
             Text(
                 text = "Pick a type below to get started",
                 fontSize = 13.5.sp,
-                color = TextSecondary,
+                color = appTextSecondary(isDark),
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -188,6 +188,7 @@ fun GenerateQrTypeSelectionScreen(
                     GenerateTypeTile(
                         type = type,
                         isSelected = isSelected,
+                        isDark = isDark,
                         onClick = {
                             selectedType = if (isSelected) null else type
                         }
@@ -199,32 +200,32 @@ fun GenerateQrTypeSelectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 2.dp, bottom = 4.dp),
+                            .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(11.dp)
                     ) {
-                        // Left Card: Bulk QR Generator
-                        val isBulkSelected = selectedType == QRType.Bulk
+                        // Bulk QR Generator Tile
                         GenerateWideTile(
                             title = "Bulk QR",
-                            subtitle = "CSV / Batch",
-                            icon = Icons.Default.DynamicFeed,
-                            isSelected = isBulkSelected,
+                            subtitle = "Multi-batch mode",
+                            icon = Icons.Default.Layers,
+                            isSelected = selectedType == QRType.Bulk,
+                            isDark = isDark,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                selectedType = if (isBulkSelected) null else QRType.Bulk
+                                selectedType = if (selectedType == QRType.Bulk) null else QRType.Bulk
                             }
                         )
 
-                        // Right Card: 1D Product Barcode Generator
-                        val isBarcodeSelected = selectedType == QRType.Barcode
+                        // Barcode Generator Tile
                         GenerateWideTile(
                             title = "Barcode",
-                            subtitle = "Product / Mart",
-                            icon = Icons.Default.ViewWeek,
-                            isSelected = isBarcodeSelected,
+                            subtitle = "1D Retail codes",
+                            icon = Icons.Default.QrCode,
+                            isSelected = selectedType == QRType.Barcode,
+                            isDark = isDark,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                selectedType = if (isBarcodeSelected) null else QRType.Barcode
+                                selectedType = if (selectedType == QRType.Barcode) null else QRType.Barcode
                             }
                         )
                     }
@@ -253,8 +254,8 @@ fun GenerateQrTypeSelectionScreen(
                     Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            Ink950.copy(alpha = 0.4f),
-                            Ink950.copy(alpha = 0.85f)
+                            appBg(isDark).copy(alpha = 0.4f),
+                            appBg(isDark).copy(alpha = 0.85f)
                         )
                     )
                 )
@@ -268,12 +269,12 @@ fun GenerateQrTypeSelectionScreen(
                     .scale(ctaScale)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
-                        if (buttonEnabled) AmberCtaGradient
-                        else Brush.linearGradient(listOf(Ink800.copy(alpha = 0.6f), Ink800.copy(alpha = 0.6f)))
+                        if (buttonEnabled) appCtaGradient(isDark)
+                        else Brush.linearGradient(listOf(appCardBg(isDark).copy(alpha = 0.6f), appCardBg(isDark).copy(alpha = 0.6f)))
                     )
                     .border(
                         1.dp,
-                        if (buttonEnabled) AmberPrimary.copy(alpha = 0.8f) else BorderLine.copy(alpha = 0.5f),
+                        if (buttonEnabled) appGoldPrimary(isDark).copy(alpha = 0.8f) else appBorder(isDark).copy(alpha = 0.5f),
                         RoundedCornerShape(16.dp)
                     )
                     .clickable(
@@ -297,7 +298,7 @@ fun GenerateQrTypeSelectionScreen(
                         text = targetLabel,
                         fontSize = 15.sp,
                         fontWeight = if (buttonEnabled) FontWeight.Bold else FontWeight.Medium,
-                        color = if (buttonEnabled) Color(0xFF20140A) else TextTertiary
+                        color = if (buttonEnabled) Color(0xFF20140A) else appTextTertiary(isDark)
                     )
                 }
             }
@@ -309,10 +310,11 @@ fun GenerateQrTypeSelectionScreen(
 private fun GenerateTypeTile(
     type: QRType,
     isSelected: Boolean,
+    isDark: Boolean = true,
     onClick: () -> Unit
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.45f) else BorderLine,
+        targetValue = if (isSelected) appGoldPrimary(isDark).copy(alpha = 0.5f) else appBorder(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileBorder"
     )
@@ -325,17 +327,17 @@ private fun GenerateTypeTile(
         label = "TileScale"
     )
     val iconBg by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF382A14) else Ink750,
+        targetValue = if (isSelected) (if (isDark) Color(0xFF382A14) else Color(0xFFFAE8CD)) else appElevatedBg(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconBg"
     )
     val iconBorderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.35f) else Color.Transparent,
+        targetValue = if (isSelected) appGoldPrimary(isDark).copy(alpha = 0.35f) else Color.Transparent,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconBorder"
     )
     val iconTint by animateColorAsState(
-        targetValue = if (isSelected) AmberSoft else TextPrimary,
+        targetValue = if (isSelected) appGoldSoft(isDark) else appTextPrimary(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconTint"
     )
@@ -351,8 +353,13 @@ private fun GenerateTypeTile(
             .scale(tileScale)
             .clip(RoundedCornerShape(16.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
-                else Brush.linearGradient(listOf(Ink800, Ink800))
+                if (isSelected) {
+                    if (isDark) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
+                    else Brush.verticalGradient(listOf(Color(0xFFFDF6EC), CeramicCard))
+                } else {
+                    if (isDark) Brush.linearGradient(listOf(Ink800, Ink800))
+                    else Brush.linearGradient(listOf(CeramicCard, CeramicCard))
+                }
             )
             .border(
                 width = 1.dp,
@@ -371,7 +378,7 @@ private fun GenerateTypeTile(
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )
-                    val color = AmberPrimary.copy(alpha = bracketAlpha)
+                    val color = appGoldPrimary(isDark).copy(alpha = bracketAlpha)
 
                     // Top-Left (top: 6px, left: 6px)
                     val pathTL = androidx.compose.ui.graphics.Path().apply {
@@ -444,7 +451,7 @@ private fun GenerateTypeTile(
                 text = type.label,
                 fontSize = 12.5.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) TextPrimary else TextSecondary,
+                color = if (isSelected) appGoldPrimary(isDark) else appTextPrimary(isDark),
                 textAlign = TextAlign.Center
             )
         }
@@ -457,11 +464,12 @@ private fun GenerateWideTile(
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
+    isDark: Boolean = true,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.45f) else BorderLine,
+        targetValue = if (isSelected) appGoldPrimary(isDark).copy(alpha = 0.5f) else appBorder(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileBorder"
     )
@@ -474,17 +482,17 @@ private fun GenerateWideTile(
         label = "WideTileScale"
     )
     val iconBg by animateColorAsState(
-        targetValue = if (isSelected) Color(0xFF382A14) else Ink750,
+        targetValue = if (isSelected) (if (isDark) Color(0xFF382A14) else Color(0xFFFAE8CD)) else appElevatedBg(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconBg"
     )
     val iconBorderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.35f) else Color.Transparent,
+        targetValue = if (isSelected) appGoldPrimary(isDark).copy(alpha = 0.35f) else Color.Transparent,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconBorder"
     )
     val iconTint by animateColorAsState(
-        targetValue = if (isSelected) AmberSoft else TextPrimary,
+        targetValue = if (isSelected) appGoldSoft(isDark) else appTextPrimary(isDark),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconTint"
     )
@@ -500,8 +508,13 @@ private fun GenerateWideTile(
             .scale(tileScale)
             .clip(RoundedCornerShape(16.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
-                else Brush.linearGradient(listOf(Ink800, Ink800))
+                if (isSelected) {
+                    if (isDark) Brush.verticalGradient(listOf(Color(0xFF241C14), Ink800))
+                    else Brush.verticalGradient(listOf(Color(0xFFFDF6EC), CeramicCard))
+                } else {
+                    if (isDark) Brush.linearGradient(listOf(Ink800, Ink800))
+                    else Brush.linearGradient(listOf(CeramicCard, CeramicCard))
+                }
             )
             .border(
                 width = 1.dp,
@@ -520,7 +533,7 @@ private fun GenerateWideTile(
                         cap = androidx.compose.ui.graphics.StrokeCap.Round,
                         join = androidx.compose.ui.graphics.StrokeJoin.Round
                     )
-                    val color = AmberPrimary.copy(alpha = bracketAlpha)
+                    val color = appGoldPrimary(isDark).copy(alpha = bracketAlpha)
 
                     // Top-Left
                     val pathTL = androidx.compose.ui.graphics.Path().apply {

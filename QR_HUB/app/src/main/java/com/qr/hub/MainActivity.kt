@@ -94,8 +94,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.ScannerTab) }
-    val isDark = isSystemInDarkTheme()
     val context = LocalContext.current
+    var themeMode by remember { mutableStateOf(ThemePreferenceManager.getThemeMode(context)) }
+    val systemDark = isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        AppThemeMode.SYSTEM -> systemDark
+        AppThemeMode.DARK -> true
+        AppThemeMode.LIGHT -> false
+    }
 
     // Handle system back button
     BackHandler(enabled = true) {
@@ -114,7 +120,11 @@ fun AppNavigation() {
     // Determine if bottom nav should be shown — hide on result, generate forms, history detail, privacy policy, and terms
     val showBottomNav = currentScreen !is Screen.Result && currentScreen !is Screen.GenerateForm && currentScreen !is Screen.HistoryDetail && currentScreen !is Screen.PrivacyPolicy && currentScreen !is Screen.TermsOfService
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(appBg(isDark))
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Main content area with smooth page transitions
             Box(modifier = Modifier.weight(1f)) {
@@ -171,6 +181,12 @@ fun AppNavigation() {
                             onBackClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.AboutLegal -> AboutLegalScreen(
+                            isDark = isDark,
+                            currentThemeMode = themeMode,
+                            onThemeModeChange = { newMode ->
+                                themeMode = newMode
+                                ThemePreferenceManager.setThemeMode(context, newMode)
+                            },
                             onBackClick = { currentScreen = Screen.ScannerTab },
                             onPrivacyPolicyClick = { currentScreen = Screen.PrivacyPolicy },
                             onTermsClick = { currentScreen = Screen.TermsOfService }
@@ -231,8 +247,8 @@ fun BottomNavigationBar(
 
     androidx.compose.material3.Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Ink900,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+        color = appNavBg(isDark),
+        border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
     ) {
         Row(
             modifier = Modifier
@@ -247,6 +263,7 @@ fun BottomNavigationBar(
                 icon = Icons.Filled.QrCode,
                 label = "Generate",
                 selected = actualTab == Screen.GenerateTab,
+                isDark = isDark,
                 onClick = { onTabSelected(Screen.GenerateTab) }
             )
 
@@ -255,6 +272,7 @@ fun BottomNavigationBar(
                 icon = Icons.Filled.QrCodeScanner,
                 label = "Scan",
                 selected = actualTab == Screen.ScannerTab,
+                isDark = isDark,
                 onClick = { onTabSelected(Screen.ScannerTab) }
             )
 
@@ -263,6 +281,7 @@ fun BottomNavigationBar(
                 icon = Icons.Filled.History,
                 label = "History",
                 selected = actualTab == Screen.HistoryTab,
+                isDark = isDark,
                 onClick = { onTabSelected(Screen.HistoryTab) }
             )
 
@@ -271,6 +290,7 @@ fun BottomNavigationBar(
                 icon = Icons.Filled.Settings,
                 label = "Settings",
                 selected = actualTab == Screen.AboutLegal,
+                isDark = isDark,
                 onClick = { onTabSelected(Screen.AboutLegal) }
             )
         }
@@ -282,15 +302,19 @@ private fun BottomNavItem(
     icon: ImageVector,
     label: String,
     selected: Boolean,
+    isDark: Boolean = true,
     onClick: () -> Unit
 ) {
+    val activeColor = appGoldPrimary(isDark)
+    val inactiveColor = appTextTertiary(isDark)
+
     val animatedIconColor by animateColorAsState(
-        targetValue = if (selected) AmberSoft else TextTertiary,
+        targetValue = if (selected) activeColor else inactiveColor,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "NavIconColor"
     )
     val animatedTextColor by animateColorAsState(
-        targetValue = if (selected) AmberSoft else TextTertiary,
+        targetValue = if (selected) activeColor else inactiveColor,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "NavTextColor"
     )
@@ -298,17 +322,9 @@ private fun BottomNavItem(
         targetValue = if (selected) 1.08f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessLow
         ),
         label = "NavIconScale"
-    )
-    val dotScale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "NavDotScale"
     )
 
     Column(
@@ -316,34 +332,28 @@ private fun BottomNavItem(
             .clip(RoundedCornerShape(12.dp))
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(horizontal = 20.dp, vertical = 4.dp),
+                indication = null
+            ) { onClick() }
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = animatedIconColor,
             modifier = Modifier
-                .size(22.dp)
+                .size(23.dp)
                 .scale(iconScale)
         )
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
             text = label,
+            color = animatedTextColor,
             fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = animatedTextColor
-        )
-        // Indicator dot with smooth scale animation
-        Box(
-            modifier = Modifier
-                .size(3.dp)
-                .scale(dotScale)
-                .clip(CircleShape)
-                .background(AmberPrimary)
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            letterSpacing = 0.5.sp
         )
     }
 }

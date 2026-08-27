@@ -42,11 +42,14 @@ import com.qr.hub.scanner.getInstalledUpiApps
 import com.qr.hub.util.*
 
 // ============================================
-// SETTINGS & ABOUT SCREEN — Luxury Obsidian & Gold
+// SETTINGS & ABOUT SCREEN — Ink & Ceramic Luxury
 // ============================================
 
 @Composable
 fun AboutLegalScreen(
+    isDark: Boolean = true,
+    currentThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    onThemeModeChange: (AppThemeMode) -> Unit = {},
     onBackClick: () -> Unit,
     onPrivacyPolicyClick: () -> Unit,
     onTermsClick: () -> Unit = {}
@@ -56,6 +59,7 @@ fun AboutLegalScreen(
 
     // UPI state
     var showDefaultAppDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
     var defaultPkg by remember { mutableStateOf(UpiPreferenceManager.getDefaultPackage(context)) }
     var defaultName by remember { mutableStateOf(UpiPreferenceManager.getDefaultName(context)) }
     var isQuickPay by remember { mutableStateOf(UpiPreferenceManager.isQuickPayEnabled(context)) }
@@ -74,10 +78,22 @@ fun AboutLegalScreen(
         )
     }
 
+    if (showThemeDialog) {
+        ThemeChooserDialog(
+            currentMode = currentThemeMode,
+            isDark = isDark,
+            onDismiss = { showThemeDialog = false },
+            onSelect = { mode ->
+                onThemeModeChange(mode)
+                showThemeDialog = false
+            }
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink950)
+            .background(appBg(isDark))
             .statusBarsPadding()
     ) {
         Column(
@@ -99,15 +115,15 @@ fun AboutLegalScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, CircleShape)
+                        .background(appCardBg(isDark))
+                        .border(1.dp, appBorder(isDark), CircleShape)
                         .clickable { onBackClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = TextPrimary,
+                        tint = appTextPrimary(isDark),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -117,14 +133,14 @@ fun AboutLegalScreen(
                 Column {
                     Text(
                         "Settings & Info",
-                        color = TextPrimary,
+                        color = appTextPrimary(isDark),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = (-0.3).sp
                     )
                     Text(
                         "Preferences, Legal & App Information",
-                        color = TextTertiary,
+                        color = appTextTertiary(isDark),
                         fontSize = 12.5.sp
                     )
                 }
@@ -132,10 +148,10 @@ fun AboutLegalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Section 1: Scanner & UPI Preferences ──
+            // ── Section 1: Appearance & Theme ──
             Text(
-                "SCANNER & PAYMENT PREFERENCES",
-                color = AmberSoft,
+                "APPEARANCE",
+                color = appGoldPrimary(isDark),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
@@ -148,8 +164,82 @@ fun AboutLegalScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = Ink850,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
+            ) {
+                Column {
+                    // Theme Mode Selector
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(color = appGoldDim2(isDark))
+                            ) {
+                                showThemeDialog = true
+                            }
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2))
+                                .border(0.8.dp, appGoldPrimary(isDark).copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = null,
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "App Theme",
+                                color = appTextPrimary(isDark),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                currentThemeMode.label,
+                                color = appGoldPrimary(isDark),
+                                fontSize = 12.5.sp
+                            )
+                        }
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = appTextTertiary(isDark),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ── Section 2: Scanner & UPI Preferences ──
+            Text(
+                "SCANNER & PAYMENT PREFERENCES",
+                color = appGoldPrimary(isDark),
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 1.5.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+            )
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
             ) {
                 Column {
                     // Default UPI App
@@ -158,7 +248,7 @@ fun AboutLegalScreen(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(color = AmberDim2)
+                                indication = ripple(color = appGoldDim2(isDark))
                             ) {
                                 showDefaultAppDialog = true
                             }
@@ -169,14 +259,14 @@ fun AboutLegalScreen(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF0D2A2A))
-                                .border(0.8.dp, CyanAccent.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                                .background(if (isDark) Color(0xFF0D2A2A) else Color(0xFFE2F6F3))
+                                .border(0.8.dp, CyanAccent.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.AccountBalance,
                                 contentDescription = null,
-                                tint = CyanAccent,
+                                tint = if (isDark) CyanAccent else Color(0xFF1E8E7E),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -184,25 +274,25 @@ fun AboutLegalScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "Default UPI App",
-                                color = TextPrimary,
+                                color = appTextPrimary(isDark),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 if (!defaultName.isNullOrEmpty()) defaultName!! else "None (Always Ask)",
-                                color = if (!defaultName.isNullOrEmpty()) CyanAccent else TextTertiary,
+                                color = if (!defaultName.isNullOrEmpty()) (if (isDark) CyanAccent else Color(0xFF1E8E7E)) else appTextTertiary(isDark),
                                 fontSize = 12.5.sp
                             )
                         }
                         Icon(
                             Icons.Default.ChevronRight,
                             contentDescription = null,
-                            tint = TextTertiary,
+                            tint = appTextTertiary(isDark),
                             modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
 
                     // Quick Auto-Pay Toggle
                     Row(
@@ -210,7 +300,7 @@ fun AboutLegalScreen(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(color = AmberDim2)
+                                indication = ripple(color = appGoldDim2(isDark))
                             ) {
                                 val next = !isQuickPay
                                 isQuickPay = next
@@ -223,14 +313,14 @@ fun AboutLegalScreen(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF2A1F0D))
-                                .border(0.8.dp, AmberSoft.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                                .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2))
+                                .border(0.8.dp, appGoldPrimary(isDark).copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Bolt,
                                 contentDescription = null,
-                                tint = AmberSoft,
+                                tint = appGoldPrimary(isDark),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -238,13 +328,13 @@ fun AboutLegalScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "Quick Auto-Pay",
-                                color = TextPrimary,
+                                color = appTextPrimary(isDark),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 if (isQuickPay) "Active on scan (Direct pay)" else "Disabled (Show result first)",
-                                color = if (isQuickPay) AmberSoft else TextTertiary,
+                                color = if (isQuickPay) appGoldPrimary(isDark) else appTextTertiary(isDark),
                                 fontSize = 12.5.sp
                             )
                         }
@@ -255,10 +345,10 @@ fun AboutLegalScreen(
                                 UpiPreferenceManager.setQuickPayEnabled(context, next)
                             },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color(0xFF20140A),
-                                checkedTrackColor = AmberSoft,
-                                uncheckedThumbColor = TextTertiary,
-                                uncheckedTrackColor = Ink750
+                                checkedThumbColor = if (isDark) Color(0xFF20140A) else Color.White,
+                                checkedTrackColor = appGoldPrimary(isDark),
+                                uncheckedThumbColor = appTextTertiary(isDark),
+                                uncheckedTrackColor = if (isDark) Ink750 else CeramicElevated
                             )
                         )
                     }
@@ -267,10 +357,10 @@ fun AboutLegalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Section 2: Legal & Privacy ──
+            // ── Section 3: Legal & Privacy ──
             Text(
                 "LEGAL & PRIVACY",
-                color = AmberSoft,
+                color = appGoldPrimary(isDark),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
@@ -283,15 +373,16 @@ fun AboutLegalScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = Ink850,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
             ) {
                 Column {
                     // Language
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.Default.Language,
-                        iconTint = CyanAccent,
-                        iconBg = Color(0xFF0D2A2A),
+                        iconTint = if (isDark) CyanAccent else Color(0xFF1E8E7E),
+                        iconBg = if (isDark) Color(0xFF0D2A2A) else Color(0xFFE2F6F3),
                         title = "Language",
                         subtitle = "English",
                         onClick = {
@@ -303,25 +394,27 @@ fun AboutLegalScreen(
                         }
                     )
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
 
                     // Privacy Policy
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.Default.PrivacyTip,
-                        iconTint = Color(0xFF66BB6A),
-                        iconBg = Color(0xFF0D2A14),
+                        iconTint = Color(0xFF43A047),
+                        iconBg = if (isDark) Color(0xFF0D2A14) else Color(0xFFE8F5E9),
                         title = "Privacy Policy",
                         subtitle = "How your data is protected offline",
                         onClick = onPrivacyPolicyClick
                     )
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
 
                     // Terms & Conditions
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.Default.Description,
-                        iconTint = AmberSoft,
-                        iconBg = Color(0xFF2A1F0D),
+                        iconTint = appGoldPrimary(isDark),
+                        iconBg = if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2),
                         title = "Terms & Conditions",
                         subtitle = "Rules for using QR Hub",
                         onClick = onTermsClick
@@ -331,10 +424,10 @@ fun AboutLegalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── Section 3: Support & Community ──
+            // ── Section 4: Support & Community ──
             Text(
                 "SUPPORT & COMMUNITY",
-                color = AmberSoft,
+                color = appGoldPrimary(isDark),
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
@@ -347,15 +440,16 @@ fun AboutLegalScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = Ink850,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
             ) {
                 Column {
                     // Contact Us
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.AutoMirrored.Filled.HelpCenter,
                         iconTint = Color(0xFF7E57C2),
-                        iconBg = Color(0xFF1A0D2A),
+                        iconBg = if (isDark) Color(0xFF1A0D2A) else Color(0xFFF3E5F5),
                         title = "Contact Us",
                         subtitle = "Get in touch: krishnatechhub.contact@gmail.com",
                         onClick = {
@@ -369,13 +463,14 @@ fun AboutLegalScreen(
                         }
                     )
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
 
                     // Rate Us
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.Default.Star,
-                        iconTint = Color(0xFFFFD54F),
-                        iconBg = Color(0xFF2A250D),
+                        iconTint = Color(0xFFF59E0B),
+                        iconBg = if (isDark) Color(0xFF2A250D) else Color(0xFFFEF3C7),
                         title = "Rate Us",
                         subtitle = "Leave a review on Google Play Store",
                         onClick = {
@@ -393,13 +488,14 @@ fun AboutLegalScreen(
                         }
                     )
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
 
                     // Share App
                     SettingsItemRow(
+                        isDark = isDark,
                         icon = Icons.Default.Share,
-                        iconTint = CyanAccent,
-                        iconBg = Color(0xFF0D2A2A),
+                        iconTint = if (isDark) CyanAccent else Color(0xFF1E8E7E),
+                        iconBg = if (isDark) Color(0xFF0D2A2A) else Color(0xFFE2F6F3),
                         title = "Share App",
                         subtitle = "Tell a friend about QR Hub",
                         onClick = {
@@ -428,14 +524,14 @@ fun AboutLegalScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, AmberDim2, RoundedCornerShape(14.dp))
+                        .border(1.dp, appGoldDim2(isDark), RoundedCornerShape(14.dp))
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     "QR HUB",
-                    color = AmberSoft,
+                    color = appGoldPrimary(isDark),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -446,7 +542,7 @@ fun AboutLegalScreen(
 
                 Text(
                     "VERSION ${APP_VERSION}",
-                    color = TextTertiary,
+                    color = appTextTertiary(isDark),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     letterSpacing = 1.5.sp,
@@ -464,9 +560,9 @@ fun AboutLegalScreen(
                             brush = Brush.horizontalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    AmberDim2,
-                                    AmberSoft,
-                                    AmberDim2,
+                                    appGoldDim2(isDark),
+                                    appGoldSoft(isDark),
+                                    appGoldDim2(isDark),
                                     Color.Transparent
                                 )
                             ),
@@ -479,14 +575,14 @@ fun AboutLegalScreen(
                 Text(
                     text = buildAnnotatedString {
                         withStyle(SpanStyle(
-                            color = TextTertiary,
+                            color = appTextTertiary(isDark),
                             fontFamily = FontFamily.Monospace,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Normal,
                             letterSpacing = 2.sp
                         )) { append("Built by ") }
                         withStyle(SpanStyle(
-                            color = AmberSoft,
+                            color = appGoldPrimary(isDark),
                             fontFamily = FontFamily.Monospace,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -503,6 +599,7 @@ fun AboutLegalScreen(
 
 @Composable
 private fun SettingsItemRow(
+    isDark: Boolean,
     icon: ImageVector,
     iconTint: Color,
     iconBg: Color,
@@ -515,7 +612,7 @@ private fun SettingsItemRow(
             .fillMaxWidth()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = AmberDim2)
+                indication = ripple(color = appGoldDim2(isDark))
             ) {
                 onClick()
             }
@@ -543,14 +640,14 @@ private fun SettingsItemRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,
-                color = TextPrimary,
+                color = appTextPrimary(isDark),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.2.sp
             )
             Text(
                 subtitle,
-                color = TextTertiary,
+                color = appTextTertiary(isDark),
                 fontSize = 12.sp,
                 letterSpacing = 0.1.sp
             )
@@ -559,8 +656,72 @@ private fun SettingsItemRow(
         Icon(
             Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = TextTertiary,
+            tint = appTextTertiary(isDark),
             modifier = Modifier.size(18.dp)
         )
     }
+}
+
+@Composable
+private fun ThemeChooserDialog(
+    currentMode: AppThemeMode,
+    isDark: Boolean,
+    onDismiss: () -> Unit,
+    onSelect: (AppThemeMode) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = appDialogBg(isDark),
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                "Choose Theme",
+                color = appTextPrimary(isDark),
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AppThemeMode.values().forEach { mode ->
+                    val isSelected = mode == currentMode
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) appGoldDim(isDark) else Color.Transparent)
+                            .border(
+                                width = if (isSelected) 1.dp else 0.dp,
+                                color = if (isSelected) appGoldPrimary(isDark).copy(alpha = 0.5f) else Color.Transparent,
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onSelect(mode) }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = { onSelect(mode) },
+                            colors = RadioButtonDefaults.colors(
+                                selectedColor = appGoldPrimary(isDark),
+                                unselectedColor = appTextTertiary(isDark)
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            mode.label,
+                            color = if (isSelected) appGoldPrimary(isDark) else appTextPrimary(isDark),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = appGoldPrimary(isDark), fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }
