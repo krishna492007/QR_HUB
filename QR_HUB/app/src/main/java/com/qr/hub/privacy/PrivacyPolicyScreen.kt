@@ -29,17 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.qr.hub.R
 import com.qr.hub.util.*
 
-// ============================================
-// PRIVACY POLICY SCREEN - Redesigned Ink & Amber
-// ============================================
-private val PrivacyBg = Ink950
-private val PrivacyCardBg = Ink800
-private val PrivacyCardBorder = BorderLine
-private val PrivacyAccent = AmberPrimary
-private val PrivacyTextPrimary = TextPrimary
-private val PrivacyTextSecondary = TextSecondary
-private val PrivacyTextMuted = TextTertiary
-
 // Developer Info
 const val DEVELOPER_NAME = "KRISHNA"
 const val APP_VERSION = "1.0.0"
@@ -47,6 +36,7 @@ const val DEVELOPER_EMAIL = "krishnatechhub.contact@gmail.com"
 
 @Composable
 fun PrivacyPolicyScreen(
+    isDark: Boolean = true,
     onBackClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -54,21 +44,17 @@ fun PrivacyPolicyScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(PrivacyBg)
+            .background(appBg(isDark))
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // ============================================
-            // HEADER
-            // ============================================
+            // Header
             Spacer(modifier = Modifier.statusBarsPadding())
 
-            PrivacyHeader(onBackClick = onBackClick)
+            PrivacyHeader(isDark = isDark, onBackClick = onBackClick)
 
-            // ============================================
-            // CONTENT - Scrollable
-            // ============================================
+            // Content - Scrollable
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -77,10 +63,10 @@ fun PrivacyPolicyScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Developer Info Card
-                DeveloperInfoCard()
+                DeveloperInfoCard(isDark = isDark)
 
                 // Privacy Policy Content
-                PrivacyPolicyContent()
+                PrivacyPolicyContent(isDark = isDark)
 
                 // Bottom spacer
                 Spacer(modifier = Modifier.height(24.dp))
@@ -89,11 +75,9 @@ fun PrivacyPolicyScreen(
     }
 }
 
-// ============================================
-// HEADER
-// ============================================
 @Composable
 private fun PrivacyHeader(
+    isDark: Boolean,
     onBackClick: () -> Unit
 ) {
     Row(
@@ -107,15 +91,15 @@ private fun PrivacyHeader(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Ink800)
-                .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                .background(appCardBg(isDark))
+                .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                 .clickable(onClick = onBackClick),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
-                tint = PrivacyTextPrimary,
+                tint = appTextPrimary(isDark),
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -125,24 +109,21 @@ private fun PrivacyHeader(
         // Title
         Text(
             text = "Privacy Policy",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = PrivacyTextPrimary
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = appTextPrimary(isDark)
         )
     }
 }
 
-// ============================================
-// DEVELOPER INFO CARD
-// ============================================
 @Composable
-private fun DeveloperInfoCard() {
+private fun DeveloperInfoCard(isDark: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(PrivacyCardBg)
-            .border(1.dp, PrivacyCardBorder, RoundedCornerShape(16.dp))
+            .background(appCardBg(isDark))
+            .border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
             .padding(18.dp)
     ) {
         Column {
@@ -156,7 +137,7 @@ private fun DeveloperInfoCard() {
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, AmberDim2, RoundedCornerShape(14.dp))
+                        .border(1.dp, appGoldDim2(isDark), RoundedCornerShape(14.dp))
                 )
 
                 Spacer(modifier = Modifier.width(14.dp))
@@ -166,12 +147,12 @@ private fun DeveloperInfoCard() {
                         text = "QR Hub",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrivacyTextPrimary
+                        color = appTextPrimary(isDark)
                     )
                     Text(
                         text = "Version $APP_VERSION",
                         fontSize = 12.5.sp,
-                        color = PrivacyTextSecondary
+                        color = appTextSecondary(isDark)
                     )
                 }
             }
@@ -183,7 +164,7 @@ private fun DeveloperInfoCard() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(PrivacyCardBorder)
+                    .background(appBorder(isDark))
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -196,13 +177,13 @@ private fun DeveloperInfoCard() {
                     modifier = Modifier
                         .size(34.dp)
                         .clip(RoundedCornerShape(9.dp))
-                        .background(Ink750),
+                        .background(appElevatedBg(isDark)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = null,
-                        tint = AmberSoft,
+                        tint = appGoldSoft(isDark),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -213,13 +194,13 @@ private fun DeveloperInfoCard() {
                     Text(
                         text = "Developer",
                         fontSize = 11.5.sp,
-                        color = PrivacyTextMuted
+                        color = appTextTertiary(isDark)
                     )
                     Text(
                         text = DEVELOPER_NAME,
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrivacyTextPrimary
+                        color = appTextPrimary(isDark)
                     )
                 }
             }
@@ -227,13 +208,11 @@ private fun DeveloperInfoCard() {
     }
 }
 
-// ============================================
-// PRIVACY POLICY CONTENT
-// ============================================
 @Composable
-private fun PrivacyPolicyContent() {
+private fun PrivacyPolicyContent(isDark: Boolean) {
     // Introduction Card
     PolicySectionCard(
+        isDark = isDark,
         icon = Icons.Default.PrivacyTip,
         title = "Your Privacy Matters",
         content = "QR Hub respects your privacy. This app does not collect, store, or transmit any personal data to external servers. All data is stored locally on your device."
@@ -241,6 +220,7 @@ private fun PrivacyPolicyContent() {
 
     // Data Collection Section
     PolicySectionCard(
+        isDark = isDark,
         icon = Icons.Default.Security,
         title = "Data We Store",
         content = "The app only stores:\n\n" +
@@ -252,6 +232,7 @@ private fun PrivacyPolicyContent() {
 
     // Camera Permission Section
     PolicySectionCard(
+        isDark = isDark,
         icon = Icons.Default.Security,
         title = "Camera Permission",
         content = "QR Hub requires camera access to scan QR codes. The camera is used solely for scanning purposes and:\n\n" +
@@ -262,6 +243,7 @@ private fun PrivacyPolicyContent() {
 
     // Storage Permission Section
     PolicySectionCard(
+        isDark = isDark,
         icon = Icons.Default.Security,
         title = "Storage Permissions",
         content = "Storage access is used to:\n\n" +
@@ -273,6 +255,7 @@ private fun PrivacyPolicyContent() {
 
     // Third Party Section
     PolicySectionCard(
+        isDark = isDark,
         icon = Icons.Default.Security,
         title = "Third-Party Services & Advertising",
         content = "QR Hub uses the following trusted third-party SDKs:\n\n" +
@@ -287,8 +270,8 @@ private fun PrivacyPolicyContent() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(AmberDim)
-            .border(1.dp, AmberDim2, RoundedCornerShape(16.dp))
+            .background(if (isDark) AmberDim else Color(0xFFFAF0E2))
+            .border(1.dp, appGoldDim2(isDark), RoundedCornerShape(16.dp))
             .padding(18.dp)
     ) {
         Column {
@@ -296,7 +279,7 @@ private fun PrivacyPolicyContent() {
                 text = "Contact Us",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = AmberSoft
+                color = appGoldPrimary(isDark)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -304,7 +287,7 @@ private fun PrivacyPolicyContent() {
             Text(
                 text = "If you have any questions or feedback about this Privacy Policy, please reach out directly:",
                 fontSize = 13.sp,
-                color = PrivacyTextSecondary,
+                color = appTextSecondary(isDark),
                 lineHeight = 19.sp
             )
 
@@ -315,8 +298,8 @@ private fun PrivacyPolicyContent() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Ink850)
-                    .border(1.dp, AmberDim2, RoundedCornerShape(12.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appGoldDim2(isDark), RoundedCornerShape(12.dp))
                     .clickable {
                         try {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -334,20 +317,20 @@ private fun PrivacyPolicyContent() {
                     modifier = Modifier
                         .size(34.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF2A1F0D)),
+                        .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAE8CD)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.Email,
                         contentDescription = null,
-                        tint = AmberSoft,
+                        tint = appGoldPrimary(isDark),
                         modifier = Modifier.size(18.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = DEVELOPER_EMAIL,
-                    color = AmberSoft,
+                    color = appGoldPrimary(isDark),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
@@ -355,7 +338,7 @@ private fun PrivacyPolicyContent() {
                 Icon(
                     Icons.Default.ChevronRight,
                     contentDescription = null,
-                    tint = TextTertiary,
+                    tint = appTextTertiary(isDark),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -365,18 +348,16 @@ private fun PrivacyPolicyContent() {
             Text(
                 text = "This privacy policy was last updated on August 2026.",
                 fontSize = 11.5.sp,
-                color = PrivacyTextMuted,
+                color = appTextTertiary(isDark),
                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
             )
         }
     }
 }
 
-// ============================================
-// POLICY SECTION CARD
-// ============================================
 @Composable
 private fun PolicySectionCard(
+    isDark: Boolean,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     content: String
@@ -385,8 +366,8 @@ private fun PolicySectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(PrivacyCardBg)
-            .border(1.dp, PrivacyCardBorder, RoundedCornerShape(16.dp))
+            .background(appCardBg(isDark))
+            .border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
             .padding(16.dp)
     ) {
         Column {
@@ -397,13 +378,13 @@ private fun PolicySectionCard(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(9.dp))
-                        .background(AmberDim),
+                        .background(if (isDark) AmberDim else Color(0xFFFAF0E2)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = AmberSoft,
+                        tint = appGoldPrimary(isDark),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -414,7 +395,7 @@ private fun PolicySectionCard(
                     text = title,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = PrivacyTextPrimary
+                    color = appTextPrimary(isDark)
                 )
             }
 
@@ -423,7 +404,7 @@ private fun PolicySectionCard(
             Text(
                 text = content,
                 fontSize = 13.5.sp,
-                color = PrivacyTextSecondary,
+                color = appTextSecondary(isDark),
                 lineHeight = 21.sp
             )
         }

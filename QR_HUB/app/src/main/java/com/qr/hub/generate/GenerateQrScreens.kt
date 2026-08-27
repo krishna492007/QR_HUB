@@ -1353,26 +1353,26 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
 }
 
 // =====================================================
-// REDESIGNED FIELD COLORS
+// REDESIGNED FIELD COLORS — Dynamic Ink & Ceramic
 // =====================================================
 
 @Composable
-private fun premiumFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = AmberPrimary,
-    unfocusedBorderColor = BorderLine,
-    cursorColor = AmberPrimary,
-    focusedLabelColor = AmberSoft,
-    unfocusedLabelColor = TextSecondary,
-    focusedTextColor = TextPrimary,
-    unfocusedTextColor = TextPrimary,
-    unfocusedPlaceholderColor = TextTertiary,
-    focusedPlaceholderColor = TextTertiary,
-    focusedContainerColor = Ink850,
-    unfocusedContainerColor = Ink850
+private fun premiumFieldColors(isDark: Boolean = true) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = appGoldPrimary(isDark),
+    unfocusedBorderColor = appBorder(isDark),
+    cursorColor = appGoldPrimary(isDark),
+    focusedLabelColor = appGoldSoft(isDark),
+    unfocusedLabelColor = appTextSecondary(isDark),
+    focusedTextColor = appTextPrimary(isDark),
+    unfocusedTextColor = appTextPrimary(isDark),
+    unfocusedPlaceholderColor = appTextTertiary(isDark),
+    focusedPlaceholderColor = appTextTertiary(isDark),
+    focusedContainerColor = appElevatedBg(isDark),
+    unfocusedContainerColor = appElevatedBg(isDark)
 )
 
 // =====================================================
-// SHARED REDESIGNED FORM SCREEN
+// SHARED REDESIGNED FORM SCREEN — Dynamic Ink & Ceramic
 // =====================================================
 
 @Composable
@@ -1398,7 +1398,7 @@ private fun GenerateQrFormScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink950)
+            .background(appBg(isDark))
             .statusBarsPadding()
             .navigationBarsPadding()
             .verticalScroll(scrollState)
@@ -1415,20 +1415,20 @@ private fun GenerateQrFormScreen(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     "Back",
-                    tint = TextPrimary,
+                    tint = appTextPrimary(isDark),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Spacer(modifier = Modifier.width(14.dp))
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
         }
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -1439,8 +1439,8 @@ private fun GenerateQrFormScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Ink800)
-                .border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+                .background(appCardBg(isDark))
+                .border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
                 .padding(18.dp)
         ) {
             Column {
@@ -1490,12 +1490,12 @@ private fun GenerateQrFormScreen(
                 .height(52.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(
-                    if (isValid || isGenerating) AmberCtaGradient
-                    else Brush.horizontalGradient(listOf(Ink800, Ink800))
+                    if (isValid || isGenerating) appCtaGradient(isDark)
+                    else Brush.horizontalGradient(listOf(appCardBg(isDark), appCardBg(isDark)))
                 )
                 .then(
                     if (isValid || isGenerating) Modifier.border(0.dp, Color.Transparent, RoundedCornerShape(16.dp))
-                    else Modifier.border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+                    else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
                 )
                 .clickable(enabled = isValid && !isGenerating) {
                     val activity = context as? Activity
@@ -1533,7 +1533,7 @@ private fun GenerateQrFormScreen(
                     Icon(
                         Icons.Default.QrCode,
                         null,
-                        tint = if (isValid) Color(0xFF20140A) else TextTertiary,
+                        tint = if (isValid) Color(0xFF20140A) else appTextTertiary(isDark),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1542,7 +1542,7 @@ private fun GenerateQrFormScreen(
                     if (isGenerating) "Generating..." else "Generate QR Code",
                     fontSize = 15.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isValid || isGenerating) Color(0xFF20140A) else TextTertiary
+                    color = if (isValid || isGenerating) Color(0xFF20140A) else appTextTertiary(isDark)
                 )
             }
         }
@@ -1556,14 +1556,14 @@ private fun GenerateQrFormScreen(
         displayBitmap?.let { bitmap ->
             Spacer(modifier = Modifier.height(20.dp))
 
-            // QR Card with Ink & Amber styling
+            // QR Card with Dynamic styling
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(20.dp))
                     .padding(18.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -1573,7 +1573,7 @@ private fun GenerateQrFormScreen(
                         "Your Styled QR Code",
                         fontSize = 13.5.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = TextSecondary,
+                        color = appTextSecondary(isDark),
                         modifier = Modifier.padding(bottom = 14.dp)
                     )
 
@@ -1610,8 +1610,8 @@ private fun GenerateQrFormScreen(
                                 .weight(1f)
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Ink750)
-                                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                                .background(appElevatedBg(isDark))
+                                .border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
                                 .clickable {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -1626,9 +1626,9 @@ private fun GenerateQrFormScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Share, null, tint = TextPrimary, modifier = Modifier.size(17.dp))
+                                Icon(Icons.Default.Share, null, tint = appTextPrimary(isDark), modifier = Modifier.size(17.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                Text("Share", fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = appTextPrimary(isDark))
                             }
                         }
 
@@ -1638,7 +1638,7 @@ private fun GenerateQrFormScreen(
                                 .weight(1f)
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(AmberCtaGradient)
+                                .background(appCtaGradient(isDark))
                                 .clickable(enabled = !isDownloading) {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {

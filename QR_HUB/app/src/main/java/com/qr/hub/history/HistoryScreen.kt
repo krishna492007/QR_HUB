@@ -53,34 +53,74 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 // ============================================
-// REDESIGNED HISTORY SCREEN COLORS
+// REDESIGNED HISTORY SCREEN COLORS — Dynamic Ink & Ceramic
 // ============================================
-private val HistoryBg = Ink950
-private val HistoryCardBg = Ink800
-private val HistoryCardBorder = BorderLine
-private val HistoryAccent = AmberPrimary
-private val HistoryTextPrimary = TextPrimary
-private val HistoryTextSecondary = TextSecondary
-private val HistoryTextMuted = TextTertiary
-private val SelectionAccent = AmberPrimary
+private data class HistoryColors(
+    val bg: Color,
+    val cardBg: Color,
+    val cardBorder: Color,
+    val accent: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val selectionAccent: Color
+)
+
+private val LocalHistoryColors = staticCompositionLocalOf {
+    HistoryColors(
+        bg = Ink950,
+        cardBg = Ink800,
+        cardBorder = BorderLine,
+        accent = AmberPrimary,
+        textPrimary = TextPrimary,
+        textSecondary = TextSecondary,
+        textMuted = TextTertiary,
+        selectionAccent = AmberPrimary
+    )
+}
+
+private val HistoryBg: Color @Composable get() = LocalHistoryColors.current.bg
+private val HistoryCardBg: Color @Composable get() = LocalHistoryColors.current.cardBg
+private val HistoryCardBorder: Color @Composable get() = LocalHistoryColors.current.cardBorder
+private val HistoryAccent: Color @Composable get() = LocalHistoryColors.current.accent
+private val HistoryTextPrimary: Color @Composable get() = LocalHistoryColors.current.textPrimary
+private val HistoryTextSecondary: Color @Composable get() = LocalHistoryColors.current.textSecondary
+private val HistoryTextMuted: Color @Composable get() = LocalHistoryColors.current.textMuted
+private val SelectionAccent: Color @Composable get() = LocalHistoryColors.current.selectionAccent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Suppress("OPT_IN_IS_NOT_ENABLED")
 @Composable
 fun HistoryScreen(
+    isDark: Boolean = true,
     onItemClick: (HistoryItem) -> Unit = {},
     onBackClick: () -> Unit = {},
     onPrivacyPolicyClick: () -> Unit = {}
 ) {
+    val historyColors = remember(isDark) {
+        HistoryColors(
+            bg = appBg(isDark),
+            cardBg = appCardBg(isDark),
+            cardBorder = appBorder(isDark),
+            accent = appGoldPrimary(isDark),
+            textPrimary = appTextPrimary(isDark),
+            textSecondary = appTextSecondary(isDark),
+            textMuted = appTextTertiary(isDark),
+            selectionAccent = appGoldPrimary(isDark)
+        )
+    }
+
     val viewModel: HistoryViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showSearch by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(HistoryBg)
-    ) {
+
+    CompositionLocalProvider(LocalHistoryColors provides historyColors) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(HistoryBg)
+        ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // ============================================
             // TOP SECTION — Header & Search
@@ -289,6 +329,7 @@ fun HistoryScreen(
             }
         )
     }
+}
 }
 
 // ============================================

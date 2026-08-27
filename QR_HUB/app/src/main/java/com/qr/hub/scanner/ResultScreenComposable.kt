@@ -40,11 +40,13 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,16 +67,40 @@ import com.qr.hub.viewmodel.HistoryViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 // ============================================
-// REDESIGNED RESULT SCREEN COLORS
+// REDESIGNED RESULT SCREEN COLORS — Dynamic Ink & Ceramic
 // ============================================
-private val ResultBg = Ink950
-private val ResultCardBg = Ink800
-private val ResultCardBorder = BorderLine
-private val ResultAccent = AmberPrimary
-private val ResultAccentPink = AmberSoft
-private val ResultTextPrimary = TextPrimary
-private val ResultTextSecondary = TextSecondary
-private val ResultTextMuted = TextTertiary
+private data class ResultColors(
+    val bg: Color,
+    val cardBg: Color,
+    val cardBorder: Color,
+    val accent: Color,
+    val accentPink: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color
+)
+
+private val LocalResultColors = staticCompositionLocalOf {
+    ResultColors(
+        bg = Ink950,
+        cardBg = Ink800,
+        cardBorder = BorderLine,
+        accent = AmberPrimary,
+        accentPink = AmberSoft,
+        textPrimary = TextPrimary,
+        textSecondary = TextSecondary,
+        textMuted = TextTertiary
+    )
+}
+
+private val ResultBg: Color @Composable get() = LocalResultColors.current.bg
+private val ResultCardBg: Color @Composable get() = LocalResultColors.current.cardBg
+private val ResultCardBorder: Color @Composable get() = LocalResultColors.current.cardBorder
+private val ResultAccent: Color @Composable get() = LocalResultColors.current.accent
+private val ResultAccentPink: Color @Composable get() = LocalResultColors.current.accentPink
+private val ResultTextPrimary: Color @Composable get() = LocalResultColors.current.textPrimary
+private val ResultTextSecondary: Color @Composable get() = LocalResultColors.current.textSecondary
+private val ResultTextMuted: Color @Composable get() = LocalResultColors.current.textMuted
 
 // Type-specific colors
 private val TypeUrlColor = Color(0xFF4E9EFF)
@@ -94,9 +120,24 @@ fun ResultScreen(
     isDark: Boolean,
     onBack: () -> Unit
 ) {
+    val resultColors = remember(isDark) {
+        ResultColors(
+            bg = appBg(isDark),
+            cardBg = appCardBg(isDark),
+            cardBorder = appBorder(isDark),
+            accent = appGoldPrimary(isDark),
+            accentPink = appGoldSoft(isDark),
+            textPrimary = appTextPrimary(isDark),
+            textSecondary = appTextSecondary(isDark),
+            textMuted = appTextTertiary(isDark)
+        )
+    }
+
     val context = LocalContext.current
     val parsed = remember(result.rawValue) { com.qr.hub.util.detectType(result.rawValue) }
     val historyViewModel: HistoryViewModel = viewModel()
+
+    CompositionLocalProvider(LocalResultColors provides resultColors) {
 
     // Auto-save to history and auto-save QR to gallery for instant gallery scanning
     LaunchedEffect(result.rawValue) {
@@ -409,6 +450,7 @@ fun ResultScreen(
             }
         }
     }
+}
 }
 
 // ============================================
@@ -1226,7 +1268,7 @@ private fun getTypeAccentColor(parsed: ScannedQR): Color = when (parsed) {
     is ScannedQR.Event -> Color(0xFFF9A825) // Amber for Events
     is ScannedQR.PlusCode -> TypeLocationColor
     is ScannedQR.GoogleMaps -> TypeLocationColor
-    is ScannedQR.Unknown -> ResultAccent
+    is ScannedQR.Unknown -> AmberPrimary
 }
 
 // ============================================
@@ -1421,7 +1463,7 @@ fun getBadge(parsed: ScannedQR): BadgeInfo {
         is ScannedQR.Event -> BadgeInfo(Icons.Default.Event, "Event", Color(0xFFF9A825))
         is ScannedQR.PlusCode -> BadgeInfo(Icons.Default.Place, "Plus Code", TypeLocationColor)
         is ScannedQR.GoogleMaps -> BadgeInfo(Icons.Default.Map, "Google Maps", TypeLocationColor)
-        is ScannedQR.Unknown -> BadgeInfo(Icons.Default.QuestionMark, "Unknown", ResultAccent)
+        is ScannedQR.Unknown -> BadgeInfo(Icons.Default.QuestionMark, "Unknown", AmberPrimary)
     }
 }
 

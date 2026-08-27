@@ -496,8 +496,8 @@ private fun ScannerActiveView(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
                     shape = RoundedCornerShape(20.dp),
-                    containerColor = Ink850,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLineStrong),
+                    containerColor = appCardBg(isDark),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark)),
                     shadowElevation = 12.dp,
                     modifier = Modifier.width(250.dp)
                 ) {

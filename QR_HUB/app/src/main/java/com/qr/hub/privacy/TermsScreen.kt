@@ -27,11 +27,12 @@ import androidx.compose.ui.unit.sp
 import com.qr.hub.util.*
 
 // ============================================
-// TERMS & CONDITIONS SCREEN — In-App Luxury
+// TERMS & CONDITIONS SCREEN — In-App Luxury (Dark & Ceramic)
 // ============================================
 
 @Composable
 fun TermsScreen(
+    isDark: Boolean = true,
     onBackClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -39,7 +40,7 @@ fun TermsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink950)
+            .background(appBg(isDark))
             .statusBarsPadding()
     ) {
         Column(
@@ -60,15 +61,15 @@ fun TermsScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, CircleShape)
+                        .background(appCardBg(isDark))
+                        .border(1.dp, appBorder(isDark), CircleShape)
                         .clickable { onBackClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = TextPrimary,
+                        tint = appTextPrimary(isDark),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -77,7 +78,7 @@ fun TermsScreen(
 
                 Text(
                     "Terms & Conditions",
-                    color = TextPrimary,
+                    color = appTextPrimary(isDark),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
@@ -95,114 +96,176 @@ fun TermsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(20.dp),
-                color = Ink850,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF2A1F0D)),
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Gavel,
                                 contentDescription = null,
-                                tint = AmberSoft,
-                                modifier = Modifier.size(18.dp)
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(22.dp)
                             )
                         }
-                        Text(
-                            "LEGAL AGREEMENT",
-                            color = AmberSoft,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.5.sp
-                        )
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                "QR HUB TERMS OF SERVICE",
+                                color = appGoldPrimary(isDark),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                letterSpacing = 1.sp
+                            )
+                            Text(
+                                "Last updated: August 2026",
+                                color = appTextTertiary(isDark),
+                                fontSize = 12.sp
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp)
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
-                        "Terms of Service",
-                        color = TextPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        "Please read these terms carefully before using QR HUB. By using the app, you accept all terms outlined here.",
-                        color = TextSecondary,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        "Welcome to QR HUB! By installing, accessing, or using our mobile application, you agree to comply with and be bound by these Terms and Conditions. Please review them carefully.",
+                        color = appTextSecondary(isDark),
+                        fontSize = 13.5.sp,
+                        lineHeight = 20.sp
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Sections ──
-            val sections = listOf(
-                Pair("01. Acceptance of Terms", "By downloading or using QR HUB, you agree to comply with these terms. If you do not agree, please discontinue using the app immediately."),
-                Pair("02. Offline-First Privacy", "QR HUB processes all QR codes and barcodes 100% locally on your device. No camera feeds or scanned data are uploaded to external cloud servers."),
-                Pair("03. Permitted Usage", "You may freely create, scan, export, and share barcodes and QR codes for personal and commercial activities. Malicious usage (phishing or malware links) is strictly prohibited."),
-                Pair("04. Third-Party Services & Ads", "QR HUB incorporates Google AdMob and Start.io SDKs to support ongoing free development. Ad networks adhere to Google Play Developer Policies."),
-                Pair("05. Disclaimer & Accuracy", "QR HUB is provided on an 'AS IS' basis. While our scanning engine provides high-precision recognition, the developer is not responsible for external third-party content accessed via scanned URLs or UPI payment flows.")
+            // ── Section 1 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "01",
+                title = "Acceptance of Terms",
+                content = "By downloading, installing, or using QR HUB, you signify your agreement to these Terms and Conditions as well as our Privacy Policy. If you do not agree to these terms, please do not use the application."
             )
 
-            sections.forEach { (title, desc) ->
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Ink850,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
-                ) {
-                    Column(modifier = Modifier.padding(18.dp)) {
-                        Text(
-                            title,
-                            color = AmberSoft,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            desc,
-                            color = TextSecondary,
-                            fontSize = 13.sp,
-                            lineHeight = 19.sp
-                        )
-                    }
+            // ── Section 2 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "02",
+                title = "Permitted Use & Scanner Scope",
+                content = "QR HUB is designed for personal, non-commercial, and commercial utility scanning, generating QR codes, and processing 1D retail barcodes. You agree not to use the app for illegal activities, transmitting malware, or creating fraudulent QR codes."
+            )
+
+            // ── Section 3 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "03",
+                title = "UPI Payments & Third-Party Apps",
+                content = "QR HUB facilitates quick UPI intent redirection to certified payment apps (such as Google Pay, PhonePe, Paytm, BHIM) installed on your device. QR HUB is not a payment gateway and does not process, hold, or guarantee financial transactions."
+            )
+
+            // ── Section 4 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "04",
+                title = "Device Permissions & Privacy",
+                content = "Camera permissions are utilized solely for on-device visual QR scanning. Storage permissions are used only when you choose to export history or save generated QR codes to your gallery. All scanning logic operates 100% on-device via Google ML Kit."
+            )
+
+            // ── Section 5 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "05",
+                title = "Intellectual Property & Branding",
+                content = "All interfaces, brand assets, animations, icons, and software designs created for QR HUB are the exclusive property of Krishna (KRISHNA / QR HUB). You may not reverse engineer, decompile, or copy the proprietary design patterns without explicit permission."
+            )
+
+            // ── Section 6 ──
+            TermsSectionCard(
+                isDark = isDark,
+                number = "06",
+                title = "Disclaimer & Limitation of Liability",
+                content = "QR HUB is provided on an 'AS IS' and 'AS AVAILABLE' basis without warranties of any kind. The developer shall not be liable for any indirect, incidental, or consequential damages resulting from the use or inability to use the application."
+            )
+
+            // ── Contact Card ──
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = appCardBg(isDark),
+                border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text(
+                        "Questions or Legal Inquiries?",
+                        color = appGoldPrimary(isDark),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "For legal notices, rights inquiries, or support, reach out to:\nkrishnatechhub.contact@gmail.com",
+                        color = appTextSecondary(isDark),
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
 
-            // ── Footer ──
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+@Composable
+private fun TermsSectionCard(
+    isDark: Boolean,
+    number: String,
+    title: String,
+    content: String
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = appCardBg(isDark),
+        border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
+    ) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "BUILT BY KRISHNA",
-                    color = AmberSoft,
-                    fontSize = 11.sp,
+                    text = number,
+                    color = appGoldPrimary(isDark),
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 2.sp
+                    fontFamily = FontFamily.Monospace
                 )
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = title,
+                    color = appTextPrimary(isDark),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = content,
+                color = appTextSecondary(isDark),
+                fontSize = 13.sp,
+                lineHeight = 20.sp
+            )
         }
     }
 }

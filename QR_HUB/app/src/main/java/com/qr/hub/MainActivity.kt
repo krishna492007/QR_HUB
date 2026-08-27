@@ -154,6 +154,7 @@ fun AppNavigation() {
                             onPrivacyPolicyClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.HistoryTab -> HistoryScreen(
+                            isDark = isDark,
                             onItemClick = { item ->
                                 currentScreen = Screen.HistoryDetail(item.id)
                             },
@@ -162,7 +163,7 @@ fun AppNavigation() {
                         )
                         is Screen.HistoryDetail -> {
                             val itemId = (screen as Screen.HistoryDetail).itemId
-                            HistoryDetailWrapper(itemId = itemId, onBackClick = { currentScreen = Screen.HistoryTab })
+                            HistoryDetailWrapper(itemId = itemId, isDark = isDark, onBackClick = { currentScreen = Screen.HistoryTab })
                         }
                         is Screen.Result -> ResultScreen(
                             result = (screen as Screen.Result).data,
@@ -178,6 +179,7 @@ fun AppNavigation() {
                             )
                         }
                         is Screen.PrivacyPolicy -> PrivacyPolicyScreen(
+                            isDark = isDark,
                             onBackClick = { currentScreen = Screen.AboutLegal }
                         )
                         is Screen.AboutLegal -> AboutLegalScreen(
@@ -192,6 +194,7 @@ fun AppNavigation() {
                             onTermsClick = { currentScreen = Screen.TermsOfService }
                         )
                         is Screen.TermsOfService -> TermsScreen(
+                            isDark = isDark,
                             onBackClick = { currentScreen = Screen.AboutLegal }
                         )
                     }
@@ -372,7 +375,7 @@ fun BottomNavigationBarPreview() {
 }
 
 @Composable
-fun HistoryDetailWrapper(itemId: Long, onBackClick: () -> Unit) {
+fun HistoryDetailWrapper(itemId: Long, isDark: Boolean = true, onBackClick: () -> Unit) {
     val context = LocalContext.current
     val repository = remember { HistoryRepository(context) }
     var item by remember { mutableStateOf<com.qr.hub.data.model.HistoryItem?>(null) }
@@ -384,6 +387,7 @@ fun HistoryDetailWrapper(itemId: Long, onBackClick: () -> Unit) {
     if (item != null) {
         HistoryDetailScreen(
             item = item!!,
+            isDark = isDark,
             onBackClick = onBackClick
         )
     } else {
@@ -391,19 +395,19 @@ fun HistoryDetailWrapper(itemId: Long, onBackClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Ink950),
+                .background(appBg(isDark)),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 androidx.compose.material3.CircularProgressIndicator(
-                    color = AmberPrimary,
+                    color = appGoldPrimary(isDark),
                     strokeWidth = 3.dp,
                     modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "Loading...",
-                    color = TextSecondary,
+                    color = appTextSecondary(isDark),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )

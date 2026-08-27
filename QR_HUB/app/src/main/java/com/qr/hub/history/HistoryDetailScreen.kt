@@ -56,26 +56,71 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// Ink & Amber Design Tokens
-private val DetailBg = Ink950
-private val DetailCardBg = Ink800
-private val DetailCardBorder = BorderLine
-private val DetailAccent = AmberPrimary
-private val DetailAccentSoft = AmberSoft
-private val DetailCtaGradient = Brush.verticalGradient(listOf(AmberSoft, AmberPrimary))
-private val DetailTextPrimary = TextPrimary
-private val DetailTextSecondary = TextSecondary
-private val DetailTextMuted = TextTertiary
+// ============================================
+// REDESIGNED DETAIL SCREEN COLORS — Dynamic Ink & Ceramic
+// ============================================
+private data class DetailColors(
+    val bg: Color,
+    val cardBg: Color,
+    val cardBorder: Color,
+    val accent: Color,
+    val accentSoft: Color,
+    val ctaGradient: Brush,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color
+)
+
+private val LocalDetailColors = staticCompositionLocalOf {
+    DetailColors(
+        bg = Ink950,
+        cardBg = Ink800,
+        cardBorder = BorderLine,
+        accent = AmberPrimary,
+        accentSoft = AmberSoft,
+        ctaGradient = Brush.verticalGradient(listOf(AmberSoft, AmberPrimary)),
+        textPrimary = TextPrimary,
+        textSecondary = TextSecondary,
+        textMuted = TextTertiary
+    )
+}
+
+private val DetailBg: Color @Composable get() = LocalDetailColors.current.bg
+private val DetailCardBg: Color @Composable get() = LocalDetailColors.current.cardBg
+private val DetailCardBorder: Color @Composable get() = LocalDetailColors.current.cardBorder
+private val DetailAccent: Color @Composable get() = LocalDetailColors.current.accent
+private val DetailAccentSoft: Color @Composable get() = LocalDetailColors.current.accentSoft
+private val DetailCtaGradient: Brush @Composable get() = LocalDetailColors.current.ctaGradient
+private val DetailTextPrimary: Color @Composable get() = LocalDetailColors.current.textPrimary
+private val DetailTextSecondary: Color @Composable get() = LocalDetailColors.current.textSecondary
+private val DetailTextMuted: Color @Composable get() = LocalDetailColors.current.textMuted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryDetailScreen(
     item: HistoryItem,
+    isDark: Boolean = true,
     onBackClick: () -> Unit = {}
 ) {
+    val detailColors = remember(isDark) {
+        DetailColors(
+            bg = appBg(isDark),
+            cardBg = appCardBg(isDark),
+            cardBorder = appBorder(isDark),
+            accent = appGoldPrimary(isDark),
+            accentSoft = appGoldSoft(isDark),
+            ctaGradient = appCtaGradient(isDark),
+            textPrimary = appTextPrimary(isDark),
+            textSecondary = appTextSecondary(isDark),
+            textMuted = appTextTertiary(isDark)
+        )
+    }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val parsed = remember(item.rawValue, item.type) { parseHistoryDetailItem(item) }
+
+    CompositionLocalProvider(LocalDetailColors provides detailColors) {
 
     val defaultAppLogo = remember {
         try { BitmapFactory.decodeResource(context.resources, R.drawable.qrhub_logo) } catch (_: Exception) { null }
@@ -409,6 +454,7 @@ fun HistoryDetailScreen(
         // ── BANNER AD (START.IO ZERO DELAY MONETIZATION) ──
         BannerAdView(modifier = Modifier.fillMaxWidth())
     }
+}
 }
 
 /**
