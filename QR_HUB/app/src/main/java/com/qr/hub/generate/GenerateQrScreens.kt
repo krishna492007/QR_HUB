@@ -172,6 +172,7 @@ fun GenerateQrTypeSelectionScreen(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(11.dp),
                 verticalArrangement = Arrangement.spacedBy(11.dp),
+                contentPadding = PaddingValues(bottom = 90.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 // 12 Standard Types (3 columns each)
@@ -193,7 +194,7 @@ fun GenerateQrTypeSelectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 2.dp, bottom = 2.dp),
+                            .padding(top = 2.dp, bottom = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(11.dp)
                     ) {
                         // Left Card: Bulk QR Generator
@@ -224,34 +225,52 @@ fun GenerateQrTypeSelectionScreen(
                     }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        // ============================================
+        // FLOATING BOTTOM ACTION CTA (Transparent Backdrop)
+        // ============================================
+        val buttonEnabled = selectedType != null
+        val ctaScale by animateFloatAsState(
+            targetValue = if (buttonEnabled) 1.0f else 0.98f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "CtaScale"
+        )
 
-            // ============================================
-            // STICKY BOTTOM ACTION CTA
-            // ============================================
-            val buttonEnabled = selectedType != null
-            val ctaBgColor by animateColorAsState(
-                targetValue = if (buttonEnabled) AmberPrimary else Ink800,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                label = "CtaBgColor"
-            )
-            val ctaBorderColor by animateColorAsState(
-                targetValue = if (buttonEnabled) Color.Transparent else BorderLine,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-                label = "CtaBorderColor"
-            )
-
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Ink950.copy(alpha = 0.4f),
+                            Ink950.copy(alpha = 0.85f)
+                        )
+                    )
+                )
+                .padding(horizontal = 22.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
+                    .scale(ctaScale)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         if (buttonEnabled) AmberCtaGradient
-                        else Brush.linearGradient(listOf(ctaBgColor, ctaBgColor))
+                        else Brush.linearGradient(listOf(Ink800.copy(alpha = 0.6f), Ink800.copy(alpha = 0.6f)))
                     )
-                    .border(1.dp, ctaBorderColor, RoundedCornerShape(16.dp))
+                    .border(
+                        1.dp,
+                        if (buttonEnabled) AmberPrimary.copy(alpha = 0.8f) else BorderLine.copy(alpha = 0.5f),
+                        RoundedCornerShape(16.dp)
+                    )
                     .clickable(
                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                         indication = null,
@@ -277,8 +296,6 @@ fun GenerateQrTypeSelectionScreen(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
         }
     }
 }
@@ -290,12 +307,12 @@ private fun GenerateTypeTile(
     onClick: () -> Unit
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberDim2 else BorderLine,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.45f) else BorderLine,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileBorder"
     )
     val tileScale by animateFloatAsState(
-        targetValue = if (isSelected) 1.03f else 1.0f,
+        targetValue = if (isSelected) 1.04f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -303,13 +320,18 @@ private fun GenerateTypeTile(
         label = "TileScale"
     )
     val iconBg by animateColorAsState(
-        targetValue = if (isSelected) AmberDim2 else Ink750,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) Color(0xFF382A14) else Ink750,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconBg"
+    )
+    val iconBorderColor by animateColorAsState(
+        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.35f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "TileIconBorder"
     )
     val iconTint by animateColorAsState(
         targetValue = if (isSelected) AmberSoft else TextPrimary,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "TileIconTint"
     )
 
@@ -317,15 +339,15 @@ private fun GenerateTypeTile(
         modifier = Modifier
             .fillMaxWidth()
             .scale(tileScale)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(AmberDim, Ink800))
+                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF221A12), Ink800))
                 else Brush.linearGradient(listOf(Ink800, Ink800))
             )
             .border(
                 width = 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             )
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -337,17 +359,17 @@ private fun GenerateTypeTile(
         // Corner brackets on selected state with smooth fade & scale in
         AnimatedVisibility(
             visible = isSelected,
-            enter = fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.85f),
-            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.85f)
+            enter = fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.8f),
+            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.8f)
         ) {
             CornerBrackets(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(6.dp),
-                color = AmberPrimary,
-                bracketSize = 10.dp,
-                strokeWidth = 2.dp,
-                cornerRadius = 4.dp
+                    .padding(5.dp),
+                color = AmberSoft,
+                bracketSize = 12.dp,
+                strokeWidth = 2.5.dp,
+                cornerRadius = 6.dp
             )
         }
 
@@ -359,16 +381,17 @@ private fun GenerateTypeTile(
             // Icon Container
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconBg),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(iconBg)
+                    .border(1.dp, iconBorderColor, RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = type.icon,
                     contentDescription = type.label,
                     tint = iconTint,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -376,8 +399,8 @@ private fun GenerateTypeTile(
             Text(
                 text = type.label,
                 fontSize = 12.5.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                color = TextPrimary,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) TextPrimary else TextSecondary,
                 textAlign = TextAlign.Center
             )
         }
@@ -394,8 +417,8 @@ private fun GenerateWideTile(
     onClick: () -> Unit
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) AmberDim2 else BorderLine,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.45f) else BorderLine,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileBorder"
     )
     val tileScale by animateFloatAsState(
@@ -407,13 +430,18 @@ private fun GenerateWideTile(
         label = "WideTileScale"
     )
     val iconBg by animateColorAsState(
-        targetValue = if (isSelected) AmberDim2 else Ink750,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) Color(0xFF382A14) else Ink750,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconBg"
+    )
+    val iconBorderColor by animateColorAsState(
+        targetValue = if (isSelected) AmberPrimary.copy(alpha = 0.35f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "WideTileIconBorder"
     )
     val iconTint by animateColorAsState(
         targetValue = if (isSelected) AmberSoft else TextPrimary,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "WideTileIconTint"
     )
 
@@ -421,15 +449,15 @@ private fun GenerateWideTile(
         modifier = modifier
             .fillMaxWidth()
             .scale(tileScale)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(
-                if (isSelected) Brush.verticalGradient(listOf(AmberDim, Ink800))
+                if (isSelected) Brush.verticalGradient(listOf(Color(0xFF221A12), Ink800))
                 else Brush.linearGradient(listOf(Ink800, Ink800))
             )
             .border(
                 width = 1.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             )
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -440,17 +468,17 @@ private fun GenerateWideTile(
     ) {
         AnimatedVisibility(
             visible = isSelected,
-            enter = fadeIn(tween(180)) + scaleIn(tween(180), initialScale = 0.85f),
-            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.85f)
+            enter = fadeIn(tween(200)) + scaleIn(tween(200), initialScale = 0.8f),
+            exit = fadeOut(tween(140)) + scaleOut(tween(140), targetScale = 0.8f)
         ) {
             CornerBrackets(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(6.dp),
-                color = AmberPrimary,
-                bracketSize = 10.dp,
-                strokeWidth = 2.dp,
-                cornerRadius = 4.dp
+                    .padding(5.dp),
+                color = AmberSoft,
+                bracketSize = 12.dp,
+                strokeWidth = 2.5.dp,
+                cornerRadius = 6.dp
             )
         }
 
@@ -461,16 +489,17 @@ private fun GenerateWideTile(
         ) {
             Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconBg),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(iconBg)
+                    .border(1.dp, iconBorderColor, RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     tint = iconTint,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -478,14 +507,14 @@ private fun GenerateWideTile(
                 Text(
                     text = title,
                     fontSize = 13.sp,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                    color = TextPrimary,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                    color = if (isSelected) TextPrimary else TextSecondary,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     text = subtitle,
                     fontSize = 10.5.sp,
-                    color = AmberSoft,
+                    color = if (isSelected) AmberSoft.copy(alpha = 0.8f) else TextTertiary,
                     textAlign = TextAlign.Center
                 )
             }
@@ -496,15 +525,16 @@ private fun GenerateWideTile(
 @Composable
 fun CornerBrackets(
     modifier: Modifier = Modifier,
-    color: Color = AmberPrimary,
-    bracketSize: androidx.compose.ui.unit.Dp = 10.dp,
-    strokeWidth: androidx.compose.ui.unit.Dp = 2.dp,
-    cornerRadius: androidx.compose.ui.unit.Dp = 4.dp
+    color: Color = AmberSoft,
+    bracketSize: androidx.compose.ui.unit.Dp = 12.dp,
+    strokeWidth: androidx.compose.ui.unit.Dp = 2.5.dp,
+    cornerRadius: androidx.compose.ui.unit.Dp = 6.dp
 ) {
     androidx.compose.foundation.Canvas(modifier = modifier) {
         val bSize = bracketSize.toPx()
         val sWidth = strokeWidth.toPx()
         val r = cornerRadius.toPx()
+        val half = sWidth / 2f
         val stroke = androidx.compose.ui.graphics.drawscope.Stroke(
             width = sWidth,
             cap = androidx.compose.ui.graphics.StrokeCap.Round,
@@ -513,37 +543,37 @@ fun CornerBrackets(
 
         // Top-Left ┌
         val pathTL = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, bSize)
-            lineTo(0f, r)
-            quadraticTo(0f, 0f, r, 0f)
-            lineTo(bSize, 0f)
+            moveTo(half, bSize)
+            lineTo(half, r)
+            quadraticTo(half, half, r, half)
+            lineTo(bSize, half)
         }
         drawPath(pathTL, color, style = stroke)
 
         // Top-Right ┐
         val pathTR = androidx.compose.ui.graphics.Path().apply {
-            moveTo(size.width - bSize, 0f)
-            lineTo(size.width - r, 0f)
-            quadraticTo(size.width, 0f, size.width, r)
-            lineTo(size.width, bSize)
+            moveTo(size.width - bSize, half)
+            lineTo(size.width - r, half)
+            quadraticTo(size.width - half, half, size.width - half, r)
+            lineTo(size.width - half, bSize)
         }
         drawPath(pathTR, color, style = stroke)
 
         // Bottom-Left └
         val pathBL = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, size.height - bSize)
-            lineTo(0f, size.height - r)
-            quadraticTo(0f, size.height, r, size.height)
-            lineTo(bSize, size.height)
+            moveTo(half, size.height - bSize)
+            lineTo(half, size.height - r)
+            quadraticTo(half, size.height - half, r, size.height - half)
+            lineTo(bSize, size.height - half)
         }
         drawPath(pathBL, color, style = stroke)
 
         // Bottom-Right ┘
         val pathBR = androidx.compose.ui.graphics.Path().apply {
-            moveTo(size.width - bSize, size.height)
-            lineTo(size.width - r, size.height)
-            quadraticTo(size.width, size.height, size.width, size.height - r)
-            lineTo(size.width, size.height - bSize)
+            moveTo(size.width - bSize, size.height - half)
+            lineTo(size.width - r, size.height - half)
+            quadraticTo(size.width - half, size.height - half, size.width - half, size.height - r)
+            lineTo(size.width - half, size.height - bSize)
         }
         drawPath(pathBR, color, style = stroke)
     }
