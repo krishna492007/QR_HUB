@@ -39,7 +39,7 @@ private val PrivacyTextMuted = TextTertiary
 // Developer Info
 const val DEVELOPER_NAME = "KRISHNA"
 const val APP_VERSION = "1.0.0"
-const val DEVELOPER_EMAIL = "support.qrhub@gmail.com"
+const val DEVELOPER_EMAIL = "krishnatechhub.contact@gmail.com"
 
 @Composable
 fun PrivacyPolicyScreen(
@@ -276,10 +276,11 @@ private fun PrivacyPolicyContent() {
     // Third Party Section
     PolicySectionCard(
         icon = Icons.Default.Security,
-        title = "Third-Party Services",
-        content = "QR Hub uses the following services:\n\n" +
-                "• Google ML Kit (for QR code scanning - on-device only)\n\n" +
-                "No analytics, advertising, or tracking services are used."
+        title = "Third-Party Services & Advertising",
+        content = "QR Hub uses the following trusted third-party SDKs:\n\n" +
+                "• Google ML Kit (for on-device high-speed scanning)\n" +
+                "• Google AdMob & Start.io (for delivering policy-compliant advertisements)\n\n" +
+                "These ad networks may collect anonymized advertising identifiers in accordance with their privacy policies to display relevant ads."
     )
 
     // Contact Section
@@ -311,7 +312,7 @@ private fun PrivacyPolicyContent() {
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "This privacy policy was last updated on April 2025.",
+                text = "This privacy policy was last updated on August 2026.",
                 fontSize = 11.5.sp,
                 color = PrivacyTextMuted,
                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
