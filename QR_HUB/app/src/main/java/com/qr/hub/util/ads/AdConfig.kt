@@ -17,9 +17,9 @@ object AdConfig {
     const val UNITY_BANNER_PLACEMENT = "Banner_Android"
 
     // ----------------------------------------------------
-    // GOOGLE ADMOB (For Play Store Release)
+    // GOOGLE ADMOB (Official Production IDs)
     // ----------------------------------------------------
-    const val ADMOB_APP_ID = "ca-app-pub-7266647940952906~4589127679"
-    const val ADMOB_BANNER_ID = "ca-app-pub-7266647940952906/5664708416"
-    const val ADMOB_INTERSTITIAL_ID = "ca-app-pub-7266647940952906/4573998340"
+    const val ADMOB_APP_ID = "ca-app-pub-5378252094188023~4426119685"
+    const val ADMOB_BANNER_ID = "ca-app-pub-5378252094188023/8845088294"
+    const val ADMOB_INTERSTITIAL_ID = "ca-app-pub-5378252094188023/2694235612"
 }
