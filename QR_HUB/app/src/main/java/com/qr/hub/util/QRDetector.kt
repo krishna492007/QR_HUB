@@ -29,15 +29,6 @@ private fun isLikelyDomain(raw: String): Boolean {
 
 fun detectType(value: String): ScannedQR {
     val raw = value.trim()
-
-    // 1. FIRST PRIORITY: If compressed with GZIP, decompress first and recursively detect
-    if (QRCompressor.isCompressed(raw)) {
-        val decompressed = QRCompressor.decompress(raw)
-        if (decompressed != null) {
-            return detectType(decompressed)
-        }
-    }
-
     return when {
         raw.lowercase().startsWith("mailto:") -> {
             val after = raw.removePrefix("mailto:").removePrefix("MAILTO:").removePrefix("Mailto:")
@@ -141,6 +132,11 @@ fun detectType(value: String): ScannedQR {
 
         // Detect URLs without protocol: www.domain.com or domain.com patterns
         raw.lowercase().startsWith("www.") -> {
+            ScannedQR.QRURL(raw)
+        }
+
+        // Detect domain-like patterns: contains "." and looks like a URL (no spaces, has TLD)
+        isLikelyDomain(raw) -> {
             ScannedQR.QRURL(raw)
         }
 

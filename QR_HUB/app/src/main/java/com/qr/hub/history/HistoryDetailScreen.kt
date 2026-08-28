@@ -595,12 +595,6 @@ private fun saveQRToGallery(context: Context, bitmap: Bitmap, name: String) {
 
 private fun parseHistoryDetailItem(item: HistoryItem): ScannedQR {
     val raw = item.rawValue
-    if (com.qr.hub.util.QRCompressor.isCompressed(raw)) {
-        val decompressed = com.qr.hub.util.QRCompressor.decompress(raw)
-        if (decompressed != null) {
-            return com.qr.hub.util.detectType(decompressed)
-        }
-    }
     val lower = raw.lowercase()
 
     return when {

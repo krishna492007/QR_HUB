@@ -215,8 +215,7 @@ object QRStylingEngine {
                     val right = left + moduleSize
                     val bottom = top + moduleSize
 
-                    val isDense = matrixSize >= 50
-                    drawDataModule(canvas, left, top, right, bottom, moduleSize, config.moduleShape, fgPaint, isDense)
+                    drawDataModule(canvas, left, top, right, bottom, moduleSize, config.moduleShape, fgPaint)
                 }
             }
         }
@@ -265,7 +264,7 @@ object QRStylingEngine {
     }
 
     /**
-     * Draw individual data module based on chosen shape (with high-density micro-chip optimization)
+     * Draw individual data module based on chosen shape
      */
     private fun drawDataModule(
         canvas: Canvas,
@@ -275,17 +274,8 @@ object QRStylingEngine {
         bottom: Float,
         moduleSize: Float,
         shape: QRModuleShape,
-        paint: Paint,
-        isDense: Boolean = false
+        paint: Paint
     ) {
-        if (isDense) {
-            // High-density optimization: crisp high-contrast micro-rectangles
-            val rect = RectF(left + 0.1f, top + 0.1f, right - 0.1f, bottom - 0.1f)
-            val radius = moduleSize * 0.15f
-            canvas.drawRoundRect(rect, radius, radius, paint)
-            return
-        }
-
         when (shape) {
             QRModuleShape.SQUARE -> {
                 canvas.drawRect(left, top, right, bottom, paint)
