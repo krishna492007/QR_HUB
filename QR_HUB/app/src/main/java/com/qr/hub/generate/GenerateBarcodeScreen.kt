@@ -142,11 +142,11 @@ fun GenerateBarcodeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink950)
+            .background(appBg(isDark))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // ── TOP BAR ──
+        // ── TOP BAR WITH UNIFIED HTML ICON BADGE ──
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -157,22 +157,38 @@ fun GenerateBarcodeScreen(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     "Back",
-                    tint = TextPrimary,
+                    tint = appTextPrimary(isDark),
                     modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(appGoldDim2(isDark))
+                    .border(1.dp, appGoldPrimary(isDark).copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = HtmlIcons.BarcodeIcon,
+                    contentDescription = null,
+                    tint = appGoldSoft(isDark),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text("Product Barcode Studio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Text("Generate & Print A4 Sticker Sheets for Shops & Marts", fontSize = 11.5.sp, color = TextSecondary)
+                Text("Product Barcode Studio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
+                Text("Generate & Print A4 Sticker Sheets for Shops & Marts", fontSize = 11.5.sp, color = appTextSecondary(isDark))
             }
         }
 
@@ -182,8 +198,8 @@ fun GenerateBarcodeScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 6.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Ink800)
-                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                .background(appCardBg(isDark))
+                .border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
                 .padding(4.dp)
         ) {
             // Tab 0: Single & Sticker Sheet
@@ -191,16 +207,16 @@ fun GenerateBarcodeScreen(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (activeTab == 0) AmberPrimary else Color.Transparent)
+                    .background(if (activeTab == 0) appGoldPrimary(isDark) else Color.Transparent)
                     .clickable { activeTab = 0 }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Default.QrCode,
+                        HtmlIcons.BarcodeIcon,
                         null,
-                        tint = if (activeTab == 0) Color(0xFF160E06) else TextSecondary,
+                        tint = if (activeTab == 0) (if (isDark) Color(0xFF160E06) else CeramicCtaInk) else appTextSecondary(isDark),
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -208,7 +224,7 @@ fun GenerateBarcodeScreen(
                         "Single & Stickers",
                         fontSize = 12.sp,
                         fontWeight = if (activeTab == 0) FontWeight.Bold else FontWeight.Medium,
-                        color = if (activeTab == 0) Color(0xFF160E06) else TextSecondary
+                        color = if (activeTab == 0) (if (isDark) Color(0xFF160E06) else CeramicCtaInk) else appTextSecondary(isDark)
                     )
                 }
             }
@@ -218,16 +234,16 @@ fun GenerateBarcodeScreen(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (activeTab == 1) AmberPrimary else Color.Transparent)
+                    .background(if (activeTab == 1) appGoldPrimary(isDark) else Color.Transparent)
                     .clickable { activeTab = 1 }
                     .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Default.DynamicFeed,
+                        HtmlIcons.BulkQr,
                         null,
-                        tint = if (activeTab == 1) Color(0xFF160E06) else TextSecondary,
+                        tint = if (activeTab == 1) (if (isDark) Color(0xFF160E06) else CeramicCtaInk) else appTextSecondary(isDark),
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -235,7 +251,7 @@ fun GenerateBarcodeScreen(
                         "Bulk List (CSV)",
                         fontSize = 12.sp,
                         fontWeight = if (activeTab == 1) FontWeight.Bold else FontWeight.Medium,
-                        color = if (activeTab == 1) Color(0xFF160E06) else TextSecondary
+                        color = if (activeTab == 1) (if (isDark) Color(0xFF160E06) else CeramicCtaInk) else appTextSecondary(isDark)
                     )
                 }
             }

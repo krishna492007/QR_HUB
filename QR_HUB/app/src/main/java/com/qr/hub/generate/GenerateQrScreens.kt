@@ -728,14 +728,22 @@ fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
         qrType = "TEXT",
         getContent = { QRGenerator.buildTextContent(text) }
     ) {
-        // Hint row
+        // Hint row with unified HtmlIcon badge
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Info, null, tint = AccentPurple.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Enter any text to encode into a QR code", fontSize = 12.sp, color = TextSecondary)
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(appGoldDim2(isDark)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(HtmlIcons.TextQr, null, tint = appGoldSoft(isDark), modifier = Modifier.size(16.dp))
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Enter any text to encode into a QR code", fontSize = 12.5.sp, color = appTextSecondary(isDark))
         }
 
         OutlinedTextField(
@@ -781,7 +789,7 @@ fun GenerateUrlQrScreen(isDark: Boolean, onBack: () -> Unit) {
             onValueChange = { url = it },
             label = { Text("Enter URL (e.g., google.com)") },
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Link, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.UrlQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             colors = premiumFieldColors(isDark)
         )
     }
@@ -816,6 +824,7 @@ fun GenerateUpiQrScreen(isDark: Boolean, onBack: () -> Unit) {
             value = vpa,
             onValueChange = { vpa = it },
             label = { Text("UPI ID / VPA *") },
+            leadingIcon = { Icon(HtmlIcons.UpiQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("example@upi") },
             isError = vpa.isNotEmpty() && !vpa.contains("@"),
@@ -867,7 +876,7 @@ fun GeneratePhoneQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Phone Number *") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("+91 98765 43210") },
-            leadingIcon = { Icon(Icons.Default.Phone, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.PhoneQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             isError = number.isNotEmpty() && !isValidPhone(number),
             supportingText = if (number.isNotEmpty() && !isValidPhone(number)) {
                 { Text("Min 10 digits required", color = Color(0xFFEF5350)) }
@@ -952,7 +961,7 @@ fun GenerateEmailQrScreen(isDark: Boolean, onBack: () -> Unit) {
             onValueChange = { address = it },
             label = { Text("Email Address *") },
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Email, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.EmailQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             isError = address.isNotEmpty() && !isValidEmail(address),
             supportingText = if (address.isNotEmpty() && !isValidEmail(address)) {
                 { Text("Enter a valid email address", color = Color(0xFFEF5350)) }
@@ -996,7 +1005,7 @@ fun GenerateWifiQrScreen(isDark: Boolean, onBack: () -> Unit) {
             onValueChange = { ssid = it },
             label = { Text("Network Name (SSID) *") },
             modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Wifi, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.WiFiQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -1054,7 +1063,7 @@ fun GenerateContactQrScreen(isDark: Boolean, onBack: () -> Unit) {
         getContent = { QRGenerator.buildContactContent(name, phone, email, org, title) }
     ) {
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name *") }, modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Person, null, tint = AccentPurple) }, colors = premiumFieldColors(isDark))
+            leadingIcon = { Icon(HtmlIcons.ContactQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) }, colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -1111,7 +1120,7 @@ fun GenerateWhatsAppQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Phone Number *") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("With country code, e.g., 919876543210") },
-            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Chat, null, tint = Color(0xFF4CAF50)) },
+            leadingIcon = { Icon(HtmlIcons.WhatsAppQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             isError = number.isNotEmpty() && !isValidPhone(number),
             supportingText = if (number.isNotEmpty() && !isValidPhone(number)) {
                 { Text("Min 10 digits required", color = Color(0xFFEF5350)) }
@@ -1152,7 +1161,7 @@ fun GenerateWAGroupQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Group Invite Link / Code *") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("https://chat.whatsapp.com/ABC123...") },
-            leadingIcon = { Icon(Icons.Default.Group, null, tint = Color(0xFF00BFA5)) },
+            leadingIcon = { Icon(HtmlIcons.WAGroupQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -1197,7 +1206,7 @@ fun GenerateLocationQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Latitude *") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. 28.6139") },
-            leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.LocationQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             isError = latError,
             supportingText = if (latError) { { Text("Must be -90 to 90", color = Color(0xFFEF5350)) } } else null,
             colors = premiumFieldColors(isDark)
@@ -1287,7 +1296,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Event Title *") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. Team Meeting") },
-            leadingIcon = { Icon(Icons.Default.Event, null, tint = AccentPurple) },
+            leadingIcon = { Icon(HtmlIcons.EventQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(20.dp)) },
             colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -1404,7 +1413,7 @@ private fun GenerateQrFormScreen(
             .verticalScroll(scrollState)
             .imePadding()
     ) {
-        // ── TOP BAR ──
+        // ── TOP BAR WITH UNIFIED HTML ICON BADGE ──
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -1427,7 +1436,23 @@ private fun GenerateQrFormScreen(
                     modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(appGoldDim2(isDark))
+                    .border(1.dp, appGoldPrimary(isDark).copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = HtmlIcons.getTypeIcon(qrType),
+                    contentDescription = null,
+                    tint = appGoldSoft(isDark),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
         }
 
