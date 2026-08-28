@@ -46,19 +46,49 @@ object QRGenerator {
         foregroundColor: Int = Color.BLACK,
         backgroundColor: Int = Color.WHITE
     ): Bitmap {
-        val hints = hashMapOf<EncodeHintType, Any>().apply {
-            put(EncodeHintType.CHARACTER_SET, "UTF-8")
-            put(EncodeHintType.MARGIN, 2) // Standard 2-module quiet zone for fast edge detection
-            put(EncodeHintType.ERROR_CORRECTION, com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M)
+        if (content.isEmpty()) {
+            return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         }
 
-        val bitMatrix: BitMatrix = MultiFormatWriter().encode(
-            content,
-            BarcodeFormat.QR_CODE,
-            size,
-            size,
-            hints
+        val eccLevels = listOf(
+            com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M,
+            com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.L
         )
+
+        var bitMatrix: BitMatrix? = null
+        for (ecc in eccLevels) {
+            try {
+                val hints = hashMapOf<EncodeHintType, Any>().apply {
+                    put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                    put(EncodeHintType.MARGIN, 2)
+                    put(EncodeHintType.ERROR_CORRECTION, ecc)
+                }
+                bitMatrix = MultiFormatWriter().encode(
+                    content,
+                    BarcodeFormat.QR_CODE,
+                    size,
+                    size,
+                    hints
+                )
+                break
+            } catch (e: Exception) {
+                continue
+            }
+        }
+
+        if (bitMatrix == null) {
+            val safeContent = if (content.length > 2800) content.take(2800) else content
+            val hints = hashMapOf<EncodeHintType, Any>().apply {
+                put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                put(EncodeHintType.MARGIN, 2)
+                put(EncodeHintType.ERROR_CORRECTION, com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.L)
+            }
+            bitMatrix = try {
+                MultiFormatWriter().encode(safeContent, BarcodeFormat.QR_CODE, size, size, hints)
+            } catch (e: Exception) {
+                MultiFormatWriter().encode(safeContent.take(1000), BarcodeFormat.QR_CODE, size, size, hints)
+            }
+        }
 
         val width = bitMatrix.width
         val height = bitMatrix.height
@@ -67,7 +97,7 @@ object QRGenerator {
         // Pixel-by-pixel sharp Black & White rendering (zero module gaps, zero scanning errors)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) foregroundColor else backgroundColor)
             }
         }
 

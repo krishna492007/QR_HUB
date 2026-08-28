@@ -707,13 +707,12 @@ private fun isValidEmail(email: String): Boolean {
 }
 
 // =====================================================
-// TEXT QR
-// =====================================================
-
 @Composable
 fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
     var text by remember { mutableStateOf("") }
     var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val maxSafeChars = 2800
+    val isOverLimit = text.length > maxSafeChars
 
     GenerateQrFormScreen(
         title = "Text QR Code",
@@ -723,7 +722,7 @@ fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
             val qr = QRGenerator.generateStandardQRBitmap(QRGenerator.buildTextContent(text))
             generatedBitmap = if (logo != null) QRGenerator.overlayLogoOnQR(qr, logo) else qr
         },
-        isValid = text.isNotEmpty(),
+        isValid = text.isNotEmpty() && !isOverLimit,
         generatedBitmap = generatedBitmap,
         qrType = "TEXT",
         getContent = { QRGenerator.buildTextContent(text) }
@@ -757,8 +756,33 @@ fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
             colors = premiumFieldColors(isDark)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("${text.length} characters", fontSize = 12.sp, color = TextTertiary, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.End)
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isOverLimit) {
+                Text(
+                    "Exceeds max QR capacity (Max ~2,800 chars)",
+                    fontSize = 11.5.sp,
+                    color = Color(0xFFFF5252),
+                    fontWeight = FontWeight.Medium
+                )
+            } else {
+                Text(
+                    "Adaptive error correction enabled",
+                    fontSize = 11.5.sp,
+                    color = appTextTertiary(isDark)
+                )
+            }
+            Text(
+                "${text.length} / $maxSafeChars",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isOverLimit) Color(0xFFFF5252) else if (text.length > 2000) appGoldPrimary(isDark) else appTextTertiary(isDark)
+            )
+        }
     }
 }
 

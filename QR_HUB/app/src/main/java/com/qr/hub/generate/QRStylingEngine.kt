@@ -14,23 +14,58 @@ object QRStylingEngine {
 
     /**
      * Render styled QR Bitmap with custom shapes, gradients, corner eyes, sleek square/squircle/circle logo badge, and frames.
+     * Includes Adaptive Error Correction fallback (H -> Q -> M -> L) to encode large text seamlessly without crashes.
      */
     fun renderStyledQR(
         content: String,
         config: QRStyleConfig,
         baseSize: Int = 1024
     ): Bitmap {
-        // 1. Encode QR Matrix with High Error Correction (30% recovery for logo & custom shapes)
-        val hints = hashMapOf<EncodeHintType, Any>().apply {
-            put(EncodeHintType.CHARACTER_SET, "UTF-8")
-            put(EncodeHintType.MARGIN, 0) // Zero ZXing margin, we control custom padding
-            put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H)
+        if (content.isEmpty()) {
+            return Bitmap.createBitmap(baseSize, baseSize, Bitmap.Config.ARGB_8888)
         }
 
-        val bitMatrix = try {
-            QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0, hints)
-        } catch (e: Exception) {
-            QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 25, 25, hints)
+        // 1. Adaptive Error Correction Fallback: Try H (30% recovery) -> Q (25%) -> M (15%) -> L (7%)
+        val eccLevels = listOf(
+            ErrorCorrectionLevel.H,
+            ErrorCorrectionLevel.Q,
+            ErrorCorrectionLevel.M,
+            ErrorCorrectionLevel.L
+        )
+
+        var bitMatrix: com.google.zxing.common.BitMatrix? = null
+        var usedEccLevel = ErrorCorrectionLevel.H
+
+        for (ecc in eccLevels) {
+            try {
+                val hints = hashMapOf<EncodeHintType, Any>().apply {
+                    put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                    put(EncodeHintType.MARGIN, 0) // Zero ZXing margin, we control custom padding
+                    put(EncodeHintType.ERROR_CORRECTION, ecc)
+                }
+                bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0, hints)
+                usedEccLevel = ecc
+                break
+            } catch (e: Exception) {
+                // Try next lower ECC level to fit more data
+                continue
+            }
+        }
+
+        // Final fallback if data exceeds standard: truncate or generate with L at fixed size
+        if (bitMatrix == null) {
+            val safeContent = if (content.length > 2800) content.take(2800) else content
+            val hints = hashMapOf<EncodeHintType, Any>().apply {
+                put(EncodeHintType.CHARACTER_SET, "UTF-8")
+                put(EncodeHintType.MARGIN, 0)
+                put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L)
+            }
+            bitMatrix = try {
+                QRCodeWriter().encode(safeContent, BarcodeFormat.QR_CODE, 0, 0, hints)
+            } catch (e: Exception) {
+                QRCodeWriter().encode(safeContent.take(1000), BarcodeFormat.QR_CODE, 25, 25, hints)
+            }
+            usedEccLevel = ErrorCorrectionLevel.L
         }
 
         val matrixSize = bitMatrix.width
@@ -125,13 +160,19 @@ object QRStylingEngine {
             }
         }
 
-        // Center Logo Cutout Calculation (Matches exact squircle/circle curvature)
+        // Center Logo Cutout Calculation (Matches exact squircle/circle curvature & scales safely for high-density QRs)
         val hasLogo = config.logoBitmap != null
         val matrixCenter = matrixSize / 2f
-        val logoSpanModules = if (hasLogo) (matrixSize * 0.25f).toInt().coerceAtLeast(5) else 0
+        val logoScaleRatio = when {
+            usedEccLevel == ErrorCorrectionLevel.L -> 0.12f
+            usedEccLevel == ErrorCorrectionLevel.M -> 0.16f
+            matrixSize > 65 -> 0.18f
+            else -> 0.22f
+        }
+        val logoSpanModules = if (hasLogo) (matrixSize * logoScaleRatio).toInt().coerceAtLeast(3) else 0
         val halfSpanM = logoSpanModules / 2f
         val cornerRadiusM = halfSpanM * 0.28f
-        val circleCutoutRadius = matrixSize * 0.16f
+        val circleCutoutRadius = logoSpanModules * 0.60f
 
         // ── 4. DRAW DATA MODULES ──
         for (x in 0 until matrixSize) {
