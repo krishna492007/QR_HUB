@@ -24,6 +24,7 @@ import com.qr.hub.util.*
 @Composable
 fun UrlSecurityCard(
     url: String,
+    isDark: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var analysis by remember(url) { mutableStateOf<UrlSecurityAnalysis?>(null) }
@@ -44,28 +45,34 @@ fun UrlSecurityCard(
 
     when (currentAnalysis.securityLevel) {
         SecurityLevel.SAFE -> {
-            shieldBg = Color(0x1A10B981)
+            shieldBg = if (isDark) Color(0x1A10B981) else Color(0xFFDCFCE7)
             shieldBorder = Color(0xFF10B981)
-            shieldTint = Color(0xFF34D399)
+            shieldTint = if (isDark) Color(0xFF34D399) else Color(0xFF059669)
         }
         SecurityLevel.CAUTION -> {
-            shieldBg = Color(0x1AFFB300)
+            shieldBg = if (isDark) Color(0x1AFFB300) else Color(0xFFFEF3C7)
             shieldBorder = Color(0xFFFFB300)
-            shieldTint = Color(0xFFFFC107)
+            shieldTint = if (isDark) Color(0xFFFFC107) else Color(0xFFD97706)
         }
         SecurityLevel.SUSPICIOUS -> {
-            shieldBg = Color(0x1AFF3D00)
+            shieldBg = if (isDark) Color(0x1AFF3D00) else Color(0xFFFEE2E2)
             shieldBorder = Color(0xFFFF3D00)
-            shieldTint = Color(0xFFFF5252)
+            shieldTint = if (isDark) Color(0xFFFF5252) else Color(0xFFDC2626)
         }
     }
+
+    val cardBg = if (isDark) Ink800 else CeramicSurface
+    val cardBorder = if (isDark) shieldBorder.copy(alpha = 0.4f) else (if (currentAnalysis.securityLevel == SecurityLevel.SAFE) Color(0xFF86EFAC) else shieldBorder.copy(alpha = 0.4f))
+    val accentSoft = appGoldSoft(isDark)
+    val textPrimary = appTextPrimary(isDark)
+    val textSecondary = appTextSecondary(isDark)
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Ink800)
-            .border(1.dp, shieldBorder.copy(alpha = 0.4f), RoundedCornerShape(18.dp))
+            .background(cardBg)
+            .border(1.dp, cardBorder, RoundedCornerShape(18.dp))
             .padding(14.dp)
     ) {
         Column {
@@ -88,7 +95,7 @@ fun UrlSecurityCard(
                         contentAlignment = Alignment.Center
                     ) {
                         if (isChecking) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = AmberSoft, strokeWidth = 2.dp)
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = accentSoft, strokeWidth = 2.dp)
                         } else {
                             Icon(
                                 imageVector = when (currentAnalysis.securityLevel) {
@@ -110,12 +117,12 @@ fun UrlSecurityCard(
                             text = currentAnalysis.safetyTitle,
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = textPrimary
                         )
                         Text(
                             text = currentAnalysis.safetyDescription,
                             fontSize = 11.sp,
-                            color = TextSecondary,
+                            color = textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -123,18 +130,31 @@ fun UrlSecurityCard(
                 }
 
                 // Protocol Pill (HTTPS / HTTP)
+                val isHttps = currentAnalysis.isHttps
+                val protocolPillBg = if (isDark) {
+                    if (isHttps) Color(0x2610B981) else Color(0x26FF5252)
+                } else {
+                    if (isHttps) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)
+                }
+                val protocolPillBorder = if (isHttps) Color(0xFF10B981) else Color(0xFFFF5252)
+                val protocolPillTint = if (isDark) {
+                    if (isHttps) Color(0xFF34D399) else Color(0xFFFF5252)
+                } else {
+                    if (isHttps) Color(0xFF059669) else Color(0xFFDC2626)
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (currentAnalysis.isHttps) Color(0x2610B981) else Color(0x26FF5252))
-                        .border(1.dp, if (currentAnalysis.isHttps) Color(0xFF10B981) else Color(0xFFFF5252), RoundedCornerShape(8.dp))
+                        .background(protocolPillBg)
+                        .border(1.dp, protocolPillBorder, RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = if (currentAnalysis.isHttps) Icons.Default.Lock else Icons.Default.LockOpen,
+                            imageVector = if (isHttps) Icons.Default.Lock else Icons.Default.LockOpen,
                             contentDescription = null,
-                            tint = if (currentAnalysis.isHttps) Color(0xFF34D399) else Color(0xFFFF5252),
+                            tint = protocolPillTint,
                             modifier = Modifier.size(11.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -142,7 +162,7 @@ fun UrlSecurityCard(
                             text = currentAnalysis.protocol,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (currentAnalysis.isHttps) Color(0xFF34D399) else Color(0xFFFF5252)
+                            color = protocolPillTint
                         )
                     }
                 }
@@ -155,21 +175,21 @@ fun UrlSecurityCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Ink750)
-                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                        .background(if (isDark) Ink750 else CeramicSurface2)
+                        .border(1.dp, if (isDark) BorderLine else CeramicBorder, RoundedCornerShape(12.dp))
                         .padding(10.dp)
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.UnfoldMore, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.UnfoldMore, null, tint = accentSoft, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Unmasked Destination URL", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                            Text("Unmasked Destination URL", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = accentSoft)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = currentAnalysis.unmaskedUrl,
                             fontSize = 12.sp,
-                            color = TextPrimary,
+                            color = textPrimary,
                             fontWeight = FontWeight.Medium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -192,12 +212,12 @@ fun UrlSecurityCard(
                     text = if (isDetailsExpanded) "Hide Security Checklist" else "View Trust Checklist & Risks",
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = AmberSoft
+                    color = accentSoft
                 )
                 Icon(
                     imageVector = if (isDetailsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = AmberSoft,
+                    tint = accentSoft,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -214,9 +234,9 @@ fun UrlSecurityCard(
                     // Trust Points (Green Checks)
                     currentAnalysis.trustPoints.forEach { point ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.CheckCircle, null, tint = if (isDark) Color(0xFF10B981) else Color(0xFF059669), modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(point, fontSize = 11.sp, color = TextSecondary)
+                            Text(point, fontSize = 11.sp, color = textSecondary)
                         }
                     }
 
@@ -225,7 +245,7 @@ fun UrlSecurityCard(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Warning, null, tint = Color(0xFFFF5252), modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(point, fontSize = 11.sp, color = Color(0xFFFF8A80))
+                            Text(point, fontSize = 11.sp, color = if (isDark) Color(0xFFFF8A80) else Color(0xFFDC2626))
                         }
                     }
                 }

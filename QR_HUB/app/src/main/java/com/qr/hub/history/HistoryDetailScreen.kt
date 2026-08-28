@@ -446,7 +446,7 @@ fun HistoryDetailScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     DetailItem(
-                        icon = Icons.Default.Category,
+                        icon = HtmlIcons.getTypeIcon(item.type),
                         label = "QR Type",
                         value = item.type
                     )
@@ -456,7 +456,7 @@ fun HistoryDetailScreen(
             // ── URL SECURITY INSPECTOR CARD (IF URL) ──
             if (item.type.equals("URL", ignoreCase = true) || item.rawValue.startsWith("http://", ignoreCase = true) || item.rawValue.startsWith("https://", ignoreCase = true)) {
                 Spacer(modifier = Modifier.height(14.dp))
-                com.qr.hub.util.security.UrlSecurityCard(url = item.rawValue)
+                com.qr.hub.util.security.UrlSecurityCard(url = item.rawValue, isDark = isDark)
             }
 
             // Bottom Spacing

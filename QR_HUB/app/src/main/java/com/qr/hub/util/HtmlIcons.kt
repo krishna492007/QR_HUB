@@ -494,4 +494,22 @@ object HtmlIcons {
             }
         }.build()
     }
+
+    fun getTypeIcon(type: String): ImageVector = when (type.uppercase().trim()) {
+        "URL", "QRURL", "HTTP", "HTTPS" -> UrlQr
+        "PHONE", "TEL" -> PhoneQr
+        "SMS", "SMSTO" -> SmsQr
+        "EMAIL", "QREMAIL", "MAILTO" -> EmailQr
+        "WIFI" -> WiFiQr
+        "WHATSAPP" -> WhatsAppQr
+        "WA_GROUP", "WAGROUP" -> WAGroupQr
+        "TEXT", "PLAIN" -> TextQr
+        "LOCATION", "PLUS_CODE", "GOOGLE_MAPS", "GEO" -> LocationQr
+        "UPI", "PAYMENT" -> UpiQr
+        "CONTACT", "VCARD", "MECARD" -> ContactQr
+        "EVENT", "VEVENT", "CALENDAR" -> EventQr
+        "BULK", "BULK_QR" -> BulkQr
+        "BARCODE", "EAN_13", "UPC_A", "CODE_128", "QR_CODE" -> BarcodeIcon
+        else -> TextQr
+    }
 }

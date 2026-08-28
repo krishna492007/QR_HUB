@@ -70,9 +70,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 // REDESIGNED RESULT SCREEN COLORS — Dynamic Ink & Ceramic
 // ============================================
 private data class ResultColors(
+    val isDark: Boolean,
     val bg: Color,
     val cardBg: Color,
     val cardBorder: Color,
+    val elevatedBg: Color,
     val accent: Color,
     val accentPink: Color,
     val textPrimary: Color,
@@ -82,9 +84,11 @@ private data class ResultColors(
 
 private val LocalResultColors = staticCompositionLocalOf {
     ResultColors(
+        isDark = true,
         bg = Ink950,
         cardBg = Ink800,
         cardBorder = BorderLine,
+        elevatedBg = Ink750,
         accent = AmberPrimary,
         accentPink = AmberSoft,
         textPrimary = TextPrimary,
@@ -92,6 +96,9 @@ private val LocalResultColors = staticCompositionLocalOf {
         textMuted = TextTertiary
     )
 }
+
+private val ResultIsDark: Boolean @Composable get() = LocalResultColors.current.isDark
+private val ResultElevatedBg: Color @Composable get() = LocalResultColors.current.elevatedBg
 
 private val ResultBg: Color @Composable get() = LocalResultColors.current.bg
 private val ResultCardBg: Color @Composable get() = LocalResultColors.current.cardBg
@@ -122,9 +129,11 @@ fun ResultScreen(
 ) {
     val resultColors = remember(isDark) {
         ResultColors(
+            isDark = isDark,
             bg = appBg(isDark),
             cardBg = appCardBg(isDark),
             cardBorder = appBorder(isDark),
+            elevatedBg = appElevatedBg(isDark),
             accent = appGoldPrimary(isDark),
             accentPink = appGoldSoft(isDark),
             textPrimary = appTextPrimary(isDark),
@@ -197,8 +206,8 @@ fun ResultScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Ink800)
-                            .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                            .background(ResultCardBg)
+                            .border(1.dp, ResultCardBorder, RoundedCornerShape(12.dp))
                             .clickable(onClick = onBack),
                         contentAlignment = Alignment.Center
                     ) {
@@ -223,8 +232,8 @@ fun ResultScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink800)
-                                .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                                .background(ResultCardBg)
+                                .border(1.dp, ResultCardBorder, RoundedCornerShape(12.dp))
                                 .clickable { showMenu = true },
                             contentAlignment = Alignment.Center
                         ) {
@@ -240,8 +249,8 @@ fun ResultScreen(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                             shape = RoundedCornerShape(20.dp),
-                            containerColor = Ink850,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderLineStrong),
+                            containerColor = if (ResultIsDark) Ink850 else CeramicSurface,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, if (ResultIsDark) BorderLineStrong else CeramicBorder),
                             shadowElevation = 12.dp,
                             modifier = Modifier.width(250.dp)
                         ) {
@@ -472,8 +481,8 @@ private fun TypeHeroBadge(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Ink800)
-                .border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+                .background(ResultCardBg)
+                .border(1.dp, ResultCardBorder, RoundedCornerShape(16.dp))
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -482,13 +491,13 @@ private fun TypeHeroBadge(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(AmberDim),
+                    .background(if (ResultIsDark) AmberDim else Color(0xFFFAF0E1)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     badge.icon,
                     contentDescription = null,
-                    tint = AmberSoft,
+                    tint = if (ResultIsDark) AmberSoft else CeramicGold,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -528,8 +537,8 @@ private fun ResultDetailCard(
             .fillMaxWidth()
             .padding(horizontal = 18.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Ink800)
-            .border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+            .background(ResultCardBg)
+            .border(1.dp, ResultCardBorder, RoundedCornerShape(16.dp))
     ) {
         when (parsed) {
             is ScannedQR.Text -> {
@@ -539,7 +548,7 @@ private fun ResultDetailCard(
             is ScannedQR.QRURL -> {
                 DetailField(Icons.Default.Link, "URL", parsed.url, typeColor, isLink = true)
                 Spacer(modifier = Modifier.height(10.dp))
-                com.qr.hub.util.security.UrlSecurityCard(url = parsed.url)
+                com.qr.hub.util.security.UrlSecurityCard(url = parsed.url, isDark = ResultIsDark)
             }
 
             is ScannedQR.UPI -> {
@@ -656,12 +665,14 @@ private fun DetailField(
     highlight: Boolean = false,
     isLink: Boolean = false
 ) {
+    val isDark = ResultIsDark
+    val borderCol = ResultCardBorder
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .drawBehind {
                 drawLine(
-                    color = BorderLine,
+                    color = borderCol,
                     start = Offset(54.dp.toPx(), size.height),
                     end = Offset(size.width - 16.dp.toPx(), size.height),
                     strokeWidth = 0.5.dp.toPx()
@@ -675,13 +686,13 @@ private fun DetailField(
             modifier = Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(9.dp))
-                .background(Ink750),
+                .background(if (isDark) Ink750 else Color(0xFFF3EFE9)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = AmberSoft,
+                tint = if (isDark) AmberSoft else CeramicGold,
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -714,14 +725,15 @@ private fun DetailField(
 @Composable
 private fun RawDataCard(rawValue: String) {
     var expanded by remember { mutableStateOf(false) }
+    val isDark = ResultIsDark
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 18.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Ink800)
-            .border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+            .background(ResultCardBg)
+            .border(1.dp, ResultCardBorder, RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier
@@ -762,7 +774,7 @@ private fun RawDataCard(rawValue: String) {
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Ink900)
+                    .background(if (isDark) Ink900 else CeramicSurface2)
                     .padding(12.dp)
             ) {
                 Text(
@@ -831,8 +843,8 @@ private fun QuickActionButton(
         modifier = modifier
             .height(50.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Ink800)
-            .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+            .background(ResultCardBg)
+            .border(1.dp, ResultCardBorder, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -876,11 +888,12 @@ private fun TypeSpecificActions(
                 val defaultName = remember { UpiPreferenceManager.getDefaultName(context) }
                 val defaultPkg = remember { UpiPreferenceManager.getDefaultPackage(context) }
 
+                val isDark = ResultIsDark
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Ink800),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLine)
+                    colors = CardDefaults.cardColors(containerColor = ResultCardBg),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, ResultCardBorder)
                 ) {
                     Column(
                         modifier = Modifier
@@ -1153,12 +1166,13 @@ private fun ExtraActionButton(
     color: Color,
     onClick: () -> Unit
 ) {
+    val isDark = ResultIsDark
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Ink800)
-            .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+            .background(ResultCardBg)
+            .border(1.dp, ResultCardBorder, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1167,13 +1181,13 @@ private fun ExtraActionButton(
             modifier = Modifier
                 .size(34.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Ink750),
+                .background(if (isDark) Ink750 else Color(0xFFF3EFE9)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 icon,
                 contentDescription = null,
-                tint = AmberSoft,
+                tint = if (isDark) AmberSoft else CeramicGold,
                 modifier = Modifier.size(17.dp)
             )
         }
@@ -1451,20 +1465,18 @@ data class BadgeInfo(val icon: ImageVector, val label: String, val tint: Color)
 
 fun getBadge(parsed: ScannedQR): BadgeInfo {
     return when (parsed) {
-        is ScannedQR.Text -> BadgeInfo(Icons.Default.TextFields, "Text", TypeTextColor)
-        is ScannedQR.QRURL -> BadgeInfo(Icons.Default.Link, "URL", TypeUrlColor)
-        is ScannedQR.UPI -> BadgeInfo(Icons.Default.AccountBalance, "UPI Payment", TypeUpiColor)
-        is ScannedQR.Phone -> BadgeInfo(Icons.Default.Phone, "Phone", TypePhoneColor)
-        is ScannedQR.Contact -> BadgeInfo(Icons.Default.Person, "Contact", TypeContactColor)
-        is ScannedQR.SMS -> BadgeInfo(Icons.AutoMirrored.Filled.Message, "SMS", TypeSmsColor)
-        is ScannedQR.QREmail -> BadgeInfo(Icons.Default.Email, "Email", TypeEmailColor)
-        is ScannedQR.WiFi -> BadgeInfo(Icons.Default.Wifi, "WiFi", TypeWifiColor)
-        is ScannedQR.WhatsApp -> BadgeInfo(Icons.AutoMirrored.Filled.Chat, "WhatsApp", TypeWhatsAppColor)
-        is ScannedQR.Location -> BadgeInfo(Icons.Default.LocationOn, "Location", TypeLocationColor)
-        is ScannedQR.Event -> BadgeInfo(Icons.Default.Event, "Event", Color(0xFFF9A825))
-        is ScannedQR.PlusCode -> BadgeInfo(Icons.Default.Place, "Plus Code", TypeLocationColor)
-        is ScannedQR.GoogleMaps -> BadgeInfo(Icons.Default.Map, "Google Maps", TypeLocationColor)
-        is ScannedQR.Unknown -> BadgeInfo(Icons.Default.QuestionMark, "Unknown", AmberPrimary)
+        is ScannedQR.Text -> BadgeInfo(HtmlIcons.TextQr, "Text", TypeTextColor)
+        is ScannedQR.QRURL -> BadgeInfo(HtmlIcons.UrlQr, "URL", TypeUrlColor)
+        is ScannedQR.UPI -> BadgeInfo(HtmlIcons.UpiQr, "UPI Payment", TypeUpiColor)
+        is ScannedQR.Phone -> BadgeInfo(HtmlIcons.PhoneQr, "Phone", TypePhoneColor)
+        is ScannedQR.Contact -> BadgeInfo(HtmlIcons.ContactQr, "Contact", TypeContactColor)
+        is ScannedQR.SMS -> BadgeInfo(HtmlIcons.SmsQr, "SMS", TypeSmsColor)
+        is ScannedQR.QREmail -> BadgeInfo(HtmlIcons.EmailQr, "Email", TypeEmailColor)
+        is ScannedQR.WiFi -> BadgeInfo(HtmlIcons.WiFiQr, "WiFi", TypeWifiColor)
+        is ScannedQR.WhatsApp -> BadgeInfo(HtmlIcons.WhatsAppQr, "WhatsApp", TypeWhatsAppColor)
+        is ScannedQR.Location, is ScannedQR.PlusCode, is ScannedQR.GoogleMaps -> BadgeInfo(HtmlIcons.LocationQr, "Location", TypeLocationColor)
+        is ScannedQR.Event -> BadgeInfo(HtmlIcons.EventQr, "Event", Color(0xFFF9A825))
+        is ScannedQR.Unknown -> BadgeInfo(HtmlIcons.TextQr, "Unknown", AmberPrimary)
     }
 }
 

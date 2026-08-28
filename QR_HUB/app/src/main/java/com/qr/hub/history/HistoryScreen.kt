@@ -757,18 +757,19 @@ private fun CategoryFilterRow(
             val isSelected = selectedCategory == value ||
                     (value == null && selectedCategory == null)
 
+            val isDark = LocalHistoryColors.current.isDark
             val chipBg by animateColorAsState(
-                targetValue = if (isSelected) AmberDim else Ink800,
+                targetValue = if (isSelected) appGoldDim(isDark) else appCardBg(isDark),
                 animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
                 label = "ChipBg"
             )
             val chipBorder by animateColorAsState(
-                targetValue = if (isSelected) AmberDim2 else BorderLine,
+                targetValue = if (isSelected) appGoldPrimary(isDark) else appBorder(isDark),
                 animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
                 label = "ChipBorder"
             )
             val chipTextColor by animateColorAsState(
-                targetValue = if (isSelected) HistoryTextPrimary else HistoryTextSecondary,
+                targetValue = if (isSelected) (if (isDark) AmberSoft else CeramicGold) else appTextSecondary(isDark),
                 animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
                 label = "ChipTextColor"
             )
@@ -1224,18 +1225,21 @@ private fun getSubtitle(item: HistoryItem): String {
 }
 
 private fun getTypeIcon(type: String) = when (type.uppercase()) {
-    "URL", "QRURL" -> Icons.Default.Link
-    "PHONE" -> Icons.Default.Phone
-    "SMS" -> Icons.Default.Sms
-    "EMAIL", "QREMAIL" -> Icons.Default.Email
-    "WIFI" -> Icons.Default.Wifi
-    "WHATSAPP" -> Icons.AutoMirrored.Filled.Chat
-    "TEXT" -> Icons.Default.TextFields
-    "LOCATION", "PLUS_CODE", "GOOGLE_MAPS" -> Icons.Default.LocationOn
-    "UPI" -> Icons.Default.Payment
-    "CONTACT", "VCARD" -> Icons.Default.Person
-    "EVENT", "VEVENT" -> Icons.Default.Event
-    else -> Icons.Default.QrCode
+    "URL", "QRURL" -> HtmlIcons.UrlQr
+    "PHONE" -> HtmlIcons.PhoneQr
+    "SMS" -> HtmlIcons.SmsQr
+    "EMAIL", "QREMAIL" -> HtmlIcons.EmailQr
+    "WIFI" -> HtmlIcons.WiFiQr
+    "WHATSAPP" -> HtmlIcons.WhatsAppQr
+    "WA_GROUP", "WAGROUP" -> HtmlIcons.WAGroupQr
+    "TEXT" -> HtmlIcons.TextQr
+    "LOCATION", "PLUS_CODE", "GOOGLE_MAPS" -> HtmlIcons.LocationQr
+    "UPI" -> HtmlIcons.UpiQr
+    "CONTACT", "VCARD" -> HtmlIcons.ContactQr
+    "EVENT", "VEVENT" -> HtmlIcons.EventQr
+    "BULK", "BULK_QR" -> HtmlIcons.BulkQr
+    "BARCODE" -> HtmlIcons.BarcodeIcon
+    else -> HtmlIcons.TextQr
 }
 
 private fun getTypeColor(type: String): Color = when (type.uppercase()) {

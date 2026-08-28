@@ -1678,8 +1678,8 @@ private fun GenerateQrFormScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 18.dp)
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Ink800)
-                    .border(1.dp, if (isCustomizeExpanded) AmberPrimary else BorderLine, RoundedCornerShape(18.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, if (isCustomizeExpanded) appGoldPrimary(isDark) else appBorder(isDark), RoundedCornerShape(18.dp))
             ) {
                 Column {
                     // Tap Header Bar
@@ -1694,10 +1694,10 @@ private fun GenerateQrFormScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(AmberDim2),
+                                .background(appGoldDim2(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Palette, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Palette, null, tint = appGoldSoft(isDark), modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -1705,18 +1705,18 @@ private fun GenerateQrFormScreen(
                                 "Customize QR Style",
                                 fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                                color = appTextPrimary(isDark)
                             )
                             Text(
                                 if (isCustomizeExpanded) "Tap to collapse customization panel" else "Tap to customize Colors, Shapes, Eyes & Logos",
                                 fontSize = 11.5.sp,
-                                color = TextTertiary
+                                color = appTextTertiary(isDark)
                             )
                         }
                         Icon(
                             if (isCustomizeExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = AmberSoft,
+                            tint = appGoldSoft(isDark),
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -1728,11 +1728,12 @@ private fun GenerateQrFormScreen(
                         exit = shrinkVertically() + fadeOut()
                     ) {
                         Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                            HorizontalDivider(color = BorderLine, modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(color = appBorder(isDark), modifier = Modifier.padding(horizontal = 16.dp))
                             Spacer(modifier = Modifier.height(10.dp))
                             QRCustomizationSection(
                                 qrType = qrType,
                                 styleConfig = styleConfig,
+                                isDark = isDark,
                                 onStyleChanged = { newConfig ->
                                     styleConfig = newConfig
                                     val raw = getContent()
