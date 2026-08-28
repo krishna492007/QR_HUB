@@ -169,7 +169,7 @@ fun AboutLegalScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark))
             ) {
                 Column {
-                    // Theme Mode Selector
+                    // Theme Mode Toggle (Quick ON/OFF Switch)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -177,7 +177,8 @@ fun AboutLegalScreen(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = ripple(color = appGoldDim2(isDark))
                             ) {
-                                showThemeDialog = true
+                                val newMode = if (isDark) AppThemeMode.LIGHT else AppThemeMode.DARK
+                                onThemeModeChange(newMode)
                             }
                             .padding(horizontal = 18.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -200,22 +201,29 @@ fun AboutLegalScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "App Theme",
+                                "Dark Mode",
                                 color = appTextPrimary(isDark),
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                currentThemeMode.label,
-                                color = appGoldPrimary(isDark),
+                                if (isDark) "Active (Obsidian & Gold)" else "Disabled (Ceramic & Gold)",
+                                color = if (isDark) appGoldPrimary(isDark) else appTextTertiary(isDark),
                                 fontSize = 12.5.sp
                             )
                         }
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = appTextTertiary(isDark),
-                            modifier = Modifier.size(20.dp)
+                        Switch(
+                            checked = isDark,
+                            onCheckedChange = { isChecked ->
+                                val newMode = if (isChecked) AppThemeMode.DARK else AppThemeMode.LIGHT
+                                onThemeModeChange(newMode)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = if (isDark) Color(0xFF20140A) else Color.White,
+                                checkedTrackColor = appGoldPrimary(isDark),
+                                uncheckedThumbColor = if (isDark) appTextTertiary(isDark) else Color.White,
+                                uncheckedTrackColor = if (isDark) Ink750 else CeramicElevated
+                            )
                         )
                     }
                 }
