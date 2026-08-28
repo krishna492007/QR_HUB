@@ -1602,13 +1602,18 @@ private fun GenerateQrFormScreen(
                         modifier = Modifier.padding(bottom = 14.dp)
                     )
 
-                    // QR Image container
+                    // QR Image container with clear framing border
                     Box(
                         modifier = Modifier
                             .size(250.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(18.dp))
                             .background(Color(styleConfig.bgColor))
-                            .padding(8.dp),
+                            .border(
+                                width = 1.2.dp,
+                                color = if (isDark) BorderLineStrong else appGoldPrimary(isDark).copy(alpha = 0.35f),
+                                shape = RoundedCornerShape(18.dp)
+                            )
+                            .padding(10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(

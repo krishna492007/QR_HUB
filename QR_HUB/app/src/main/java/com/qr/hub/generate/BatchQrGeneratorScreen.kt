@@ -500,9 +500,10 @@ fun BatchQrGeneratorScreen(
                                         Box(
                                             modifier = Modifier
                                                 .size(120.dp)
-                                                .clip(RoundedCornerShape(10.dp))
+                                                .clip(RoundedCornerShape(12.dp))
                                                 .background(Color(styleConfig.bgColor))
-                                                .padding(4.dp)
+                                                .border(1.dp, if (isDark) BorderLineStrong else appGoldPrimary(isDark).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                                                .padding(6.dp)
                                         ) {
                                             Image(
                                                 bitmap = item.bitmap.asImageBitmap(),

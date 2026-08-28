@@ -440,6 +440,7 @@ fun GenerateBarcodeScreen(
                                     .height(130.dp)
                                     .clip(RoundedCornerShape(14.dp))
                                     .background(Color.White)
+                                    .border(1.dp, if (isDark) BorderLineStrong else appGoldPrimary(isDark).copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                                     .padding(10.dp),
                                 contentAlignment = Alignment.Center
                             ) {

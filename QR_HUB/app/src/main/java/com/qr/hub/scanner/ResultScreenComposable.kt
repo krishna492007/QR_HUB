@@ -916,13 +916,13 @@ private fun TypeSpecificActions(
                                     modifier = Modifier
                                         .size(28.dp)
                                         .clip(CircleShape)
-                                        .background(CyanDim),
+                                        .background(appTealDim(ResultIsDark)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = CyanAccent,
+                                        tint = appTealAccent(ResultIsDark),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -931,7 +931,7 @@ private fun TypeSpecificActions(
                                         text = "100% SUCCESSFUL PAYMENT",
                                         fontSize = 11.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = CyanAccent,
+                                        color = appTealAccent(ResultIsDark),
                                         letterSpacing = 0.5.sp
                                     )
                                     Text(
@@ -946,8 +946,8 @@ private fun TypeSpecificActions(
                             if (!defaultName.isNullOrEmpty()) {
                                 Surface(
                                     shape = RoundedCornerShape(20.dp),
-                                    color = AmberDim,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, AmberDim2)
+                                    color = appGoldDim(ResultIsDark),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, appGoldDim2(ResultIsDark))
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -959,7 +959,7 @@ private fun TypeSpecificActions(
                                             text = defaultName,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = AmberSoft
+                                            color = appGoldSoft(ResultIsDark)
                                         )
                                     }
                                 }
@@ -989,11 +989,11 @@ private fun TypeSpecificActions(
                                             },
                                         shape = RoundedCornerShape(14.dp),
                                         colors = CardDefaults.cardColors(
-                                            containerColor = if (isThisDefault) AmberDim else Ink750
+                                            containerColor = if (isThisDefault) appGoldDim(ResultIsDark) else appElevatedBg(ResultIsDark)
                                         ),
                                         border = androidx.compose.foundation.BorderStroke(
                                             width = if (isThisDefault) 1.5.dp else 1.dp,
-                                            color = if (isThisDefault) AmberDim2 else BorderLine
+                                            color = if (isThisDefault) appGoldPrimary(ResultIsDark) else appBorder(ResultIsDark)
                                         )
                                     ) {
                                         Column(
@@ -1041,7 +1041,7 @@ private fun TypeSpecificActions(
                                                 text = app.appName,
                                                 fontSize = 11.5.sp,
                                                 fontWeight = if (isThisDefault) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isThisDefault) AmberSoft else ResultTextPrimary,
+                                                color = if (isThisDefault) appGoldSoft(ResultIsDark) else ResultTextPrimary,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
