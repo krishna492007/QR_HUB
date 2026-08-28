@@ -135,9 +135,11 @@ fun detectType(value: String): ScannedQR {
             ScannedQR.QRURL(raw)
         }
 
-        // Detect domain-like patterns: contains "." and looks like a URL (no spaces, has TLD)
-        isLikelyDomain(raw) -> {
-            ScannedQR.QRURL(raw)
+        // Detect Compressed Ultra-Long QR Payloads
+        QRCompressor.isCompressed(raw) -> {
+            val decompressed = QRCompressor.decompress(raw) ?: raw
+            // Re-detect on decompressed content in case it's a URL or plain text
+            detectType(decompressed)
         }
 
         else -> ScannedQR.Text(raw)

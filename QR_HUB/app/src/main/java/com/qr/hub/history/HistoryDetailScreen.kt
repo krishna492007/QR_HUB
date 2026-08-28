@@ -637,6 +637,10 @@ private fun parseHistoryDetailItem(item: HistoryItem): ScannedQR {
             startDate = icalField(raw, "DTSTART"),
             endDate = icalField(raw, "DTEND")
         )
+        com.qr.hub.util.QRCompressor.isCompressed(raw) -> {
+            val decompressed = com.qr.hub.util.QRCompressor.decompress(raw) ?: raw
+            com.qr.hub.util.detectType(decompressed)
+        }
         else -> ScannedQR.Text(raw)
     }
 }

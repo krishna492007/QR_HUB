@@ -710,22 +710,31 @@ private fun isValidEmail(email: String): Boolean {
 @Composable
 fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
     var text by remember { mutableStateOf("") }
+    var isCompressMode by remember { mutableStateOf(false) }
     var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    val maxSafeChars = 2800
+    val maxSafeChars = if (isCompressMode) 8000 else 2800
     val isOverLimit = text.length > maxSafeChars
+
+    val activeContent = remember(text, isCompressMode) {
+        if (isCompressMode && text.isNotEmpty()) {
+            QRCompressor.compress(text)
+        } else {
+            QRGenerator.buildTextContent(text)
+        }
+    }
 
     GenerateQrFormScreen(
         title = "Text QR Code",
         isDark = isDark,
         onBack = onBack,
         onGenerate = { logo ->
-            val qr = QRGenerator.generateStandardQRBitmap(QRGenerator.buildTextContent(text))
+            val qr = QRGenerator.generateStandardQRBitmap(activeContent)
             generatedBitmap = if (logo != null) QRGenerator.overlayLogoOnQR(qr, logo) else qr
         },
         isValid = text.isNotEmpty() && !isOverLimit,
         generatedBitmap = generatedBitmap,
         qrType = "TEXT",
-        getContent = { QRGenerator.buildTextContent(text) }
+        getContent = { activeContent }
     ) {
         // Hint row with unified HtmlIcon badge
         Row(
@@ -764,24 +773,85 @@ fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
         ) {
             if (isOverLimit) {
                 Text(
-                    "Exceeds max QR capacity (Max ~2,800 chars)",
+                    "Exceeds max capacity (Max $maxSafeChars chars)",
                     fontSize = 11.5.sp,
                     color = Color(0xFFFF5252),
                     fontWeight = FontWeight.Medium
                 )
             } else {
                 Text(
-                    "Adaptive error correction enabled",
+                    if (isCompressMode) "🗜️ Ultra GZIP Compression Active" else "Adaptive High-Density Mode",
                     fontSize = 11.5.sp,
-                    color = appTextTertiary(isDark)
+                    color = if (isCompressMode) appGoldPrimary(isDark) else appTextTertiary(isDark),
+                    fontWeight = if (isCompressMode) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
             Text(
                 "${text.length} / $maxSafeChars",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (isOverLimit) Color(0xFFFF5252) else if (text.length > 2000) appGoldPrimary(isDark) else appTextTertiary(isDark)
+                color = if (isOverLimit) Color(0xFFFF5252) else if (text.length > (maxSafeChars * 0.75)) appGoldPrimary(isDark) else appTextTertiary(isDark)
             )
+        }
+
+        // Ultra Compression Mode Toggle Card
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            shape = RoundedCornerShape(14.dp),
+            color = if (isCompressMode) appGoldDim(isDark) else appElevatedBg(isDark),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = if (isCompressMode) appGoldPrimary(isDark) else appBorder(isDark)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isCompressMode = !isCompressMode }
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isCompressMode) appGoldPrimary(isDark).copy(alpha = 0.2f) else appCardBg(isDark)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Compress,
+                        contentDescription = null,
+                        tint = if (isCompressMode) appGoldPrimary(isDark) else appTextSecondary(isDark),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Ultra Compression Mode",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isCompressMode) appGoldSoft(isDark) else appTextPrimary(isDark)
+                    )
+                    Text(
+                        if (isCompressMode) "Active: Fits up to 1,500 words in clean compact QR" else "Compress huge text to keep QR dots big & clean",
+                        fontSize = 11.sp,
+                        color = if (isCompressMode) appGoldPrimary(isDark) else appTextTertiary(isDark)
+                    )
+                }
+                Switch(
+                    checked = isCompressMode,
+                    onCheckedChange = { isCompressMode = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = if (isDark) Color(0xFF20140A) else Color.White,
+                        checkedTrackColor = appGoldPrimary(isDark),
+                        uncheckedThumbColor = if (isDark) appTextTertiary(isDark) else Color.White,
+                        uncheckedTrackColor = if (isDark) Ink750 else CeramicElevated
+                    )
+                )
+            }
         }
     }
 }
