@@ -321,6 +321,7 @@ private fun ScannerActiveView(
         SetDefaultUpiAppDialog(
             installedApps = installedUpiApps,
             currentDefaultPkg = defaultPkg,
+            isDark = isDark,
             onDismiss = { showDefaultAppDialog = false },
             onSetDefault = { pkg, name ->
                 defaultPkg = pkg
@@ -452,15 +453,15 @@ private fun ScannerActiveView(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                     .clickable { onBack?.invoke() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = TextPrimary,
+                    tint = appTextPrimary(isDark),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -470,7 +471,7 @@ private fun ScannerActiveView(
                 "Scan",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
+                color = appTextPrimary(isDark)
             )
 
             // More menu button
@@ -479,15 +480,15 @@ private fun ScannerActiveView(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                        .background(appCardBg(isDark))
+                        .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                         .clickable { showMenu = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Default.MoreVert,
                         contentDescription = "More",
-                        tint = TextPrimary,
+                        tint = appTextPrimary(isDark),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -507,7 +508,7 @@ private fun ScannerActiveView(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(color = AmberDim2)
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(isDark))
                             ) {
                                 showMenu = false
                                 showDefaultAppDialog = true
@@ -520,13 +521,13 @@ private fun ScannerActiveView(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750),
+                                .background(appElevatedBg(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Star,
                                 contentDescription = null,
-                                tint = AmberSoft,
+                                tint = appGoldPrimary(isDark),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -536,20 +537,20 @@ private fun ScannerActiveView(
                         ) {
                             Text(
                                 "Default UPI app",
-                                color = TextSecondary,
+                                color = appTextSecondary(isDark),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal
                             )
                             Text(
                                 text = if (!defaultName.isNullOrEmpty()) defaultName!! else "None (Always Ask)",
-                                color = TextPrimary,
+                                color = appTextPrimary(isDark),
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
                         }
                     }
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.8.dp)
 
                     // Quick auto-pay
                     Row(
@@ -557,7 +558,7 @@ private fun ScannerActiveView(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(color = AmberDim2)
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(isDark))
                             ) {
                                 val next = !isQuickPay
                                 isQuickPay = next
@@ -571,13 +572,13 @@ private fun ScannerActiveView(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750),
+                                .background(appElevatedBg(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Bolt,
                                 contentDescription = null,
-                                tint = AmberSoft,
+                                tint = appGoldPrimary(isDark),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -587,7 +588,7 @@ private fun ScannerActiveView(
                         ) {
                             Text(
                                 "Quick auto-pay",
-                                color = TextSecondary,
+                                color = appTextSecondary(isDark),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal
                             )
@@ -611,7 +612,7 @@ private fun ScannerActiveView(
                                 } else {
                                     Text(
                                         "Disabled",
-                                        color = TextTertiary,
+                                        color = appTextTertiary(isDark),
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 14.sp
                                     )
@@ -619,10 +620,6 @@ private fun ScannerActiveView(
                             }
                         }
                     }
-
-
-
-
 
                     // Premium Brand Footer
                     Box(
@@ -641,9 +638,9 @@ private fun ScannerActiveView(
                                         brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                                             colors = listOf(
                                                 androidx.compose.ui.graphics.Color.Transparent,
-                                                AmberDim2,
-                                                AmberSoft,
-                                                AmberDim2,
+                                                appGoldDim2(isDark),
+                                                appGoldPrimary(isDark),
+                                                appGoldDim2(isDark),
                                                 androidx.compose.ui.graphics.Color.Transparent
                                             )
                                         ),
@@ -655,7 +652,7 @@ private fun ScannerActiveView(
                                 text = androidx.compose.ui.text.buildAnnotatedString {
                                     withStyle(
                                         style = androidx.compose.ui.text.SpanStyle(
-                                            color = TextTertiary,
+                                            color = appTextTertiary(isDark),
                                             fontFamily = FontFamily.Monospace,
                                             fontSize = 9.5.sp,
                                             fontWeight = FontWeight.Normal,
@@ -664,7 +661,7 @@ private fun ScannerActiveView(
                                     ) { append("BUILT BY ") }
                                     withStyle(
                                         style = androidx.compose.ui.text.SpanStyle(
-                                            color = AmberSoft,
+                                            color = appGoldSoft(isDark),
                                             fontFamily = FontFamily.Monospace,
                                             fontSize = 10.5.sp,
                                             fontWeight = FontWeight.Bold,

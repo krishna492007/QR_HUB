@@ -72,20 +72,20 @@ private val AccentPurple = AmberSoft
 private val AccentPink = AmberPrimary
 
 sealed class QRType(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    object Bulk : QRType("Bulk QR", Icons.Default.DynamicFeed)
-    object Barcode : QRType("Barcode", Icons.Default.ViewWeek)
-    object Text : QRType("Text", Icons.Default.TextFields)
-    object URL : QRType("URL", Icons.Default.Link)
-    object UPI : QRType("UPI", Icons.Default.AccountBalance)
-    object WhatsApp : QRType("WhatsApp", Icons.AutoMirrored.Filled.Chat)
-    object WAGroup : QRType("WA Group", Icons.Default.Group)
-    object Phone : QRType("Phone", Icons.Default.Phone)
-    object SMS : QRType("SMS", Icons.Default.Sms)
-    object Email : QRType("Email", Icons.Default.Email)
-    object Contact : QRType("Contact", Icons.Default.Person)
-    object WiFi : QRType("WiFi", Icons.Default.Wifi)
-    object Location : QRType("Location", Icons.Default.LocationOn)
-    object Event : QRType("Event", Icons.Default.Event)
+    object Bulk : QRType("Bulk QR", HtmlIcons.BulkQr)
+    object Barcode : QRType("Barcode", HtmlIcons.BarcodeIcon)
+    object Text : QRType("Text", HtmlIcons.TextQr)
+    object URL : QRType("URL", HtmlIcons.UrlQr)
+    object UPI : QRType("UPI", HtmlIcons.UpiQr)
+    object WhatsApp : QRType("WhatsApp", HtmlIcons.WhatsAppQr)
+    object WAGroup : QRType("WA Group", HtmlIcons.WAGroupQr)
+    object Phone : QRType("Phone", HtmlIcons.PhoneQr)
+    object SMS : QRType("SMS", HtmlIcons.SmsQr)
+    object Email : QRType("Email", HtmlIcons.EmailQr)
+    object Contact : QRType("Contact", HtmlIcons.ContactQr)
+    object WiFi : QRType("WiFi", HtmlIcons.WiFiQr)
+    object Location : QRType("Location", HtmlIcons.LocationQr)
+    object Event : QRType("Event", HtmlIcons.EventQr)
 
     companion object {
         val allTypes = listOf(Bulk, Barcode, Text, URL, UPI, WhatsApp, WAGroup, Phone, SMS, Email, Contact, WiFi, Location, Event)
@@ -746,7 +746,7 @@ fun GenerateTextQrScreen(isDark: Boolean, onBack: () -> Unit) {
             minLines = 4,
             maxLines = 6,
             placeholder = { Text("Type your message, notes, or any text...") },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -782,7 +782,7 @@ fun GenerateUrlQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Enter URL (e.g., google.com)") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Link, null, tint = AccentPurple) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
     }
 }
@@ -822,20 +822,20 @@ fun GenerateUpiQrScreen(isDark: Boolean, onBack: () -> Unit) {
             supportingText = if (vpa.isNotEmpty() && !vpa.contains("@")) {
                 { Text("UPI ID must contain @", color = Color(0xFFEF5350)) }
             } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Payee Name") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Payee Name") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = amount,
             onValueChange = { if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) amount = it },
             label = { Text("Amount (₹)") },
             modifier = Modifier.fillMaxWidth(),
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text("Note / Remark") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text("Note / Remark") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
     }
 }
 
@@ -872,7 +872,7 @@ fun GeneratePhoneQrScreen(isDark: Boolean, onBack: () -> Unit) {
             supportingText = if (number.isNotEmpty() && !isValidPhone(number)) {
                 { Text("Min 10 digits required", color = Color(0xFFEF5350)) }
             } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
     }
 }
@@ -909,7 +909,7 @@ fun GenerateSmsQrScreen(isDark: Boolean, onBack: () -> Unit) {
             supportingText = if (number.isNotEmpty() && !isValidPhone(number)) {
                 { Text("Min 10 digits required", color = Color(0xFFEF5350)) }
             } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -918,7 +918,7 @@ fun GenerateSmsQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Message") },
             modifier = Modifier.fillMaxWidth(),
             minLines = 3, maxLines = 5,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
     }
 }
@@ -957,12 +957,12 @@ fun GenerateEmailQrScreen(isDark: Boolean, onBack: () -> Unit) {
             supportingText = if (address.isNotEmpty() && !isValidEmail(address)) {
                 { Text("Enter a valid email address", color = Color(0xFFEF5350)) }
             } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Subject") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = subject, onValueChange = { subject = it }, label = { Text("Subject") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = body, onValueChange = { body = it }, label = { Text("Body") }, modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 5, colors = premiumFieldColors())
+        OutlinedTextField(value = body, onValueChange = { body = it }, label = { Text("Body") }, modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 5, colors = premiumFieldColors(isDark))
     }
 }
 
@@ -997,10 +997,10 @@ fun GenerateWifiQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Network Name (SSID) *") },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = { Icon(Icons.Default.Wifi, null, tint = AccentPurple) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
 
         var expanded by remember { mutableStateOf(false) }
@@ -1012,7 +1012,7 @@ fun GenerateWifiQrScreen(isDark: Boolean, onBack: () -> Unit) {
                 label = { Text("Security Type") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(type = MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                colors = premiumFieldColors()
+                colors = premiumFieldColors(isDark)
             )
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 listOf("WPA", "WEP", "None").forEach { displayEnc ->
@@ -1054,7 +1054,7 @@ fun GenerateContactQrScreen(isDark: Boolean, onBack: () -> Unit) {
         getContent = { QRGenerator.buildContactContent(name, phone, email, org, title) }
     ) {
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name *") }, modifier = Modifier.fillMaxWidth(),
-            leadingIcon = { Icon(Icons.Default.Person, null, tint = AccentPurple) }, colors = premiumFieldColors())
+            leadingIcon = { Icon(Icons.Default.Person, null, tint = AccentPurple) }, colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
             value = phone,
@@ -1063,7 +1063,7 @@ fun GenerateContactQrScreen(isDark: Boolean, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             isError = !phoneValid,
             supportingText = if (!phoneValid) { { Text("Min 10 digits required", color = Color(0xFFEF5350)) } } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -1073,12 +1073,12 @@ fun GenerateContactQrScreen(isDark: Boolean, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             isError = !emailValid,
             supportingText = if (!emailValid) { { Text("Enter a valid email", color = Color(0xFFEF5350)) } } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = org, onValueChange = { org = it }, label = { Text("Organization") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = org, onValueChange = { org = it }, label = { Text("Organization") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
         Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors())
+        OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Job Title") }, modifier = Modifier.fillMaxWidth(), colors = premiumFieldColors(isDark))
     }
 }
 
@@ -1116,11 +1116,11 @@ fun GenerateWhatsAppQrScreen(isDark: Boolean, onBack: () -> Unit) {
             supportingText = if (number.isNotEmpty() && !isValidPhone(number)) {
                 { Text("Min 10 digits required", color = Color(0xFFEF5350)) }
             } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(value = message, onValueChange = { message = it }, label = { Text("Pre-filled Message") },
-            modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 5, colors = premiumFieldColors())
+            modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 5, colors = premiumFieldColors(isDark))
     }
 }
 
@@ -1153,7 +1153,7 @@ fun GenerateWAGroupQrScreen(isDark: Boolean, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("https://chat.whatsapp.com/ABC123...") },
             leadingIcon = { Icon(Icons.Default.Group, null, tint = Color(0xFF00BFA5)) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text("Paste the full invite link or just the code", fontSize = 12.sp, color = TextSecondary)
@@ -1200,7 +1200,7 @@ fun GenerateLocationQrScreen(isDark: Boolean, onBack: () -> Unit) {
             leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = AccentPurple) },
             isError = latError,
             supportingText = if (latError) { { Text("Must be -90 to 90", color = Color(0xFFEF5350)) } } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -1211,7 +1211,7 @@ fun GenerateLocationQrScreen(isDark: Boolean, onBack: () -> Unit) {
             placeholder = { Text("e.g. 77.2090") },
             isError = lngError,
             supportingText = if (lngError) { { Text("Must be -180 to 180", color = Color(0xFFEF5350)) } } else null,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -1220,7 +1220,7 @@ fun GenerateLocationQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Place Name (optional)") },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. India Gate, New Delhi") },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
     }
 }
@@ -1288,7 +1288,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. Team Meeting") },
             leadingIcon = { Icon(Icons.Default.Event, null, tint = AccentPurple) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -1298,7 +1298,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text("e.g. Conference Room A") },
             leadingIcon = { Icon(Icons.Default.LocationOn, null, tint = AccentPurple.copy(alpha = 0.7f)) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
@@ -1307,7 +1307,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
             label = { Text("Description") },
             modifier = Modifier.fillMaxWidth(),
             minLines = 2, maxLines = 3,
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -1327,7 +1327,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
                 }
             },
             leadingIcon = { Icon(Icons.Default.Schedule, null, tint = AccentPurple.copy(alpha = 0.7f)) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -1347,7 +1347,7 @@ fun GenerateEventQrScreen(isDark: Boolean, onBack: () -> Unit) {
                 }
             },
             leadingIcon = { Icon(Icons.Default.Schedule, null, tint = AccentPurple.copy(alpha = 0.7f)) },
-            colors = premiumFieldColors()
+            colors = premiumFieldColors(isDark)
         )
     }
 }

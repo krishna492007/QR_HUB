@@ -240,10 +240,11 @@ fun HistoryScreen(
                             )
                         }
 
-                        // AdMob Banner Ad
+                        // Banner Ad with bottom clearance for navigation bar
                         item {
+                            Spacer(modifier = Modifier.height(10.dp))
                             BannerAdView()
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                 }
@@ -408,15 +409,15 @@ private fun HistoryHeader(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (showSearch) AmberDim2 else Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                    .background(if (showSearch) appGoldDim2(LocalHistoryColors.current.isDark) else HistoryCardBg)
+                    .border(1.dp, if (showSearch) HistoryAccent else HistoryCardBorder, RoundedCornerShape(12.dp))
                     .clickable(onClick = onSearchToggle),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     if (showSearch) Icons.Default.Close else Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = if (showSearch) AmberSoft else HistoryTextPrimary,
+                    tint = if (showSearch) HistoryAccent else HistoryTextPrimary,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -429,8 +430,8 @@ private fun HistoryHeader(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                        .background(HistoryCardBg)
+                        .border(1.dp, HistoryCardBorder, RoundedCornerShape(12.dp))
                         .clickable { showMenu = true },
                     contentAlignment = Alignment.Center
                 ) {
@@ -446,8 +447,8 @@ private fun HistoryHeader(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
                     shape = RoundedCornerShape(20.dp),
-                    containerColor = Ink850,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLineStrong),
+                    containerColor = if (LocalHistoryColors.current.isDark) Ink850 else CeramicSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, HistoryCardBorder),
                     shadowElevation = 12.dp,
                     modifier = Modifier.width(250.dp)
                 ) {
@@ -457,7 +458,7 @@ private fun HistoryHeader(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(color = AmberDim2)
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(LocalHistoryColors.current.isDark))
                             ) {
                                 showMenu = false
                                 exportAllHistory(context, allItems)
@@ -470,13 +471,13 @@ private fun HistoryHeader(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750),
+                                .background(if (LocalHistoryColors.current.isDark) Ink750 else CeramicSurface2),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.FileDownload,
                                 contentDescription = null,
-                                tint = AmberSoft,
+                                tint = HistoryAccent,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -489,7 +490,7 @@ private fun HistoryHeader(
                         )
                     }
 
-                    HorizontalDivider(color = BorderLine, thickness = 0.8.dp)
+                    HorizontalDivider(color = HistoryCardBorder, thickness = 0.8.dp)
 
                     // Clear all history
                     Row(
@@ -497,7 +498,7 @@ private fun HistoryHeader(
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                indication = androidx.compose.material3.ripple(color = AmberDim2)
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(LocalHistoryColors.current.isDark))
                             ) {
                                 showMenu = false
                                 onClearAll()
@@ -510,7 +511,7 @@ private fun HistoryHeader(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750),
+                                .background(if (LocalHistoryColors.current.isDark) Ink750 else CeramicSurface2),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -529,8 +530,6 @@ private fun HistoryHeader(
                         )
                     }
 
-
-
                     // Premium Brand Footer
                     Box(
                         modifier = Modifier
@@ -548,9 +547,9 @@ private fun HistoryHeader(
                                         brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                                             colors = listOf(
                                                 androidx.compose.ui.graphics.Color.Transparent,
-                                                AmberDim2,
-                                                AmberSoft,
-                                                AmberDim2,
+                                                appGoldDim2(LocalHistoryColors.current.isDark),
+                                                HistoryAccent,
+                                                appGoldDim2(LocalHistoryColors.current.isDark),
                                                 androidx.compose.ui.graphics.Color.Transparent
                                             )
                                         ),
@@ -571,7 +570,7 @@ private fun HistoryHeader(
                                     ) { append("BUILT BY ") }
                                     withStyle(
                                         style = androidx.compose.ui.text.SpanStyle(
-                                            color = AmberSoft,
+                                            color = HistoryAccent,
                                             fontFamily = FontFamily.Monospace,
                                             fontSize = 10.5.sp,
                                             fontWeight = FontWeight.Bold,
@@ -626,11 +625,11 @@ private fun HistoryHeader(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AmberPrimary,
-                    unfocusedBorderColor = BorderLine,
-                    cursorColor = AmberPrimary,
-                    focusedContainerColor = Ink800,
-                    unfocusedContainerColor = Ink800,
+                    focusedBorderColor = HistoryAccent,
+                    unfocusedBorderColor = HistoryCardBorder,
+                    cursorColor = HistoryAccent,
+                    focusedContainerColor = if (LocalHistoryColors.current.isDark) Ink800 else CeramicSurface2,
+                    unfocusedContainerColor = if (LocalHistoryColors.current.isDark) Ink800 else CeramicSurface2,
                     focusedTextColor = HistoryTextPrimary,
                     unfocusedTextColor = HistoryTextPrimary
                 ),

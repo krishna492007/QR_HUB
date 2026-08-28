@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.qr.hub.util.Ink900
 import com.startapp.sdk.ads.banner.Banner
 
 /**
@@ -30,9 +30,11 @@ fun BannerAdView(
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(8.dp))
-                .background(Ink900),
+                .background(Color.Transparent),
             factory = { context ->
-                Banner(context)
+                Banner(context).apply {
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                }
             }
         )
     }

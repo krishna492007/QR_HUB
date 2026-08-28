@@ -162,6 +162,7 @@ fun ResultScreen(
         SetDefaultUpiAppDialog(
             installedApps = installedUpiApps,
             currentDefaultPkg = defaultPkg,
+            isDark = isDark,
             onDismiss = { showDefaultAppDialog = false },
             onSetDefault = { pkg, name ->
                 defaultPkg = pkg
@@ -1813,6 +1814,7 @@ fun getAppScanGuide(packageName: String, appName: String): List<String> {
 fun SetDefaultUpiAppDialog(
     installedApps: List<UpiAppItem>,
     currentDefaultPkg: String?,
+    isDark: Boolean = true,
     onDismiss: () -> Unit,
     onSetDefault: (packageName: String?, appName: String?) -> Unit
 ) {
@@ -1824,10 +1826,10 @@ fun SetDefaultUpiAppDialog(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Close", color = ResultTextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text("Close", color = appTextSecondary(isDark), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         },
-        containerColor = Ink850,
+        containerColor = if (isDark) Ink850 else CeramicSurface,
         shape = RoundedCornerShape(22.dp),
         title = {
             Column {
@@ -1835,13 +1837,13 @@ fun SetDefaultUpiAppDialog(
                     text = "Default UPI App",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = ResultTextPrimary
+                    color = appTextPrimary(isDark)
                 )
                 Spacer(Modifier.height(3.dp))
                 Text(
                     text = "Pick an app for instant 1-tap payments",
                     fontSize = 12.5.sp,
-                    color = ResultTextSecondary
+                    color = appTextSecondary(isDark)
                 )
             }
         },
@@ -1862,11 +1864,11 @@ fun SetDefaultUpiAppDialog(
                             },
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) AmberDim else Ink800
+                            containerColor = if (isSelected) appGoldDim(isDark) else appElevatedBg(isDark)
                         ),
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) AmberDim2 else BorderLine
+                            color = if (isSelected) appGoldPrimary(isDark) else appBorder(isDark)
                         )
                     ) {
                         Row(
@@ -1880,13 +1882,13 @@ fun SetDefaultUpiAppDialog(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Ink750),
+                                    .background(if (isDark) Ink750 else CeramicCanvas),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Apps,
                                     contentDescription = null,
-                                    tint = ResultTextPrimary,
+                                    tint = appTextPrimary(isDark),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -1895,12 +1897,12 @@ fun SetDefaultUpiAppDialog(
                                     text = "No Default App",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isSelected) AmberSoft else ResultTextPrimary
+                                    color = if (isSelected) appGoldPrimary(isDark) else appTextPrimary(isDark)
                                 )
                                 Text(
                                     text = "Always show installed apps list",
                                     fontSize = 11.5.sp,
-                                    color = ResultTextSecondary
+                                    color = appTextSecondary(isDark)
                                 )
                             }
                             RadioButton(
@@ -1910,8 +1912,8 @@ fun SetDefaultUpiAppDialog(
                                     onDismiss()
                                 },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = AmberPrimary,
-                                    unselectedColor = ResultTextMuted
+                                    selectedColor = appGoldPrimary(isDark),
+                                    unselectedColor = appTextTertiary(isDark)
                                 )
                             )
                         }
@@ -1930,11 +1932,11 @@ fun SetDefaultUpiAppDialog(
                             },
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) AmberDim else Ink800
+                            containerColor = if (isSelected) appGoldDim(isDark) else appElevatedBg(isDark)
                         ),
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) AmberDim2 else BorderLine
+                            color = if (isSelected) appGoldPrimary(isDark) else appBorder(isDark)
                         )
                     ) {
                         Row(
@@ -1973,12 +1975,12 @@ fun SetDefaultUpiAppDialog(
                                     text = app.appName,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isSelected) AmberSoft else ResultTextPrimary
+                                    color = if (isSelected) appGoldPrimary(isDark) else appTextPrimary(isDark)
                                 )
                                 Text(
                                     text = "1-tap direct payment",
                                     fontSize = 11.5.sp,
-                                    color = CyanAccent
+                                    color = appTextSecondary(isDark)
                                 )
                             }
                             RadioButton(
@@ -1988,8 +1990,8 @@ fun SetDefaultUpiAppDialog(
                                     onDismiss()
                                 },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = AmberPrimary,
-                                    unselectedColor = ResultTextMuted
+                                    selectedColor = appGoldPrimary(isDark),
+                                    unselectedColor = appTextTertiary(isDark)
                                 )
                             )
                         }

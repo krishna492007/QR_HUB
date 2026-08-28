@@ -60,12 +60,15 @@ import kotlinx.coroutines.withContext
 // REDESIGNED DETAIL SCREEN COLORS — Dynamic Ink & Ceramic
 // ============================================
 private data class DetailColors(
+    val isDark: Boolean,
     val bg: Color,
     val cardBg: Color,
     val cardBorder: Color,
+    val elevatedBg: Color,
     val accent: Color,
     val accentSoft: Color,
     val ctaGradient: Brush,
+    val ctaTextColor: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     val textMuted: Color
@@ -73,12 +76,15 @@ private data class DetailColors(
 
 private val LocalDetailColors = staticCompositionLocalOf {
     DetailColors(
+        isDark = true,
         bg = Ink950,
         cardBg = Ink800,
         cardBorder = BorderLine,
+        elevatedBg = Ink750,
         accent = AmberPrimary,
         accentSoft = AmberSoft,
         ctaGradient = Brush.verticalGradient(listOf(AmberSoft, AmberPrimary)),
+        ctaTextColor = Color(0xFF20140A),
         textPrimary = TextPrimary,
         textSecondary = TextSecondary,
         textMuted = TextTertiary
@@ -88,9 +94,11 @@ private val LocalDetailColors = staticCompositionLocalOf {
 private val DetailBg: Color @Composable get() = LocalDetailColors.current.bg
 private val DetailCardBg: Color @Composable get() = LocalDetailColors.current.cardBg
 private val DetailCardBorder: Color @Composable get() = LocalDetailColors.current.cardBorder
+private val DetailElevatedBg: Color @Composable get() = LocalDetailColors.current.elevatedBg
 private val DetailAccent: Color @Composable get() = LocalDetailColors.current.accent
 private val DetailAccentSoft: Color @Composable get() = LocalDetailColors.current.accentSoft
 private val DetailCtaGradient: Brush @Composable get() = LocalDetailColors.current.ctaGradient
+private val DetailCtaTextColor: Color @Composable get() = LocalDetailColors.current.ctaTextColor
 private val DetailTextPrimary: Color @Composable get() = LocalDetailColors.current.textPrimary
 private val DetailTextSecondary: Color @Composable get() = LocalDetailColors.current.textSecondary
 private val DetailTextMuted: Color @Composable get() = LocalDetailColors.current.textMuted
@@ -104,12 +112,15 @@ fun HistoryDetailScreen(
 ) {
     val detailColors = remember(isDark) {
         DetailColors(
+            isDark = isDark,
             bg = appBg(isDark),
             cardBg = appCardBg(isDark),
             cardBorder = appBorder(isDark),
+            elevatedBg = appElevatedBg(isDark),
             accent = appGoldPrimary(isDark),
             accentSoft = appGoldSoft(isDark),
             ctaGradient = appCtaGradient(isDark),
+            ctaTextColor = appCtaTextColor(isDark),
             textPrimary = appTextPrimary(isDark),
             textSecondary = appTextSecondary(isDark),
             textMuted = appTextTertiary(isDark)
@@ -264,8 +275,8 @@ fun HistoryDetailScreen(
                                 .weight(1f)
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Ink750)
-                                .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                                .background(DetailElevatedBg)
+                                .border(1.dp, DetailCardBorder, RoundedCornerShape(14.dp))
                                 .clickable {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -306,16 +317,16 @@ fun HistoryDetailScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isDownloading) {
-                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), color = DetailCtaTextColor, strokeWidth = 2.dp)
                                 } else {
-                                    Icon(Icons.Default.Download, "Download", tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Download, "Download", tint = DetailCtaTextColor, modifier = Modifier.size(18.dp))
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     if (isDownloading) "Saving..." else "Download",
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF20140A)
+                                    color = DetailCtaTextColor
                                 )
                             }
                         }
@@ -330,7 +341,7 @@ fun HistoryDetailScreen(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
                     .background(DetailCardBg)
-                    .border(1.dp, if (isCustomizeExpanded) AmberPrimary else DetailCardBorder, RoundedCornerShape(18.dp))
+                    .border(1.dp, if (isCustomizeExpanded) DetailAccent else DetailCardBorder, RoundedCornerShape(18.dp))
             ) {
                 Column {
                     Row(
@@ -344,10 +355,10 @@ fun HistoryDetailScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(AmberDim2),
+                                .background(appGoldDim2(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Palette, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Palette, null, tint = DetailAccentSoft, modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -366,7 +377,7 @@ fun HistoryDetailScreen(
                         Icon(
                             if (isCustomizeExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = AmberSoft,
+                            tint = DetailAccentSoft,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -382,6 +393,7 @@ fun HistoryDetailScreen(
                             QRCustomizationSection(
                                 qrType = item.type,
                                 styleConfig = styleConfig,
+                                isDark = isDark,
                                 onStyleChanged = { newConfig ->
                                     styleConfig = newConfig
                                 },

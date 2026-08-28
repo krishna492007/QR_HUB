@@ -53,6 +53,7 @@ private val BrandPalette = listOf(
 fun CustomColorPickerDialog(
     initialTarget: ColorTarget = ColorTarget.FOREGROUND,
     styleConfig: QRStyleConfig,
+    isDark: Boolean = true,
     onDismiss: () -> Unit,
     onColorApplied: (QRStyleConfig) -> Unit
 ) {
@@ -73,6 +74,14 @@ fun CustomColorPickerDialog(
         mutableStateOf(String.format("%06X", 0xFFFFFF and activeColorInt))
     }
 
+    val dialogBg = if (isDark) Ink900 else CeramicSurface
+    val cardBorder = if (isDark) BorderLine else CeramicBorder
+    val elevatedBg = if (isDark) Ink750 else CeramicSurface2
+    val accent = appGoldPrimary(isDark)
+    val accentSoft = appGoldSoft(isDark)
+    val textPrimary = appTextPrimary(isDark)
+    val textSecondary = appTextSecondary(isDark)
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -80,7 +89,7 @@ fun CustomColorPickerDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xE6000000))
+                .background(Color(0xCC000000))
                 .padding(20.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -88,8 +97,8 @@ fun CustomColorPickerDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Ink900)
-                    .border(1.dp, BorderLine, RoundedCornerShape(24.dp))
+                    .background(dialogBg)
+                    .border(1.dp, cardBorder, RoundedCornerShape(24.dp))
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -100,18 +109,18 @@ fun CustomColorPickerDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Palette, null, tint = AmberPrimary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Palette, null, tint = accent, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             "Custom Color Palette",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = textPrimary
                         )
                     }
 
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, null, tint = TextTertiary)
+                        Icon(Icons.Default.Close, null, tint = textSecondary)
                     }
                 }
 
@@ -134,8 +143,8 @@ fun CustomColorPickerDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) AmberDim else Ink750)
-                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
+                                .background(if (isSelected) appGoldDim(isDark) else elevatedBg)
+                                .border(1.dp, if (isSelected) accent else cardBorder, RoundedCornerShape(12.dp))
                                 .clickable { selectedTarget = target }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             contentAlignment = Alignment.Center
@@ -146,7 +155,7 @@ fun CustomColorPickerDialog(
                                         .size(12.dp)
                                         .clip(CircleShape)
                                         .background(previewColor)
-                                        .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                                        .border(1.dp, Color.Black.copy(alpha = 0.2f), CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -157,7 +166,7 @@ fun CustomColorPickerDialog(
                                     },
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) AmberSoft else TextSecondary
+                                    color = if (isSelected) accentSoft else textSecondary
                                 )
                             }
                         }
@@ -177,7 +186,7 @@ fun CustomColorPickerDialog(
                             .size(46.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(activeColorInt))
-                            .border(2.dp, BorderLine, RoundedCornerShape(12.dp))
+                            .border(2.dp, cardBorder, RoundedCornerShape(12.dp))
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -202,17 +211,19 @@ fun CustomColorPickerDialog(
                                 } catch (_: Exception) {}
                             }
                         },
-                        prefix = { Text("#", color = AmberPrimary, fontWeight = FontWeight.Bold) },
-                        label = { Text("Hex Code", fontSize = 11.sp) },
+                        prefix = { Text("#", color = accent, fontWeight = FontWeight.Bold) },
+                        label = { Text("Hex Code", fontSize = 11.sp, color = textSecondary) },
                         singleLine = true,
                         modifier = Modifier
                             .weight(1f)
-                            .height(52.dp),
+                            .height(54.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AmberPrimary,
-                            unfocusedBorderColor = BorderLine,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
+                            focusedBorderColor = accent,
+                            unfocusedBorderColor = cardBorder,
+                            focusedTextColor = textPrimary,
+                            unfocusedTextColor = textPrimary,
+                            focusedContainerColor = elevatedBg,
+                            unfocusedContainerColor = elevatedBg
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -225,7 +236,7 @@ fun CustomColorPickerDialog(
                     "Quick Brand Palettes",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextSecondary,
+                    color = textSecondary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
@@ -246,7 +257,7 @@ fun CustomColorPickerDialog(
                                 .background(Color(colorInt))
                                 .border(
                                     if (isPicked) 2.5.dp else 1.dp,
-                                    if (isPicked) AmberPrimary else Color.White.copy(alpha = 0.2f),
+                                    if (isPicked) accent else Color.Black.copy(alpha = 0.15f),
                                     RoundedCornerShape(10.dp)
                                 )
                                 .clickable {
@@ -288,14 +299,14 @@ fun CustomColorPickerDialog(
                                 .weight(1f)
                                 .height(44.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Ink750)
-                                .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                                .background(elevatedBg)
+                                .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                                 .clickable {
                                     enableGradient = false
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Solid Color", fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = TextSecondary)
+                            Text("Solid Color", fontSize = 12.5.sp, fontWeight = FontWeight.Medium, color = textSecondary)
                         }
                     }
 
@@ -305,12 +316,12 @@ fun CustomColorPickerDialog(
                             .weight(1f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Ink750)
-                            .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                            .background(elevatedBg)
+                            .border(1.dp, cardBorder, RoundedCornerShape(12.dp))
                             .clickable(onClick = onDismiss),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                        Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = textPrimary)
                     }
 
                     // Apply Color
@@ -319,7 +330,7 @@ fun CustomColorPickerDialog(
                             .weight(1.2f)
                             .height(44.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(AmberCtaGradient)
+                            .background(appCtaGradient(isDark))
                             .clickable {
                                 val updatedConfig = styleConfig.copy(
                                     fgColor = currentFg,
@@ -332,9 +343,9 @@ fun CustomColorPickerDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Check, null, tint = Color(0xFF20140A), modifier = Modifier.size(17.dp))
+                            Icon(Icons.Default.Check, null, tint = appCtaTextColor(isDark), modifier = Modifier.size(17.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Apply Colors", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                            Text("Apply Colors", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = appCtaTextColor(isDark))
                         }
                     }
                 }

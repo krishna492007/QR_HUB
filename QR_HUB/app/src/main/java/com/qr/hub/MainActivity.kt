@@ -263,7 +263,7 @@ fun BottomNavigationBar(
         ) {
             // Tab 1: Generate
             BottomNavItem(
-                icon = Icons.Filled.QrCode,
+                icon = HtmlIcons.GenerateNav,
                 label = "Generate",
                 selected = actualTab == Screen.GenerateTab,
                 isDark = isDark,
@@ -272,7 +272,7 @@ fun BottomNavigationBar(
 
             // Tab 2: Scan
             BottomNavItem(
-                icon = Icons.Filled.QrCodeScanner,
+                icon = HtmlIcons.ScanNav,
                 label = "Scan",
                 selected = actualTab == Screen.ScannerTab,
                 isDark = isDark,
@@ -281,7 +281,7 @@ fun BottomNavigationBar(
 
             // Tab 3: History
             BottomNavItem(
-                icon = Icons.Filled.History,
+                icon = HtmlIcons.HistoryNav,
                 label = "History",
                 selected = actualTab == Screen.HistoryTab,
                 isDark = isDark,
@@ -290,7 +290,7 @@ fun BottomNavigationBar(
 
             // Tab 4: Settings
             BottomNavItem(
-                icon = Icons.Filled.Settings,
+                icon = HtmlIcons.SettingsNav,
                 label = "Settings",
                 selected = actualTab == Screen.AboutLegal,
                 isDark = isDark,
