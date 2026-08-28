@@ -267,7 +267,7 @@ fun GenerateBarcodeScreen(
                 .padding(horizontal = 18.dp)
         ) {
             // ── FORMAT SELECTOR ──
-            Text("Select Barcode Standard", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+            Text("Select Barcode Standard", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = appTextSecondary(isDark))
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -280,8 +280,8 @@ fun GenerateBarcodeScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isSelected) AmberDim else Ink800)
-                            .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
+                            .background(if (isSelected) appGoldDim(isDark) else appCardBg(isDark))
+                            .border(1.dp, if (isSelected) appGoldPrimary(isDark) else appBorder(isDark), RoundedCornerShape(12.dp))
                             .clickable {
                                 selectedBarcodeType = type
                                 singleErrorMessage = null
@@ -294,7 +294,7 @@ fun GenerateBarcodeScreen(
                             type.displayName,
                             fontSize = 11.5.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) AmberSoft else TextSecondary
+                            color = if (isSelected) appGoldSoft(isDark) else appTextSecondary(isDark)
                         )
                     }
                 }
@@ -311,8 +311,8 @@ fun GenerateBarcodeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                        .background(appCardBg(isDark))
+                        .border(1.dp, appBorder(isDark), RoundedCornerShape(20.dp))
                         .padding(16.dp)
                 ) {
                     Column {
@@ -321,13 +321,13 @@ fun GenerateBarcodeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Product Code / Number", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("Product Code / Number", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
 
                             Text(
                                 "Sample",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = AmberPrimary,
+                                color = appGoldPrimary(isDark),
                                 modifier = Modifier.clickable {
                                     singleInputText = selectedBarcodeType.sample
                                 }
@@ -335,7 +335,7 @@ fun GenerateBarcodeScreen(
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(selectedBarcodeType.hint, fontSize = 11.sp, color = TextTertiary)
+                        Text(selectedBarcodeType.hint, fontSize = 11.sp, color = appTextTertiary(isDark))
                         Spacer(modifier = Modifier.height(10.dp))
 
                         OutlinedTextField(
@@ -344,14 +344,16 @@ fun GenerateBarcodeScreen(
                                 singleInputText = it
                                 singleErrorMessage = null
                             },
-                            placeholder = { Text(selectedBarcodeType.sample, color = TextTertiary, fontSize = 13.sp) },
+                            placeholder = { Text(selectedBarcodeType.sample, color = appTextTertiary(isDark), fontSize = 13.sp) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = AmberPrimary,
-                                unfocusedBorderColor = BorderLine,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
+                                focusedBorderColor = appGoldPrimary(isDark),
+                                unfocusedBorderColor = appBorder(isDark),
+                                focusedTextColor = appTextPrimary(isDark),
+                                unfocusedTextColor = appTextPrimary(isDark),
+                                focusedContainerColor = appElevatedBg(isDark),
+                                unfocusedContainerColor = appElevatedBg(isDark)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -369,7 +371,14 @@ fun GenerateBarcodeScreen(
                                 .fillMaxWidth()
                                 .height(46.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (isSingleInputValid) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
+                                .background(
+                                    if (isSingleInputValid) appCtaGradient(isDark)
+                                    else Brush.linearGradient(listOf(appElevatedBg(isDark), appElevatedBg(isDark)))
+                                )
+                                .then(
+                                    if (isSingleInputValid) Modifier.border(0.dp, Color.Transparent, RoundedCornerShape(14.dp))
+                                    else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
+                                )
                                 .clickable(enabled = isSingleInputValid) {
                                     scope.launch {
                                         val bmp = generateProductBarcode(singleInputText, selectedBarcodeType.format)
@@ -387,7 +396,7 @@ fun GenerateBarcodeScreen(
                                 Icon(
                                     Icons.Default.ViewWeek,
                                     null,
-                                    tint = if (isSingleInputValid) Color(0xFF20140A) else TextTertiary,
+                                    tint = if (isSingleInputValid) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark),
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -395,7 +404,7 @@ fun GenerateBarcodeScreen(
                                     "Generate Barcode",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSingleInputValid) Color(0xFF20140A) else TextTertiary
+                                    color = if (isSingleInputValid) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark)
                                 )
                             }
                         }
@@ -410,8 +419,8 @@ fun GenerateBarcodeScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Ink800)
-                            .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                            .background(appCardBg(isDark))
+                            .border(1.dp, appBorder(isDark), RoundedCornerShape(20.dp))
                             .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -420,7 +429,7 @@ fun GenerateBarcodeScreen(
                                 "Generated Barcode Label",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TextSecondary,
+                                color = appTextSecondary(isDark),
                                 modifier = Modifier.padding(bottom = 12.dp)
                             )
 
@@ -453,8 +462,8 @@ fun GenerateBarcodeScreen(
                                         .weight(1f)
                                         .height(44.dp)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Ink750)
-                                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                                        .background(appElevatedBg(isDark))
+                                        .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                                         .clickable {
                                             val activity = context as? Activity
                                             AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -464,9 +473,9 @@ fun GenerateBarcodeScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Share, null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                                        Icon(Icons.Default.Share, null, tint = appTextPrimary(isDark), modifier = Modifier.size(16.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Share Single", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                        Text("Share Single", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, color = appTextPrimary(isDark))
                                     }
                                 }
 
@@ -475,8 +484,8 @@ fun GenerateBarcodeScreen(
                                         .weight(1f)
                                         .height(44.dp)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(AmberDim)
-                                        .border(1.dp, AmberPrimary, RoundedCornerShape(12.dp))
+                                        .background(appGoldDim(isDark))
+                                        .border(1.dp, appGoldPrimary(isDark), RoundedCornerShape(12.dp))
                                         .clickable(enabled = !isSavingSingle) {
                                             val activity = context as? Activity
                                             AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -491,12 +500,12 @@ fun GenerateBarcodeScreen(
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         if (isSavingSingle) {
-                                            CircularProgressIndicator(modifier = Modifier.size(15.dp), color = AmberSoft, strokeWidth = 1.5.dp)
+                                            CircularProgressIndicator(modifier = Modifier.size(15.dp), color = appGoldSoft(isDark), strokeWidth = 1.5.dp)
                                         } else {
-                                            Icon(Icons.Default.Download, null, tint = AmberSoft, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.Download, null, tint = appGoldSoft(isDark), modifier = Modifier.size(16.dp))
                                         }
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Save Single", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                        Text("Save Single", fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = appGoldSoft(isDark))
                                     }
                                 }
                             }
@@ -512,26 +521,26 @@ fun GenerateBarcodeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text("Print Sticker Sheet", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                                    Text("A4 Self-Adhesive Sticker Paper", fontSize = 11.sp, color = TextTertiary)
+                                    Text("Print Sticker Sheet", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
+                                    Text("A4 Self-Adhesive Sticker Paper", fontSize = 11.sp, color = appTextTertiary(isDark))
                                 }
 
                                 // Clean Pill Badge for A4 Page Count
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(AmberDim)
-                                        .border(1.dp, AmberPrimary.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                        .background(appGoldDim(isDark))
+                                        .border(1.dp, appGoldPrimary(isDark).copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                         .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Description, null, tint = AmberSoft, modifier = Modifier.size(13.dp))
+                                        Icon(Icons.Default.Description, null, tint = appGoldSoft(isDark), modifier = Modifier.size(13.dp))
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             "$calculatedPages A4 Page${if (calculatedPages > 1) "s" else ""}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = AmberSoft
+                                            color = appGoldSoft(isDark)
                                         )
                                     }
                                 }
@@ -553,8 +562,8 @@ fun GenerateBarcodeScreen(
                                                 modifier = Modifier
                                                     .weight(1f)
                                                     .clip(RoundedCornerShape(12.dp))
-                                                    .background(if (isPicked) AmberDim else Ink750)
-                                                    .border(1.dp, if (isPicked) AmberPrimary else BorderLine, RoundedCornerShape(12.dp))
+                                                    .background(if (isPicked) appGoldDim(isDark) else appElevatedBg(isDark))
+                                                    .border(1.dp, if (isPicked) appGoldPrimary(isDark) else appBorder(isDark), RoundedCornerShape(12.dp))
                                                     .clickable { selectedSheetFormat = format }
                                                     .padding(horizontal = 10.dp, vertical = 9.dp)
                                             ) {
@@ -568,17 +577,17 @@ fun GenerateBarcodeScreen(
                                                             format.title,
                                                             fontSize = 12.sp,
                                                             fontWeight = FontWeight.Bold,
-                                                            color = if (isPicked) AmberSoft else TextPrimary
+                                                            color = if (isPicked) appGoldSoft(isDark) else appTextPrimary(isDark)
                                                         )
                                                         if (isPicked) {
-                                                            Icon(Icons.Default.CheckCircle, null, tint = AmberPrimary, modifier = Modifier.size(14.dp))
+                                                            Icon(Icons.Default.CheckCircle, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(14.dp))
                                                         }
                                                     }
                                                     Spacer(modifier = Modifier.height(2.dp))
                                                     Text(
                                                         format.useCase,
                                                         fontSize = 10.sp,
-                                                        color = if (isPicked) TextSecondary else TextTertiary
+                                                        color = if (isPicked) appTextSecondary(isDark) else appTextTertiary(isDark)
                                                     )
                                                 }
                                             }
@@ -612,8 +621,8 @@ fun GenerateBarcodeScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(Ink750)
-                                        .border(1.dp, BorderLine, RoundedCornerShape(10.dp))
+                                        .background(appElevatedBg(isDark))
+                                        .border(1.dp, appBorder(isDark), RoundedCornerShape(10.dp))
                                         .clickable {
                                             val cur = copiesInputText.toIntOrNull() ?: 24
                                             val next = (cur - 12).coerceAtLeast(1)
@@ -621,7 +630,7 @@ fun GenerateBarcodeScreen(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.Remove, null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Remove, null, tint = appTextPrimary(isDark), modifier = Modifier.size(18.dp))
                                 }
 
                                 // Direct Input Box
@@ -641,10 +650,12 @@ fun GenerateBarcodeScreen(
                                         .width(76.dp)
                                         .height(48.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = AmberPrimary,
-                                        unfocusedBorderColor = BorderLine,
-                                        focusedTextColor = TextPrimary,
-                                        unfocusedTextColor = TextPrimary
+                                        focusedBorderColor = appGoldPrimary(isDark),
+                                        unfocusedBorderColor = appBorder(isDark),
+                                        focusedTextColor = appTextPrimary(isDark),
+                                        unfocusedTextColor = appTextPrimary(isDark),
+                                        focusedContainerColor = appElevatedBg(isDark),
+                                        unfocusedContainerColor = appElevatedBg(isDark)
                                     ),
                                     shape = RoundedCornerShape(10.dp)
                                 )
@@ -654,8 +665,8 @@ fun GenerateBarcodeScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(Ink750)
-                                        .border(1.dp, BorderLine, RoundedCornerShape(10.dp))
+                                        .background(appElevatedBg(isDark))
+                                        .border(1.dp, appBorder(isDark), RoundedCornerShape(10.dp))
                                         .clickable {
                                             val cur = copiesInputText.toIntOrNull() ?: 24
                                             val next = cur + 12
@@ -663,7 +674,7 @@ fun GenerateBarcodeScreen(
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.Add, null, tint = TextPrimary, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Add, null, tint = appTextPrimary(isDark), modifier = Modifier.size(18.dp))
                                 }
 
                                 // Quick Preset Pills
@@ -678,8 +689,8 @@ fun GenerateBarcodeScreen(
                                         Box(
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(8.dp))
-                                                .background(if (isSelected) AmberDim else Ink750)
-                                                .border(1.dp, if (isSelected) AmberPrimary else BorderLine, RoundedCornerShape(8.dp))
+                                                .background(if (isSelected) appGoldDim(isDark) else appElevatedBg(isDark))
+                                                .border(1.dp, if (isSelected) appGoldPrimary(isDark) else appBorder(isDark), RoundedCornerShape(8.dp))
                                             .clickable { copiesInputText = quickCount }
                                             .padding(horizontal = 9.dp, vertical = 9.dp)
                                         ) {
@@ -687,7 +698,7 @@ fun GenerateBarcodeScreen(
                                                 "$quickCount pcs",
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                color = if (isSelected) AmberSoft else TextSecondary
+                                                color = if (isSelected) appGoldSoft(isDark) else appTextSecondary(isDark)
                                             )
                                         }
                                     }
@@ -702,7 +713,7 @@ fun GenerateBarcodeScreen(
                                     .fillMaxWidth()
                                     .height(48.dp)
                                     .clip(RoundedCornerShape(14.dp))
-                                    .background(AmberCtaGradient)
+                                    .background(appCtaGradient(isDark))
                                     .clickable(enabled = !isGeneratingStickerSheet && totalCopies > 0) {
                                         val activity = context as? Activity
                                         AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -723,16 +734,16 @@ fun GenerateBarcodeScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (isGeneratingStickerSheet) {
-                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = if (isDark) Color(0xFF20140A) else CeramicCtaInk, strokeWidth = 2.dp)
                                     } else {
-                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.PictureAsPdf, null, tint = if (isDark) Color(0xFF20140A) else CeramicCtaInk, modifier = Modifier.size(18.dp))
                                     }
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         if (isGeneratingStickerSheet) "Generating PDF Sheet..." else "Export $totalCopies Stickers ($calculatedPages Page${if (calculatedPages > 1) "s" else ""} PDF)",
                                         fontSize = 13.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF20140A)
+                                        color = if (isDark) Color(0xFF20140A) else CeramicCtaInk
                                     )
                                 }
                             }
@@ -749,8 +760,8 @@ fun GenerateBarcodeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Ink800)
-                        .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                        .background(appCardBg(isDark))
+                        .border(1.dp, appBorder(isDark), RoundedCornerShape(20.dp))
                         .padding(16.dp)
                 ) {
                     Column {
@@ -759,20 +770,20 @@ fun GenerateBarcodeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Barcodes List (1 per line)", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("Barcodes List (1 per line)", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
 
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(AmberDim)
-                                    .border(1.dp, AmberPrimary, RoundedCornerShape(8.dp))
+                                    .background(appGoldDim(isDark))
+                                    .border(1.dp, appGoldPrimary(isDark), RoundedCornerShape(8.dp))
                                     .clickable { filePickerLauncher.launch("*/*") }
                                     .padding(horizontal = 9.dp, vertical = 4.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.UploadFile, null, tint = AmberSoft, modifier = Modifier.size(13.dp))
+                                    Icon(Icons.Default.UploadFile, null, tint = appGoldSoft(isDark), modifier = Modifier.size(13.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Import CSV", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AmberSoft)
+                                    Text("Import CSV", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = appGoldSoft(isDark))
                                 }
                             }
                         }
@@ -786,17 +797,19 @@ fun GenerateBarcodeScreen(
                                 Text(
                                     "Enter 1 code per line:\nPROD-001\nPROD-002\nPROD-003\n8901234567890",
                                     fontSize = 12.5.sp,
-                                    color = TextTertiary
+                                    color = appTextTertiary(isDark)
                                 )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(120.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = AmberPrimary,
-                                unfocusedBorderColor = BorderLine,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextPrimary
+                                focusedBorderColor = appGoldPrimary(isDark),
+                                unfocusedBorderColor = appBorder(isDark),
+                                focusedTextColor = appTextPrimary(isDark),
+                                unfocusedTextColor = appTextPrimary(isDark),
+                                focusedContainerColor = appElevatedBg(isDark),
+                                unfocusedContainerColor = appElevatedBg(isDark)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -812,13 +825,13 @@ fun GenerateBarcodeScreen(
                                 "${bulkItemsList.size} barcode(s) detected",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (bulkItemsList.isNotEmpty()) AmberSoft else TextTertiary
+                                color = if (bulkItemsList.isNotEmpty()) appGoldSoft(isDark) else appTextTertiary(isDark)
                             )
 
                             Text(
                                 "Load 10 Sample Items",
                                 fontSize = 11.5.sp,
-                                color = AmberPrimary,
+                                color = appGoldPrimary(isDark),
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.clickable {
                                     bulkTextInput = "ITEM-101-WATCH\nITEM-102-EARBUD\nITEM-103-SPEAKER\nITEM-104-CHARGER\nITEM-105-POWERBANK\nITEM-106-ADAPTER\nITEM-107-MOUSE\nITEM-108-KEYBOARD\nITEM-109-STAND\nITEM-110-CABLE"
@@ -835,7 +848,14 @@ fun GenerateBarcodeScreen(
                                 .fillMaxWidth()
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (canGenerateBulk) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
+                                .background(
+                                    if (canGenerateBulk) appCtaGradient(isDark)
+                                    else Brush.linearGradient(listOf(appElevatedBg(isDark), appElevatedBg(isDark)))
+                                )
+                                .then(
+                                    if (canGenerateBulk) Modifier.border(0.dp, Color.Transparent, RoundedCornerShape(14.dp))
+                                    else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
+                                )
                                 .clickable(enabled = canGenerateBulk) {
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -863,17 +883,17 @@ fun GenerateBarcodeScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isGeneratingBulk) {
-                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color(0xFF20140A), strokeWidth = 2.dp)
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = if (isDark) Color(0xFF20140A) else CeramicCtaInk, strokeWidth = 2.dp)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Generating ${(bulkProgress * 100).toInt()}%...", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                                    Text("Generating ${(bulkProgress * 100).toInt()}%...", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF20140A) else CeramicCtaInk)
                                 } else {
-                                    Icon(Icons.Default.Bolt, null, tint = if (canGenerateBulk) Color(0xFF20140A) else TextTertiary, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Bolt, null, tint = if (canGenerateBulk) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark), modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         if (bulkItemsList.isEmpty()) "Add Items to Generate" else "Generate All (${bulkItemsList.size} Barcodes)",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (canGenerateBulk) Color(0xFF20140A) else TextTertiary
+                                        color = if (canGenerateBulk) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark)
                                     )
                                 }
                             }
@@ -897,9 +917,9 @@ fun GenerateBarcodeScreen(
                                 "Generated (${generatedBulkItems.size} Barcodes)",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                                color = appTextPrimary(isDark)
                             )
-                            Text("$bulkPagesCount Page(s) A4 Sheet", fontSize = 11.sp, color = AmberSoft)
+                            Text("$bulkPagesCount Page(s) A4 Sheet", fontSize = 11.sp, color = appGoldSoft(isDark))
                         }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -907,8 +927,8 @@ fun GenerateBarcodeScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(AmberDim)
-                                    .border(1.dp, AmberPrimary, RoundedCornerShape(10.dp))
+                                    .background(appGoldDim(isDark))
+                                    .border(1.dp, appGoldPrimary(isDark), RoundedCornerShape(10.dp))
                                     .clickable(enabled = !isExportingBulkZip) {
                                         scope.launch {
                                             isExportingBulkZip = true
@@ -920,12 +940,12 @@ fun GenerateBarcodeScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (isExportingBulkZip) {
-                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = AmberSoft, strokeWidth = 1.5.dp)
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = appGoldSoft(isDark), strokeWidth = 1.5.dp)
                                     } else {
-                                        Icon(Icons.Default.FolderZip, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.FolderZip, null, tint = appGoldSoft(isDark), modifier = Modifier.size(14.dp))
                                     }
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("ZIP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                    Text("ZIP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = appGoldSoft(isDark))
                                 }
                             }
 
@@ -933,7 +953,7 @@ fun GenerateBarcodeScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(AmberCtaGradient)
+                                    .background(appCtaGradient(isDark))
                                     .clickable(enabled = !isExportingBulkPdf) {
                                         scope.launch {
                                             isExportingBulkPdf = true
@@ -945,12 +965,12 @@ fun GenerateBarcodeScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (isExportingBulkPdf) {
-                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color(0xFF20140A), strokeWidth = 1.5.dp)
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = if (isDark) Color(0xFF20140A) else CeramicCtaInk, strokeWidth = 1.5.dp)
                                     } else {
-                                        Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.PictureAsPdf, null, tint = if (isDark) Color(0xFF20140A) else CeramicCtaInk, modifier = Modifier.size(14.dp))
                                     }
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("PDF Sheet", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                                    Text("PDF Sheet", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF20140A) else CeramicCtaInk)
                                 }
                             }
                         }
@@ -971,8 +991,8 @@ fun GenerateBarcodeScreen(
                                         modifier = Modifier
                                             .weight(1f)
                                             .clip(RoundedCornerShape(14.dp))
-                                            .background(Ink800)
-                                            .border(1.dp, BorderLine, RoundedCornerShape(14.dp))
+                                            .background(appCardBg(isDark))
+                                            .border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
                                             .padding(8.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -999,7 +1019,7 @@ fun GenerateBarcodeScreen(
                                                 "#${item.index} ${item.text}",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = TextPrimary,
+                                                color = appTextPrimary(isDark),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )

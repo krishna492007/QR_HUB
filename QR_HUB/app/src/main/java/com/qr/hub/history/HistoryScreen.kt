@@ -253,12 +253,12 @@ fun HistoryScreen(
     }
 
     // ============================================
-    // DELETE CONFIRMATION DIALOG
+    // DELETE CONFIRMATION DIALOG — Dynamic Ink & Ceramic
     // ============================================
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            containerColor = Ink850,
+            containerColor = appDialogBg(isDark),
             shape = RoundedCornerShape(22.dp),
             icon = {
                 Box(
@@ -279,7 +279,7 @@ fun HistoryScreen(
             title = {
                 Text(
                     if (uiState.selectionMode) "Delete Selected?" else "Clear All History?",
-                    color = HistoryTextPrimary,
+                    color = appTextPrimary(isDark),
                     fontWeight = FontWeight.Bold,
                     fontSize = 19.sp,
                     textAlign = TextAlign.Center,
@@ -293,7 +293,7 @@ fun HistoryScreen(
                     } else {
                         "All history will be permanently deleted. This action cannot be undone."
                     },
-                    color = HistoryTextSecondary,
+                    color = appTextSecondary(isDark),
                     fontSize = 13.5.sp,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp,
@@ -331,13 +331,14 @@ fun HistoryScreen(
                         .fillMaxWidth()
                         .height(46.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                        .background(appElevatedBg(isDark))
+                        .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                         .clickable { showDeleteConfirm = false },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         "Cancel",
-                        color = HistoryTextSecondary,
+                        color = appTextPrimary(isDark),
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.5.sp
                     )

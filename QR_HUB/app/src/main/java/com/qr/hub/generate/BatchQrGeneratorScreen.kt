@@ -124,11 +124,11 @@ fun BatchQrGeneratorScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Ink950)
+            .background(appBg(isDark))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // ── TOP BAR ──
+        // ── TOP BAR WITH UNIFIED HTML ICON BADGE ──
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -139,22 +139,38 @@ fun BatchQrGeneratorScreen(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(12.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(12.dp))
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     "Back",
-                    tint = TextPrimary,
+                    tint = appTextPrimary(isDark),
                     modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(appGoldDim2(isDark))
+                    .border(1.dp, appGoldPrimary(isDark).copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = HtmlIcons.BulkQr,
+                    contentDescription = null,
+                    tint = appGoldSoft(isDark),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text("Bulk QR Generator", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Text("Generate 100+ QRs in Batch & Export", fontSize = 11.5.sp, color = TextSecondary)
+                Text("Bulk QR Generator", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
+                Text("Generate 100+ QRs in Batch & Export", fontSize = 11.5.sp, color = appTextSecondary(isDark))
             }
         }
 
@@ -170,8 +186,8 @@ fun BatchQrGeneratorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Ink800)
-                    .border(1.dp, BorderLine, RoundedCornerShape(20.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, appBorder(isDark), RoundedCornerShape(20.dp))
                     .padding(16.dp)
             ) {
                 Column {
@@ -181,24 +197,24 @@ fun BatchQrGeneratorScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.DynamicFeed, null, tint = AmberPrimary, modifier = Modifier.size(18.dp))
+                            Icon(HtmlIcons.BulkQr, null, tint = appGoldPrimary(isDark), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Items List (1 per line)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("Items List (1 per line)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = appTextPrimary(isDark))
                         }
 
                         // CSV Import Button
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(AmberDim)
-                                .border(1.dp, AmberPrimary, RoundedCornerShape(8.dp))
+                                .background(appGoldDim(isDark))
+                                .border(1.dp, appGoldPrimary(isDark), RoundedCornerShape(8.dp))
                                 .clickable { filePickerLauncher.launch("*/*") }
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.UploadFile, null, tint = AmberSoft, modifier = Modifier.size(13.dp))
+                                Icon(Icons.Default.UploadFile, null, tint = appGoldSoft(isDark), modifier = Modifier.size(13.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Import CSV/TXT", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = AmberSoft)
+                                Text("Import CSV/TXT", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = appGoldSoft(isDark))
                             }
                         }
                     }
@@ -212,17 +228,19 @@ fun BatchQrGeneratorScreen(
                             Text(
                                 "Enter 1 text or URL per line:\nTable 1\nTable 2\nhttps://mybrand.com/menu\nUPI_ID@okaxis",
                                 fontSize = 12.5.sp,
-                                color = TextTertiary
+                                color = appTextTertiary(isDark)
                             )
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(130.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AmberPrimary,
-                            unfocusedBorderColor = BorderLine,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
+                            focusedBorderColor = appGoldPrimary(isDark),
+                            unfocusedBorderColor = appBorder(isDark),
+                            focusedTextColor = appTextPrimary(isDark),
+                            unfocusedTextColor = appTextPrimary(isDark),
+                            focusedContainerColor = appElevatedBg(isDark),
+                            unfocusedContainerColor = appElevatedBg(isDark)
                         ),
                         shape = RoundedCornerShape(14.dp)
                     )
@@ -239,13 +257,13 @@ fun BatchQrGeneratorScreen(
                             "${itemsList.size} item(s) detected",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (itemsList.isNotEmpty()) AmberSoft else TextTertiary
+                            color = if (itemsList.isNotEmpty()) appGoldSoft(isDark) else appTextTertiary(isDark)
                         )
 
                         Text(
                             "Load Sample Data",
                             fontSize = 11.5.sp,
-                            color = AmberPrimary,
+                            color = appGoldPrimary(isDark),
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.clickable {
                                 textInput = "Product #101 - Smart Watch\nProduct #102 - Earbuds Pro\nProduct #103 - Power Bank\nProduct #104 - Wireless Charger\nProduct #105 - Bluetooth Speaker\nProduct #106 - USB-C Hub"
@@ -262,8 +280,8 @@ fun BatchQrGeneratorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Ink800)
-                    .border(1.dp, if (isCustomizeExpanded) AmberPrimary else BorderLine, RoundedCornerShape(18.dp))
+                    .background(appCardBg(isDark))
+                    .border(1.dp, if (isCustomizeExpanded) appGoldPrimary(isDark) else appBorder(isDark), RoundedCornerShape(18.dp))
             ) {
                 Column {
                     Row(
@@ -277,10 +295,10 @@ fun BatchQrGeneratorScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(AmberDim2),
+                                .background(appGoldDim2(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Palette, null, tint = AmberSoft, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Palette, null, tint = appGoldSoft(isDark), modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -288,18 +306,18 @@ fun BatchQrGeneratorScreen(
                                 "Batch QR Styling",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                                color = appTextPrimary(isDark)
                             )
                             Text(
                                 if (isCustomizeExpanded) "Tap to collapse styling panel" else "Customize Colors, Shapes, Eyes & Logos for batch",
                                 fontSize = 11.5.sp,
-                                color = TextTertiary
+                                color = appTextTertiary(isDark)
                             )
                         }
                         Icon(
                             if (isCustomizeExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = AmberSoft,
+                            tint = appGoldSoft(isDark),
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -310,11 +328,12 @@ fun BatchQrGeneratorScreen(
                         exit = shrinkVertically() + fadeOut()
                     ) {
                         Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                            HorizontalDivider(color = BorderLine, modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(color = appBorder(isDark), modifier = Modifier.padding(horizontal = 16.dp))
                             Spacer(modifier = Modifier.height(10.dp))
                             QRCustomizationSection(
                                 qrType = "TEXT",
                                 styleConfig = styleConfig,
+                                isDark = isDark,
                                 onStyleChanged = { newConfig -> styleConfig = newConfig },
                                 modifier = Modifier.padding(horizontal = 8.dp)
                             )
@@ -332,7 +351,14 @@ fun BatchQrGeneratorScreen(
                     .fillMaxWidth()
                     .height(52.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (canGenerate) AmberCtaGradient else Brush.linearGradient(listOf(Ink750, Ink750)))
+                    .background(
+                        if (canGenerate) appCtaGradient(isDark)
+                        else Brush.linearGradient(listOf(appCardBg(isDark), appCardBg(isDark)))
+                    )
+                    .then(
+                        if (canGenerate) Modifier.border(0.dp, Color.Transparent, RoundedCornerShape(16.dp))
+                        else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
+                    )
                     .clickable(enabled = canGenerate) {
                         val activity = context as? Activity
                         AdManager.showInterstitialWithFrequency(activity, interval = 2) {
@@ -358,22 +384,22 @@ fun BatchQrGeneratorScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (isGenerating) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color(0xFF20140A), strokeWidth = 2.5.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = if (isDark) Color(0xFF20140A) else CeramicCtaInk, strokeWidth = 2.5.dp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             "Generating ${(generateProgress * 100).toInt()}%...",
                             fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF20140A)
+                            color = if (isDark) Color(0xFF20140A) else CeramicCtaInk
                         )
                     } else {
-                        Icon(Icons.Default.Bolt, null, tint = if (canGenerate) Color(0xFF20140A) else TextTertiary, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Bolt, null, tint = if (canGenerate) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark), modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             if (itemsList.isEmpty()) "Add Items to Generate" else "Generate All (${itemsList.size} QRs)",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (canGenerate) Color(0xFF20140A) else TextTertiary
+                            color = if (canGenerate) (if (isDark) Color(0xFF20140A) else CeramicCtaInk) else appTextTertiary(isDark)
                         )
                     }
                 }
@@ -393,7 +419,7 @@ fun BatchQrGeneratorScreen(
                         "Generated (${generatedItems.size} QRs)",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = appTextPrimary(isDark)
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -401,8 +427,8 @@ fun BatchQrGeneratorScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(AmberDim)
-                                .border(1.dp, AmberPrimary, RoundedCornerShape(10.dp))
+                                .background(appGoldDim(isDark))
+                                .border(1.dp, appGoldPrimary(isDark), RoundedCornerShape(10.dp))
                                 .clickable(enabled = !isExportingZip) {
                                     scope.launch {
                                         isExportingZip = true
@@ -414,12 +440,12 @@ fun BatchQrGeneratorScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isExportingZip) {
-                                    CircularProgressIndicator(modifier = Modifier.size(12.dp), color = AmberSoft, strokeWidth = 1.5.dp)
+                                    CircularProgressIndicator(modifier = Modifier.size(12.dp), color = appGoldSoft(isDark), strokeWidth = 1.5.dp)
                                 } else {
-                                    Icon(Icons.Default.FolderZip, null, tint = AmberSoft, modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.FolderZip, null, tint = appGoldSoft(isDark), modifier = Modifier.size(14.dp))
                                 }
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("ZIP Export", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = AmberSoft)
+                                Text("ZIP Export", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = appGoldSoft(isDark))
                             }
                         }
 
@@ -427,7 +453,7 @@ fun BatchQrGeneratorScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(AmberCtaGradient)
+                                .background(appCtaGradient(isDark))
                                 .clickable(enabled = !isExportingPdf) {
                                     scope.launch {
                                         isExportingPdf = true
@@ -439,12 +465,12 @@ fun BatchQrGeneratorScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (isExportingPdf) {
-                                    CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color(0xFF20140A), strokeWidth = 1.5.dp)
+                                    CircularProgressIndicator(modifier = Modifier.size(12.dp), color = if (isDark) Color(0xFF20140A) else CeramicCtaInk, strokeWidth = 1.5.dp)
                                 } else {
-                                    Icon(Icons.Default.PictureAsPdf, null, tint = Color(0xFF20140A), modifier = Modifier.size(14.dp))
+                                    Icon(Icons.Default.PictureAsPdf, null, tint = if (isDark) Color(0xFF20140A) else CeramicCtaInk, modifier = Modifier.size(14.dp))
                                 }
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("PDF Sheet", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF20140A))
+                                Text("PDF Sheet", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF20140A) else CeramicCtaInk)
                             }
                         }
                     }
@@ -465,8 +491,8 @@ fun BatchQrGeneratorScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(Ink800)
-                                        .border(1.dp, BorderLine, RoundedCornerShape(16.dp))
+                                        .background(appCardBg(isDark))
+                                        .border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
                                         .padding(10.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -491,7 +517,7 @@ fun BatchQrGeneratorScreen(
                                             "#${item.index} ${item.text}",
                                             fontSize = 11.5.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = TextPrimary,
+                                            color = appTextPrimary(isDark),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )

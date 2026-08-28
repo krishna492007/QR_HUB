@@ -69,6 +69,7 @@ fun AboutLegalScreen(
         SetDefaultUpiAppDialog(
             installedApps = installedUpiApps,
             currentDefaultPkg = defaultPkg,
+            isDark = isDark,
             onDismiss = { showDefaultAppDialog = false },
             onSetDefault = { pkg, name ->
                 defaultPkg = pkg
