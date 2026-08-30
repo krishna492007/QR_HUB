@@ -53,7 +53,7 @@ object AdManager {
             // 1. Initialize Google Mobile Ads (AdMob) with Test Device support
             try {
                 val requestConfig = com.google.android.gms.ads.RequestConfiguration.Builder()
-                    .setTestDeviceIds(listOf("7A8DA5A46C233CCB74A4A9204D4D0827", "2624F5EBBB2A79FADA8466E8F406CB7D", "28FB779D1A707B78E3D4EF8619190FE7"))
+                    .setTestDeviceIds(listOf("2624F5EBBB2A79FADA8466E8F406CB7D", "28FB779D1A707B78E3D4EF8619190FE7"))
                     .build()
                 MobileAds.setRequestConfiguration(requestConfig)
 
