@@ -31,7 +31,7 @@ import com.qr.hub.util.*
 
 // Developer Info
 const val DEVELOPER_NAME = "KRISHNA"
-const val APP_VERSION = "1.0.0"
+val APP_VERSION: String get() = com.qr.hub.BuildConfig.VERSION_NAME
 const val DEVELOPER_EMAIL = "krishnatechhub.contact@gmail.com"
 
 @Composable

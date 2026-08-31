@@ -523,6 +523,20 @@ fun AboutLegalScreen(
             Spacer(modifier = Modifier.height(36.dp))
 
             // ── Premium Brand Footer ──
+            val appVersion = remember {
+                try {
+                    val pInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        context.packageManager.getPackageInfo(context.packageName, 0)
+                    }
+                    pInfo.versionName ?: com.qr.hub.BuildConfig.VERSION_NAME
+                } catch (_: Exception) {
+                    com.qr.hub.BuildConfig.VERSION_NAME
+                }
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -550,7 +564,7 @@ fun AboutLegalScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    "VERSION ${APP_VERSION}",
+                    "VERSION $appVersion",
                     color = appTextTertiary(isDark),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
