@@ -252,16 +252,16 @@ fun HistoryScreen(
             }
 
             // ============================================
-            // STICKY BANNER AD (Directly above Bottom Navigation Bar)
+            // STICKY BANNER AD (Transparent Background above Bottom Nav Bar)
             // ============================================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(HistoryBg)
-                    .padding(horizontal = 18.dp, vertical = 4.dp),
+                    .background(Color.Transparent)
+                    .padding(horizontal = 18.dp, vertical = 2.dp),
                 contentAlignment = Alignment.Center
             ) {
-                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
+                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = false)
             }
         }
     }
