@@ -1037,12 +1037,10 @@ fun GenerateBarcodeScreen(
                 }
             }
 
-            // Prominent Banner Ad (Matching Button & Card Width)
+            // Prominent Banner Ad (Matching Button & Card Width Exactly)
             Spacer(modifier = Modifier.height(16.dp))
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
+                modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 BannerAdView(
