@@ -534,16 +534,16 @@ fun BatchQrGeneratorScreen(
                 }
             }
 
-            // Prominent Banner Ad
+            // Prominent Banner Ad (Matching Button & Card Width)
             Spacer(modifier = Modifier.height(16.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = 18.dp),
                 contentAlignment = Alignment.Center
             ) {
                 BannerAdView(
-                    type = if (generatedItems.isEmpty()) BannerAdType.MEDIUM_RECTANGLE else BannerAdType.ADAPTIVE,
+                    type = BannerAdType.ADAPTIVE,
                     showAdBadge = true
                 )
             }
