@@ -12,6 +12,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.*
 import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -182,6 +184,18 @@ fun HistoryScreen(
             )
 
             // ============================================
+            // TOP / MID BANNER AD (Centered & High Visibility)
+            // ============================================
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
+            }
+
+            // ============================================
             // CONTENT — List or Empty with Smooth Motion
             // ============================================
             Crossfade(
@@ -211,10 +225,10 @@ fun HistoryScreen(
                         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(
+                        itemsIndexed(
                             items = uiState.items,
-                            key = { it.id }
-                        ) { item ->
+                            key = { _, item -> item.id }
+                        ) { index, item ->
                             HistoryCard(
                                 item = item,
                                 isSelected = uiState.selectedIds.contains(item.id),
@@ -238,13 +252,17 @@ fun HistoryScreen(
                                     placementSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy)
                                 )
                             )
+
+                            // In-Feed Banner Ad in the middle of history list (after 3rd item)
+                            if (index == 2 && uiState.items.size > 3) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
                         }
 
-                        // Banner Ad with bottom clearance for navigation bar
                         item {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            BannerAdView()
-                            Spacer(modifier = Modifier.height(80.dp))
+                            Spacer(modifier = Modifier.height(60.dp))
                         }
                     }
                 }
@@ -1169,6 +1187,14 @@ private fun EmptyState(
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Prominent 300x250 Medium Rectangle Ad when History is empty
+            BannerAdView(
+                type = BannerAdType.MEDIUM_RECTANGLE,
+                showAdBadge = true
             )
         }
     }
