@@ -400,6 +400,21 @@ fun ResultScreen(
             }
 
             // ============================================
+            // MID-SCREEN BANNER AD (Centered Visibility)
+            // ============================================
+            item {
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BannerAdView(showAdBadge = true)
+                }
+            }
+
+            // ============================================
             // RAW DATA — Collapsible
             // ============================================
             item {

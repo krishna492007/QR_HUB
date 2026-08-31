@@ -48,6 +48,7 @@ import com.google.zxing.common.BitMatrix
 import com.qr.hub.util.*
 import com.qr.hub.util.ads.AdManager
 import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -1036,11 +1037,22 @@ fun GenerateBarcodeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
-        }
+            // Prominent Banner Ad
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BannerAdView(
+                    type = if (singleBarcodeBitmap == null && generatedBulkItems.isEmpty()) BannerAdType.MEDIUM_RECTANGLE else BannerAdType.ADAPTIVE,
+                    showAdBadge = true
+                )
+            }
 
-        // Banner Ad
-        BannerAdView(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }
 

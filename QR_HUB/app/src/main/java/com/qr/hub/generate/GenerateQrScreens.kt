@@ -11,6 +11,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.qr.hub.util.ads.AdManager
 import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -1596,12 +1597,20 @@ private fun GenerateQrFormScreen(
             }
         }
 
-        // ── BANNER AD (Bottom of Form) ──
-        Spacer(modifier = Modifier.height(14.dp))
-        BannerAdView(modifier = Modifier.padding(horizontal = 18.dp))
-
-        // ── GENERATED QR DISPLAY ──
+        // ── PROMINENT CENTERED AD (Big 300x250 Box in Empty Space) ──
         val displayBitmap = customStyledBitmap ?: generatedBitmap
+        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            BannerAdView(
+                type = if (displayBitmap == null) BannerAdType.MEDIUM_RECTANGLE else BannerAdType.ADAPTIVE,
+                showAdBadge = true
+            )
+        }
         displayBitmap?.let { bitmap ->
             Spacer(modifier = Modifier.height(20.dp))
 

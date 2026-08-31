@@ -14,6 +14,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.qr.hub.util.ads.AdManager
 import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -533,11 +534,22 @@ fun BatchQrGeneratorScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
-        }
+            // Prominent Banner Ad
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BannerAdView(
+                    type = if (generatedItems.isEmpty()) BannerAdType.MEDIUM_RECTANGLE else BannerAdType.ADAPTIVE,
+                    showAdBadge = true
+                )
+            }
 
-        // Banner Ad
-        BannerAdView(modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }
 

@@ -45,6 +45,7 @@ import com.qr.hub.model.ScannedQR
 import com.qr.hub.util.*
 import com.qr.hub.util.ads.AdManager
 import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -459,12 +460,20 @@ fun HistoryDetailScreen(
                 com.qr.hub.util.security.UrlSecurityCard(url = item.rawValue, isDark = isDark)
             }
 
+            // ── PROMINENT BANNER AD ──
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
+            }
+
             // Bottom Spacing
             Spacer(modifier = Modifier.height(48.dp))
         }
-
-        // ── BANNER AD (START.IO ZERO DELAY MONETIZATION) ──
-        BannerAdView(modifier = Modifier.fillMaxWidth())
     }
 }
 }
