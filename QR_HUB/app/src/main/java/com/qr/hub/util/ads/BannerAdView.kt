@@ -53,7 +53,9 @@ fun BannerAdView(
             BannerAdType.LARGE -> AdSize.LARGE_BANNER
             BannerAdType.ADAPTIVE -> {
                 try {
-                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, screenWidthDp)
+                    // Match the inner content width with standard screen padding (screenWidthDp - 36)
+                    val targetWidth = (screenWidthDp - 36).coerceAtLeast(300)
+                    AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, targetWidth)
                 } catch (_: Exception) {
                     AdSize.BANNER
                 }

@@ -1597,9 +1597,9 @@ private fun GenerateQrFormScreen(
             }
         }
 
-        // ── PROMINENT CENTERED AD (Big 300x250 Box in Empty Space) ──
+        // ── PROMINENT BANNER AD (Matching Generate Button Width) ──
         val displayBitmap = customStyledBitmap ?: generatedBitmap
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1607,7 +1607,7 @@ private fun GenerateQrFormScreen(
             contentAlignment = Alignment.Center
         ) {
             BannerAdView(
-                type = if (displayBitmap == null) BannerAdType.MEDIUM_RECTANGLE else BannerAdType.ADAPTIVE,
+                type = BannerAdType.ADAPTIVE,
                 showAdBadge = true
             )
         }

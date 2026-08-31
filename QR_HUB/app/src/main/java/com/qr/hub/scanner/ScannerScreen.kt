@@ -30,6 +30,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.qr.hub.util.ads.BannerAdView
+import com.qr.hub.util.ads.BannerAdType
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -410,29 +412,41 @@ private fun ScannerActiveView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 48.dp),
+                .padding(horizontal = 24.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Position the instruction text below the scan area
-            Row(
+            // Position the instruction text and Banner Ad below the scan area
+            Column(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset(y = 170.dp)
-                    .graphicsLayer { alpha = instructionAlpha },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    .offset(y = 175.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Align the code inside the frame",
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = TextSecondary
-                )
-                Text(
-                    text = "// live",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = CyanAccent
+                Row(
+                    modifier = Modifier.graphicsLayer { alpha = instructionAlpha },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Align the code inside the frame",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = TextSecondary
+                    )
+                    Text(
+                        text = "// live",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CyanAccent
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Banner Ad directly below "Align the code inside the frame"
+                BannerAdView(
+                    type = BannerAdType.ADAPTIVE,
+                    showAdBadge = true
                 )
             }
         }

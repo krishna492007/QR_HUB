@@ -405,6 +405,17 @@ fun HistoryDetailScreen(
                 }
             }
 
+            // ── BANNER AD (Directly Below Customize QR Section) ──
+            Spacer(modifier = Modifier.height(14.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // ── DETAILS CARD ──
@@ -458,17 +469,6 @@ fun HistoryDetailScreen(
             if (item.type.equals("URL", ignoreCase = true) || item.rawValue.startsWith("http://", ignoreCase = true) || item.rawValue.startsWith("https://", ignoreCase = true)) {
                 Spacer(modifier = Modifier.height(14.dp))
                 com.qr.hub.util.security.UrlSecurityCard(url = item.rawValue, isDark = isDark)
-            }
-
-            // ── PROMINENT BANNER AD ──
-            Spacer(modifier = Modifier.height(16.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
             }
 
             // Bottom Spacing

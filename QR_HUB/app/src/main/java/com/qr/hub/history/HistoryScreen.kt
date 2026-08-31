@@ -184,88 +184,84 @@ fun HistoryScreen(
             )
 
             // ============================================
-            // TOP / MID BANNER AD (Centered & High Visibility)
+            // CONTENT — List or Empty with Smooth Motion
+            // ============================================
+            Box(modifier = Modifier.weight(1f)) {
+                Crossfade(
+                    targetState = Pair(uiState.isLoading, uiState.items.isEmpty()),
+                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                    label = "ContentStateCrossfade"
+                ) { (isLoading, isEmpty) ->
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = HistoryAccent,
+                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+                    } else if (isEmpty) {
+                        EmptyState(
+                            isSearching = uiState.searchQuery.isNotEmpty(),
+                            selectedTab = uiState.selectedTab
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            items(
+                                items = uiState.items,
+                                key = { it.id }
+                            ) { item ->
+                                HistoryCard(
+                                    item = item,
+                                    isSelected = uiState.selectedIds.contains(item.id),
+                                    selectionMode = uiState.selectionMode,
+                                    onClick = {
+                                        if (uiState.selectionMode) {
+                                            viewModel.toggleSelection(item.id)
+                                        } else {
+                                            onItemClick(item)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        viewModel.toggleSelection(item.id)
+                                    },
+                                    onFavoriteClick = {
+                                        viewModel.toggleFavorite(item)
+                                    },
+                                    modifier = Modifier.animateItem(
+                                        fadeInSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+                                        fadeOutSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing),
+                                        placementSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy)
+                                    )
+                                )
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ============================================
+            // STICKY BANNER AD (Directly above Bottom Navigation Bar)
             // ============================================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(HistoryBg)
                     .padding(horizontal = 18.dp, vertical = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
                 BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
-            }
-
-            // ============================================
-            // CONTENT — List or Empty with Smooth Motion
-            // ============================================
-            Crossfade(
-                targetState = Pair(uiState.isLoading, uiState.items.isEmpty()),
-                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                label = "ContentStateCrossfade"
-            ) { (isLoading, isEmpty) ->
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = HistoryAccent,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                } else if (isEmpty) {
-                    EmptyState(
-                        isSearching = uiState.searchQuery.isNotEmpty(),
-                        selectedTab = uiState.selectedTab
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        itemsIndexed(
-                            items = uiState.items,
-                            key = { _, item -> item.id }
-                        ) { index, item ->
-                            HistoryCard(
-                                item = item,
-                                isSelected = uiState.selectedIds.contains(item.id),
-                                selectionMode = uiState.selectionMode,
-                                onClick = {
-                                    if (uiState.selectionMode) {
-                                        viewModel.toggleSelection(item.id)
-                                    } else {
-                                        onItemClick(item)
-                                    }
-                                },
-                                onLongClick = {
-                                    viewModel.toggleSelection(item.id)
-                                },
-                                onFavoriteClick = {
-                                    viewModel.toggleFavorite(item)
-                                },
-                                modifier = Modifier.animateItem(
-                                    fadeInSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
-                                    fadeOutSpec = tween(durationMillis = 180, easing = FastOutLinearInEasing),
-                                    placementSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy)
-                                )
-                            )
-
-                            // In-Feed Banner Ad in the middle of history list (after 3rd item)
-                            if (index == 2 && uiState.items.size > 3) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                BannerAdView(type = BannerAdType.ADAPTIVE, showAdBadge = true)
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                        }
-
-                        item {
-                            Spacer(modifier = Modifier.height(60.dp))
-                        }
-                    }
-                }
             }
         }
     }
@@ -1187,14 +1183,6 @@ private fun EmptyState(
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Prominent 300x250 Medium Rectangle Ad when History is empty
-            BannerAdView(
-                type = BannerAdType.MEDIUM_RECTANGLE,
-                showAdBadge = true
             )
         }
     }
