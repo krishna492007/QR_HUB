@@ -29,6 +29,7 @@ private const val TAG = "BannerAdView"
 
 enum class BannerAdType {
     ADAPTIVE,          // Full width x ~50-90dp
+    INLINE_TALL,       // Full width matching button x Taller height (~120-250dp)
     MEDIUM_RECTANGLE,  // 300x250dp Big Box
     LARGE              // 320x100dp Double Height
 }
@@ -49,6 +50,14 @@ fun BannerAdView(
 
     val adSize = remember(type, screenWidthDp) {
         when (type) {
+            BannerAdType.INLINE_TALL -> {
+                try {
+                    val targetWidth = (screenWidthDp - 36).coerceAtLeast(300)
+                    AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(context, targetWidth)
+                } catch (_: Exception) {
+                    AdSize.MEDIUM_RECTANGLE
+                }
+            }
             BannerAdType.MEDIUM_RECTANGLE -> AdSize.MEDIUM_RECTANGLE
             BannerAdType.LARGE -> AdSize.LARGE_BANNER
             BannerAdType.ADAPTIVE -> {

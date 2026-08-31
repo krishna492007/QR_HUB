@@ -1607,7 +1607,7 @@ private fun GenerateQrFormScreen(
             contentAlignment = Alignment.Center
         ) {
             BannerAdView(
-                type = BannerAdType.ADAPTIVE,
+                type = BannerAdType.INLINE_TALL,
                 showAdBadge = true
             )
         }
