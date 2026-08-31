@@ -1,4 +1,5 @@
 package com.qr.hub.util.ads
+
 import android.app.Activity
 import android.content.Context
 import android.util.Log
@@ -9,20 +10,13 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
-import com.startapp.sdk.adsbase.Ad
-import com.startapp.sdk.adsbase.StartAppAd
-import com.startapp.sdk.adsbase.StartAppSDK
-import com.startapp.sdk.adsbase.adlisteners.AdDisplayListener
-import com.startapp.sdk.adsbase.adlisteners.AdEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * High-Performance Hybrid AdManager:
- * - Primary: Google AdMob (Industry-highest eCPM & revenue)
- * - Fallback: Start.io (100% Instant Fill Rate & zero revenue loss)
+ * 100% Pure Google AdMob AdManager (Start.io Disabled)
  */
 object AdManager {
     private const val TAG = "QR_HUB_AdManager"
@@ -33,15 +27,11 @@ object AdManager {
     private var admobInterstitialAd: InterstitialAd? = null
     private var isAdMobLoading = false
 
-    // Start.io Interstitial state
-    private var startIoPreloadedAd: StartAppAd? = null
-    private var isStartIoLoaded = false
-
-    // Action counter for smart frequency capping (shows ad once every 2 actions)
+    // Action counter for frequency capping (shows ad once every 2 actions)
     private val actionCounter = AtomicInteger(0)
 
     /**
-     * Initialize both Google AdMob and Start.io SDKs asynchronously
+     * Initialize Google AdMob SDK
      */
     fun initialize(context: Context) {
         if (isInitialized) return
@@ -50,10 +40,9 @@ object AdManager {
         val appContext = context.applicationContext
 
         CoroutineScope(Dispatchers.Main).launch {
-            // 1. Initialize Google Mobile Ads (AdMob) with Test Device support
             try {
                 val requestConfig = com.google.android.gms.ads.RequestConfiguration.Builder()
-                    .setTestDeviceIds(listOf("2624F5EBBB2A79FADA8466E8F406CB7D", "28FB779D1A707B78E3D4EF8619190FE7"))
+                    .setTestDeviceIds(listOf("7A8DA5A46C233CCB74A4A9204D4D0827", "2624F5EBBB2A79FADA8466E8F406CB7D", "28FB779D1A707B78E3D4EF8619190FE7"))
                     .build()
                 MobileAds.setRequestConfiguration(requestConfig)
 
@@ -63,21 +52,6 @@ object AdManager {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Google AdMob init error: ${e.message}")
-            }
-
-            // 2. Initialize Start.io (with auto-consent and splash suppression)
-            try {
-                try {
-                    StartAppSDK.setUserConsent(appContext, "pas", System.currentTimeMillis(), true)
-                } catch (_: Exception) {}
-
-                StartAppSDK.enableReturnAds(false)
-                StartAppSDK.init(appContext, AdConfig.STARTAPP_APP_ID, false)
-                StartAppAd.disableSplash()
-                Log.d(TAG, "Start.io initialized successfully with App ID: ${AdConfig.STARTAPP_APP_ID}")
-                preloadStartIoInterstitial(appContext)
-            } catch (e: Exception) {
-                Log.e(TAG, "Start.io init error: ${e.message}")
             }
         }
     }
@@ -104,33 +78,14 @@ object AdManager {
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     admobInterstitialAd = null
                     isAdMobLoading = false
-                    Log.w(TAG, "Google AdMob Interstitial failed to load: ${loadAdError.message}. Start.io ready as backup.")
+                    Log.w(TAG, "Google AdMob Interstitial failed to load: ${loadAdError.message}")
                 }
             }
         )
     }
 
     /**
-     * Background Preload Start.io Interstitial
-     */
-    fun preloadStartIoInterstitial(context: Context) {
-        val ad = StartAppAd(context)
-        ad.loadAd(StartAppAd.AdMode.AUTOMATIC, object : AdEventListener {
-            override fun onReceiveAd(p0: Ad) {
-                startIoPreloadedAd = ad
-                isStartIoLoaded = true
-                Log.d(TAG, "Start.io Interstitial Preloaded successfully!")
-            }
-
-            override fun onFailedToReceiveAd(p0: Ad?) {
-                isStartIoLoaded = false
-                Log.w(TAG, "Start.io Interstitial failed to load: ${p0?.errorMessage}")
-            }
-        })
-    }
-
-    /**
-     * Show full-screen interstitial ad with frequency capping (AdMob First -> Start.io Secondary)
+     * Show full-screen interstitial ad with frequency capping (Only Google AdMob)
      */
     fun showInterstitialWithFrequency(
         activity: Activity?,
@@ -146,18 +101,14 @@ object AdManager {
         if (count % interval == 0) {
             showInterstitial(activity, onComplete)
         } else {
-            // Keep ads preloaded in background
+            // Keep AdMob preloaded in background
             if (admobInterstitialAd == null) preloadAdMobInterstitial(activity)
-            if (!isStartIoLoaded) preloadStartIoInterstitial(activity)
             onComplete()
         }
     }
 
     /**
-     * Smart Waterfall Show:
-     * 1. Try Google AdMob (High Revenue)
-     * 2. If AdMob unavailable, Try Start.io (100% Fill Rate)
-     * 3. If neither available, proceed immediately (Zero User Lag)
+     * Show ONLY Google AdMob Interstitial Ad
      */
     fun showInterstitial(
         activity: Activity,
@@ -165,7 +116,6 @@ object AdManager {
     ) {
         val admobAd = admobInterstitialAd
 
-        // LEVEL 1: Try Google AdMob
         if (admobAd != null) {
             admobAd.fullScreenContentCallback = object : FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
@@ -176,10 +126,10 @@ object AdManager {
                 }
 
                 override fun onAdFailedToShowFullScreenContent(adError: AdError) {
-                    Log.w(TAG, "AdMob Failed to show: ${adError.message}. Falling back to Start.io.")
+                    Log.w(TAG, "AdMob Failed to show: ${adError.message}")
                     admobInterstitialAd = null
                     preloadAdMobInterstitial(activity)
-                    showStartIoFallback(activity, onComplete)
+                    onComplete()
                 }
 
                 override fun onAdShowedFullScreenContent() {
@@ -187,69 +137,10 @@ object AdManager {
                 }
             }
             admobAd.show(activity)
-            return
-        }
-
-        // LEVEL 2: Fallback to Start.io
-        Log.d(TAG, "AdMob not ready yet, serving Start.io fallback ad...")
-        showStartIoFallback(activity, onComplete)
-    }
-
-    /**
-     * Show Start.io Fallback Interstitial
-     */
-    private fun showStartIoFallback(
-        activity: Activity,
-        onComplete: () -> Unit
-    ) {
-        val startAd = startIoPreloadedAd
-        if (isStartIoLoaded && startAd != null) {
-            startAd.showAd(object : AdDisplayListener {
-                override fun adHidden(p0: Ad?) {
-                    Log.d(TAG, "Start.io Fallback Ad Closed")
-                    isStartIoLoaded = false
-                    startIoPreloadedAd = null
-                    preloadStartIoInterstitial(activity)
-                    preloadAdMobInterstitial(activity)
-                    onComplete()
-                }
-
-                override fun adDisplayed(p0: Ad?) {
-                    Log.d(TAG, "Start.io Fallback Ad Displayed!")
-                }
-
-                override fun adClicked(p0: Ad?) {
-                    Log.d(TAG, "Start.io Fallback Ad Clicked!")
-                }
-
-                override fun adNotDisplayed(p0: Ad?) {
-                    Log.w(TAG, "Start.io Fallback Ad Not Displayed: ${p0?.errorMessage}")
-                    isStartIoLoaded = false
-                    startIoPreloadedAd = null
-                    preloadStartIoInterstitial(activity)
-                    preloadAdMobInterstitial(activity)
-                    onComplete()
-                }
-            })
         } else {
-            // Direct Start.io load attempt
-            val directAd = StartAppAd(activity)
-            directAd.loadAd(StartAppAd.AdMode.AUTOMATIC, object : AdEventListener {
-                override fun onReceiveAd(p0: Ad) {
-                    directAd.showAd(object : AdDisplayListener {
-                        override fun adHidden(ad: Ad?) { onComplete() }
-                        override fun adDisplayed(ad: Ad?) {}
-                        override fun adClicked(ad: Ad?) {}
-                        override fun adNotDisplayed(ad: Ad?) { onComplete() }
-                    })
-                }
-
-                override fun onFailedToReceiveAd(p0: Ad?) {
-                    preloadAdMobInterstitial(activity)
-                    onComplete()
-                }
-            })
+            Log.d(TAG, "AdMob Interstitial not ready yet, preloading for next time...")
+            preloadAdMobInterstitial(activity)
+            onComplete()
         }
     }
 }
-
