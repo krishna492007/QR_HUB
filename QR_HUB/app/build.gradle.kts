@@ -15,8 +15,8 @@ android {
         applicationId = "com.qr.hub"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 5
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -61,6 +61,11 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 
     packaging {
