@@ -641,8 +641,7 @@ fun AboutLegalScreen(
                         onClick = {
                             val activity = context as? Activity
                             if (activity != null) {
-                                Toast.makeText(context, "Checking for latest updates...", Toast.LENGTH_SHORT).show()
-                                InAppUpdateManager.checkForAppUpdate(activity)
+                                InAppUpdateManager.checkForAppUpdate(activity, manualCheck = true)
                             }
                         }
                     )
