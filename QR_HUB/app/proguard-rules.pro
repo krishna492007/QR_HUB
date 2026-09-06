@@ -33,15 +33,6 @@
 -dontwarn androidx.camera.**
 -dontwarn com.google.common.**
 
-# ── Keep Start.io SDK ──
--keep class com.startapp.** { *; }
--dontwarn com.startapp.**
-
-# ── Keep Unity Ads SDK ──
--keep class com.unity3d.ads.** { *; }
--keep class com.unity3d.services.** { *; }
--dontwarn com.unity3d.**
-
 # ── Keep Google AdMob SDK ──
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**

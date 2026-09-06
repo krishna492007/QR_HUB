@@ -407,47 +407,41 @@ private fun ScannerActiveView(
         )
 
         // ==========================================
-        // INSTRUCTION TEXT
+        // INSTRUCTION TEXT PILL (High-Contrast Glass Badge)
         // ==========================================
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .align(Alignment.Center)
+                .offset(y = 150.dp)
                 .padding(horizontal = 24.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Position the instruction text and Banner Ad below the scan area
-            Column(
+            Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = 175.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.65f))
+                    .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 16.dp, vertical = 7.dp)
             ) {
                 Row(
                     modifier = Modifier.graphicsLayer { alpha = instructionAlpha },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        text = "Align the code inside the frame",
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = TextSecondary
+                    Icon(
+                        imageVector = Icons.Default.QrCodeScanner,
+                        contentDescription = null,
+                        tint = AmberPrimary,
+                        modifier = Modifier.size(15.dp)
                     )
                     Text(
-                        text = "// live",
-                        fontSize = 11.sp,
+                        text = "Align code inside the frame",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = CyanAccent
+                        color = Color.White
                     )
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Banner Ad directly below "Align the code inside the frame"
-                BannerAdView(
-                    type = BannerAdType.ADAPTIVE,
-                    showAdBadge = true
-                )
             }
         }
 
@@ -691,16 +685,29 @@ private fun ScannerActiveView(
         }
 
         // ==========================================
-        // BOTTOM CONTROLS — REDESIGNED INK & AMBER
+        // BOTTOM SECTION: BANNER AD + CONTROLS (Zero-Overlap Responsive Column)
         // ==========================================
-        Row(
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 24.dp, start = 18.dp, end = 18.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .background(if (isDark) Ink850.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.92f))
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp, start = 18.dp, end = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Adaptive Banner Ad placed safely above controls bar
+            BannerAdView(
+                type = BannerAdType.ADAPTIVE,
+                showAdBadge = false
+            )
+
+            // Controls Bar (Flash, Gallery, Flip)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(if (isDark) Ink850.copy(alpha = 0.92f) else Color.White.copy(alpha = 0.92f))
                 .border(1.dp, if (isDark) BorderLineStrong else CeramicBorderStrong, RoundedCornerShape(22.dp))
                 .padding(horizontal = 8.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -758,6 +765,7 @@ private fun ScannerActiveView(
                     onLensFacingChange(newLens)
                 }
             )
+        }
         }
     }
 }

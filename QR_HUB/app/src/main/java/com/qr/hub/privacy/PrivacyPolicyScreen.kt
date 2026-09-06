@@ -260,8 +260,8 @@ private fun PrivacyPolicyContent(isDark: Boolean) {
         title = "Third-Party Services & Advertising",
         content = "QR Hub uses the following trusted third-party SDKs:\n\n" +
                 "• Google ML Kit (for on-device high-speed scanning)\n" +
-                "• Google AdMob & Start.io (for delivering policy-compliant advertisements)\n\n" +
-                "These ad networks may collect anonymized advertising identifiers in accordance with their privacy policies to display relevant ads."
+                "• Google AdMob (for delivering policy-compliant advertisements)\n\n" +
+                "These services may collect anonymized advertising identifiers in accordance with their privacy policies to display relevant ads."
     )
 
     // Contact Section

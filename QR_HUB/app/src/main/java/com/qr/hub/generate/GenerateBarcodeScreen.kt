@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +86,8 @@ fun GenerateBarcodeScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
     var activeTab by remember { mutableStateOf(0) } // 0 = Single & Multi-Copy Sheet, 1 = Bulk CSV
@@ -381,6 +385,8 @@ fun GenerateBarcodeScreen(
                                     else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
                                 )
                                 .clickable(enabled = isSingleInputValid) {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
                                     scope.launch {
                                         val bmp = generateProductBarcode(singleInputText, selectedBarcodeType.format)
                                         if (bmp != null) {
@@ -859,6 +865,8 @@ fun GenerateBarcodeScreen(
                                     else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(14.dp))
                                 )
                                 .clickable(enabled = canGenerateBulk) {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
                                     val activity = context as? Activity
                                     AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                                         scope.launch {

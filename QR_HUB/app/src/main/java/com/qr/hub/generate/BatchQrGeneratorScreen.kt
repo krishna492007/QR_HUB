@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +71,8 @@ fun BatchQrGeneratorScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
     var textInput by remember { mutableStateOf("") }
@@ -361,6 +365,8 @@ fun BatchQrGeneratorScreen(
                         else Modifier.border(1.dp, appBorder(isDark), RoundedCornerShape(16.dp))
                     )
                     .clickable(enabled = canGenerate) {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
                         val activity = context as? Activity
                         AdManager.showInterstitialWithFrequency(activity, interval = 2) {
                             scope.launch {

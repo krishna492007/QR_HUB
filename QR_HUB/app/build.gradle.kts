@@ -15,8 +15,8 @@ android {
         applicationId = "com.qr.hub"
         minSdk = 24
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3"
+        versionCode = 6
+        versionName = "1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -106,8 +106,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.google.android.gms:play-services-ads:23.6.0")
-    implementation("com.unity3d.ads:unity-ads:4.12.5")
-    implementation("com.startapp:inapp-sdk:5.1.0")
     implementation("com.google.guava:guava:33.3.1-android")
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
