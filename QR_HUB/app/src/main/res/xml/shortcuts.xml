@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="scan_qr"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_scan"
+        android:shortcutShortLabel="@string/shortcut_scan_short"
+        android:shortcutLongLabel="@string/shortcut_scan_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.qr.hub"
+            android:targetClass="com.qr.hub.MainActivity">
+            <extra android:name="shortcut_action" android:value="action_scan" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="create_upi"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_upi"
+        android:shortcutShortLabel="@string/shortcut_upi_short"
+        android:shortcutLongLabel="@string/shortcut_upi_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.qr.hub"
+            android:targetClass="com.qr.hub.MainActivity">
+            <extra android:name="shortcut_action" android:value="action_create_upi" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="bulk_generate"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_bulk"
+        android:shortcutShortLabel="@string/shortcut_bulk_short"
+        android:shortcutLongLabel="@string/shortcut_bulk_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.qr.hub"
+            android:targetClass="com.qr.hub.MainActivity">
+            <extra android:name="shortcut_action" android:value="action_bulk_generate" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="generate_barcode"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_barcode"
+        android:shortcutShortLabel="@string/shortcut_barcode_short"
+        android:shortcutLongLabel="@string/shortcut_barcode_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.qr.hub"
+            android:targetClass="com.qr.hub.MainActivity">
+            <extra android:name="shortcut_action" android:value="action_generate_barcode" />
+        </intent>
+    </shortcut>
+</shortcuts>

@@ -36,3 +36,7 @@
 # ── Keep Google AdMob SDK ──
 -keep class com.google.android.gms.ads.** { *; }
 -dontwarn com.google.android.gms.ads.**
+
+# ── Keep Google Play In-App Review & In-App Update ──
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**

@@ -1570,6 +1570,7 @@ private fun GenerateQrFormScreen(
                             if (qrContent.isNotEmpty() && qrContent != lastSavedContent) {
                                 historyViewModel.saveGenerate(qrContent, qrType)
                                 lastSavedContent = qrContent
+                                InAppReviewManager.recordSuccessfulAction(activity)
                             }
                             kotlinx.coroutines.delay(100)
                             scrollState.animateScrollTo(scrollState.maxValue)

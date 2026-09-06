@@ -27,7 +27,8 @@ fun CameraXPreview(
     modifier: Modifier = Modifier,
     onBarcodeDetected: (String) -> Unit,
     lensFacing: Int = CameraSelector.LENS_FACING_BACK,
-    flashOn: Boolean = false
+    flashOn: Boolean = false,
+    zoomRatio: Float = 1.0f
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -90,6 +91,7 @@ fun CameraXPreview(
 
             camera = p.bindToLifecycle(lifecycleOwner, cameraSelector, previewUseCase, imageAnalysis)
             camera?.cameraControl?.enableTorch(flashOn)
+            camera?.cameraControl?.setZoomRatio(zoomRatio.coerceAtLeast(1.0f))
             Log.d(TAG, "Camera bound successfully with lensFacing=$lensFacing")
         } catch (e: Exception) {
             Log.e(TAG, "Camera binding error", e)
@@ -99,6 +101,15 @@ fun CameraXPreview(
     // Update torch mode when flashOn changes
     LaunchedEffect(flashOn) {
         camera?.cameraControl?.enableTorch(flashOn)
+    }
+
+    // Update zoom ratio when zoomRatio changes
+    LaunchedEffect(zoomRatio) {
+        try {
+            camera?.cameraControl?.setZoomRatio(zoomRatio.coerceIn(1.0f, 5.0f))
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to apply zoom ratio: $zoomRatio", e)
+        }
     }
 
     DisposableEffect(context, lifecycleOwner, lensFacing) {

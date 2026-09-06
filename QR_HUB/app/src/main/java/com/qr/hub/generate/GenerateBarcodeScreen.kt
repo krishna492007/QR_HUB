@@ -392,6 +392,7 @@ fun GenerateBarcodeScreen(
                                         if (bmp != null) {
                                             singleBarcodeBitmap = bmp
                                             singleErrorMessage = null
+                                            InAppReviewManager.recordSuccessfulAction(context as? Activity)
                                         } else {
                                             singleErrorMessage = "Invalid format or length for ${selectedBarcodeType.displayName}"
                                         }

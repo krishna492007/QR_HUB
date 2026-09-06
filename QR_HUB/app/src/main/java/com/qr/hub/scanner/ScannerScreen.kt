@@ -2,6 +2,7 @@ package com.qr.hub.scanner
 
 import androidx.compose.ui.text.withStyle
 import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -22,6 +23,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -106,28 +109,29 @@ fun ScannerScreen(
         scope.launch {
             val now = System.currentTimeMillis()
             if (now - lastVibrateTime.value > 500) {
-                if (vibrator == null) {
-                    android.util.Log.d("ScannerScreen", "Vibrator is null!")
+                if (vibrator == null || !vibrator.hasVibrator()) {
                     return@launch
                 }
-                if (!vibrator!!.hasVibrator()) {
-                    android.util.Log.d("ScannerScreen", "Device has no vibrator")
-                    return@launch
-                }
-                android.util.Log.d("ScannerScreen", "Vibrating now (300ms)")
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator!!.vibrate(
+                    vibrator.vibrate(
                         VibrationEffect.createOneShot(
-                            300,
+                            250,
                             VibrationEffect.DEFAULT_AMPLITUDE
                         )
                     )
                 } else {
                     @Suppress("DEPRECATION")
-                    vibrator!!.vibrate(300)
+                    vibrator.vibrate(250)
                 }
                 lastVibrateTime.value = now
             }
+        }
+    }
+
+    fun triggerScanFeedback() {
+        ScannerPreferenceManager.playScanBeep(context)
+        if (ScannerPreferenceManager.isVibrateEnabled(context)) {
+            triggerVibrate()
         }
     }
 
@@ -173,7 +177,8 @@ fun ScannerScreen(
                     scanner.process(inputImage)
                         .addOnSuccessListener { barcodes ->
                             if (barcodes.isNotEmpty() && barcodes[0].rawValue != null) {
-                                triggerVibrate()
+                                triggerScanFeedback()
+                                InAppReviewManager.recordSuccessfulAction(context as? Activity)
                                 scannedResult = ScannedQR.RawResult(
                                     rawValue = barcodes[0].rawValue!!,
                                     format = barcodes[0].format,
@@ -286,7 +291,10 @@ fun ScannerScreen(
                 onBack = onBack,
                 onPrivacyPolicyClick = onPrivacyPolicyClick,
                 photoPickerLauncher = photoPickerLauncher,
-                onVibrate = { triggerVibrate() }
+                onScanSuccess = {
+                    triggerScanFeedback()
+                    InAppReviewManager.recordSuccessfulAction(context as? Activity)
+                }
             )
         }
     }
@@ -304,20 +312,28 @@ private fun ScannerActiveView(
     onBack: (() -> Unit)?,
     onPrivacyPolicyClick: (() -> Unit)?,
     photoPickerLauncher: androidx.activity.result.ActivityResultLauncher<PickVisualMediaRequest>,
-    onVibrate: () -> Unit
+    onScanSuccess: () -> Unit
 ) {
     val textPrimary = if (isDark) DarkTextPrimary else LightTextPrimary
     val textSecondary = if (isDark) DarkTextSecondary else LightTextSecondary
     val isFrontCamera = lensFacing == CameraSelector.LENS_FACING_FRONT
 
-    // Menu & UPI state
+    // Menu & Preferences state
     var showMenu by remember { mutableStateOf(false) }
     var showDefaultAppDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var defaultPkg by remember { mutableStateOf(UpiPreferenceManager.getDefaultPackage(context)) }
     var defaultName by remember { mutableStateOf(UpiPreferenceManager.getDefaultName(context)) }
     var isQuickPay by remember { mutableStateOf(UpiPreferenceManager.isQuickPayEnabled(context)) }
+    var isBeepEnabled by remember { mutableStateOf(ScannerPreferenceManager.isBeepEnabled(context)) }
+    var isVibrateEnabled by remember { mutableStateOf(ScannerPreferenceManager.isVibrateEnabled(context)) }
     val installedUpiApps = remember { getInstalledUpiApps(context) }
+
+    // Camera Zoom State & Gesture
+    var zoomRatio by remember { mutableFloatStateOf(1.0f) }
+    val transformableState = rememberTransformableState { zoomChange, _, _ ->
+        zoomRatio = (zoomRatio * zoomChange).coerceIn(1.0f, 5.0f)
+    }
 
     if (showDefaultAppDialog) {
         SetDefaultUpiAppDialog(
@@ -375,13 +391,15 @@ private fun ScannerActiveView(
     var hasDetected by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .transformable(transformableState)
     ) {
-        // Camera preview
+        // Camera preview with pinch-to-zoom support
         val handleBarcodeDetected: (String) -> Unit = { value ->
             if (!hasDetected) {
                 hasDetected = true
-                onVibrate()
+                onScanSuccess()
                 onNavigateToResult(
                     ScannedQR.RawResult(
                         rawValue = value,
@@ -395,7 +413,8 @@ private fun ScannerActiveView(
             modifier = Modifier.fillMaxSize(),
             onBarcodeDetected = handleBarcodeDetected,
             lensFacing = lensFacing,
-            flashOn = flashOn
+            flashOn = flashOn,
+            zoomRatio = zoomRatio
         )
 
         // ==========================================
@@ -407,13 +426,50 @@ private fun ScannerActiveView(
         )
 
         // ==========================================
+        // QUICK ZOOM SELECTOR CHIPS (1x, 2x, 3x, 5x)
+        // ==========================================
+        Row(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 112.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.Black.copy(alpha = 0.70f))
+                .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            listOf(1.0f, 2.0f, 3.0f, 5.0f).forEach { ratio ->
+                val isSelected = kotlin.math.abs(zoomRatio - ratio) < 0.25f
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(if (isSelected) AmberPrimary else Color.Transparent)
+                        .clickable { zoomRatio = ratio }
+                        .padding(horizontal = 9.dp, vertical = 3.5.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isSelected && ratio != 1.0f && ratio != 2.0f && ratio != 3.0f && ratio != 5.0f)
+                            String.format(java.util.Locale.US, "%.1fx", zoomRatio)
+                        else
+                            "${ratio.toInt()}x",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Ink900 else Color.White
+                    )
+                }
+            }
+        }
+
+        // ==========================================
         // INSTRUCTION TEXT PILL (High-Contrast Glass Badge)
         // ==========================================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.Center)
-                .offset(y = 150.dp)
+                .offset(y = 155.dp)
                 .padding(horizontal = 24.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -436,8 +492,8 @@ private fun ScannerActiveView(
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
-                        text = "Align code inside the frame",
-                        fontSize = 12.sp,
+                        text = "Align code inside the frame (Pinch to zoom)",
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White
                     )
@@ -508,7 +564,7 @@ private fun ScannerActiveView(
                     containerColor = appCardBg(isDark),
                     border = androidx.compose.foundation.BorderStroke(1.dp, appBorder(isDark)),
                     shadowElevation = 12.dp,
-                    modifier = Modifier.width(250.dp)
+                    modifier = Modifier.width(260.dp)
                 ) {
                     // Default UPI App
                     Row(
@@ -527,13 +583,13 @@ private fun ScannerActiveView(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(appElevatedBg(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Star,
+                                Icons.Default.AccountBalance,
                                 contentDescription = null,
                                 tint = appGoldPrimary(isDark),
                                 modifier = Modifier.size(18.dp)
@@ -553,7 +609,7 @@ private fun ScannerActiveView(
                                 text = if (!defaultName.isNullOrEmpty()) defaultName!! else "None (Always Ask)",
                                 color = appTextPrimary(isDark),
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
+                                fontSize = 13.5.sp
                             )
                         }
                     }
@@ -578,8 +634,8 @@ private fun ScannerActiveView(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(appElevatedBg(isDark)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -600,32 +656,114 @@ private fun ScannerActiveView(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Normal
                             )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            Text(
+                                text = if (isQuickPay) "Active on scan" else "Disabled",
+                                color = if (isQuickPay) CyanAccent else appTextTertiary(isDark),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.8.dp)
+
+                    // Beep on Scan Toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(isDark))
                             ) {
-                                if (isQuickPay) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .clip(CircleShape)
-                                            .background(CyanAccent)
-                                    )
-                                    Text(
-                                        "Active on scan",
-                                        color = CyanAccent,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 14.sp
-                                    )
-                                } else {
-                                    Text(
-                                        "Disabled",
-                                        color = appTextTertiary(isDark),
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 14.sp
-                                    )
-                                }
+                                val next = !isBeepEnabled
+                                isBeepEnabled = next
+                                ScannerPreferenceManager.setBeepEnabled(context, next)
                             }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(appElevatedBg(isDark)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isBeepEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                contentDescription = null,
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "Beep on scan",
+                                color = appTextSecondary(isDark),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                            Text(
+                                text = if (isBeepEnabled) "Enabled (Audio tone)" else "Muted",
+                                color = if (isBeepEnabled) appGoldPrimary(isDark) else appTextTertiary(isDark),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.8.dp)
+
+                    // Vibrate on Scan Toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = androidx.compose.material3.ripple(color = appGoldDim2(isDark))
+                            ) {
+                                val next = !isVibrateEnabled
+                                isVibrateEnabled = next
+                                ScannerPreferenceManager.setVibrateEnabled(context, next)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(appElevatedBg(isDark)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isVibrateEnabled) Icons.Default.Vibration else Icons.Default.NotificationsOff,
+                                contentDescription = null,
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "Vibrate on scan",
+                                color = appTextSecondary(isDark),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                            Text(
+                                text = if (isVibrateEnabled) "Enabled (Haptic)" else "Disabled",
+                                color = if (isVibrateEnabled) appGoldPrimary(isDark) else appTextTertiary(isDark),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp
+                            )
                         }
                     }
 

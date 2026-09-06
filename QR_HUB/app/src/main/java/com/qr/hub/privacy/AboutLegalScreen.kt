@@ -1,9 +1,11 @@
 package com.qr.hub.privacy
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,6 +65,8 @@ fun AboutLegalScreen(
     var defaultPkg by remember { mutableStateOf(UpiPreferenceManager.getDefaultPackage(context)) }
     var defaultName by remember { mutableStateOf(UpiPreferenceManager.getDefaultName(context)) }
     var isQuickPay by remember { mutableStateOf(UpiPreferenceManager.isQuickPayEnabled(context)) }
+    var isBeepEnabled by remember { mutableStateOf(ScannerPreferenceManager.isBeepEnabled(context)) }
+    var isVibrateEnabled by remember { mutableStateOf(ScannerPreferenceManager.isVibrateEnabled(context)) }
     val installedUpiApps = remember { getInstalledUpiApps(context) }
 
     if (showDefaultAppDialog) {
@@ -361,6 +365,128 @@ fun AboutLegalScreen(
                             )
                         )
                     }
+
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+
+                    // Scan Sound / Beep Toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(color = appGoldDim2(isDark))
+                            ) {
+                                val next = !isBeepEnabled
+                                isBeepEnabled = next
+                                ScannerPreferenceManager.setBeepEnabled(context, next)
+                            }
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2))
+                                .border(0.8.dp, appGoldPrimary(isDark).copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isBeepEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                contentDescription = null,
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Scan Beep Sound",
+                                color = appTextPrimary(isDark),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (isBeepEnabled) "Play audio beep tone on scan" else "Muted (No sound on scan)",
+                                color = if (isBeepEnabled) appGoldPrimary(isDark) else appTextTertiary(isDark),
+                                fontSize = 12.5.sp
+                            )
+                        }
+                        Switch(
+                            checked = isBeepEnabled,
+                            onCheckedChange = { next ->
+                                isBeepEnabled = next
+                                ScannerPreferenceManager.setBeepEnabled(context, next)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = if (isDark) Color(0xFF20140A) else Color.White,
+                                checkedTrackColor = appGoldPrimary(isDark),
+                                uncheckedThumbColor = appTextTertiary(isDark),
+                                uncheckedTrackColor = if (isDark) Ink750 else CeramicElevated
+                            )
+                        )
+                    }
+
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+
+                    // Scan Vibration Toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = ripple(color = appGoldDim2(isDark))
+                            ) {
+                                val next = !isVibrateEnabled
+                                isVibrateEnabled = next
+                                ScannerPreferenceManager.setVibrateEnabled(context, next)
+                            }
+                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2))
+                                .border(0.8.dp, appGoldPrimary(isDark).copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (isVibrateEnabled) Icons.Default.Vibration else Icons.Default.NotificationsOff,
+                                contentDescription = null,
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Scan Vibration",
+                                color = appTextPrimary(isDark),
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (isVibrateEnabled) "Haptic feedback on scan" else "Disabled (No vibration)",
+                                color = if (isVibrateEnabled) appGoldPrimary(isDark) else appTextTertiary(isDark),
+                                fontSize = 12.5.sp
+                            )
+                        }
+                        Switch(
+                            checked = isVibrateEnabled,
+                            onCheckedChange = { next ->
+                                isVibrateEnabled = next
+                                ScannerPreferenceManager.setVibrateEnabled(context, next)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = if (isDark) Color(0xFF20140A) else Color.White,
+                                checkedTrackColor = appGoldPrimary(isDark),
+                                uncheckedThumbColor = appTextTertiary(isDark),
+                                uncheckedTrackColor = if (isDark) Ink750 else CeramicElevated
+                            )
+                        )
+                    }
                 }
             }
 
@@ -483,16 +609,40 @@ fun AboutLegalScreen(
                         title = "Rate Us",
                         subtitle = "Leave a review on Google Play Store",
                         onClick = {
-                            try {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.qr.hub")).apply {
-                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                })
-                            } catch (_: Exception) {
+                            val activity = context as? Activity
+                            if (activity != null) {
+                                InAppReviewManager.triggerReviewFlow(activity)
+                            } else {
                                 try {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.qr.hub")).apply {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.qr.hub")).apply {
                                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                                     })
-                                } catch (_: Exception) {}
+                                } catch (_: Exception) {
+                                    try {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.qr.hub")).apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        })
+                                    } catch (_: Exception) {}
+                                }
+                            }
+                        }
+                    )
+
+                    HorizontalDivider(color = appBorder(isDark), thickness = 0.6.dp, modifier = Modifier.padding(horizontal = 18.dp))
+
+                    // Check for Updates
+                    SettingsItemRow(
+                        isDark = isDark,
+                        icon = Icons.Default.SystemUpdate,
+                        iconTint = appGoldPrimary(isDark),
+                        iconBg = if (isDark) Color(0xFF2A1F0D) else Color(0xFFFAF0E2),
+                        title = "Check for Updates",
+                        subtitle = "Get latest version from Google Play",
+                        onClick = {
+                            val activity = context as? Activity
+                            if (activity != null) {
+                                Toast.makeText(context, "Checking for latest updates...", Toast.LENGTH_SHORT).show()
+                                InAppUpdateManager.checkForAppUpdate(activity)
                             }
                         }
                     )

@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">QR HUB</string>
+    <string name="shortcut_scan_short">Scan QR</string>
+    <string name="shortcut_scan_long">Scan QR &amp; Barcode</string>
+    <string name="shortcut_upi_short">UPI QR</string>
+    <string name="shortcut_upi_long">Create UPI Payment QR</string>
+    <string name="shortcut_bulk_short">Bulk QR</string>
+    <string name="shortcut_bulk_long">Batch QR Generator</string>
+    <string name="shortcut_barcode_short">Barcode</string>
+    <string name="shortcut_barcode_long">Create Product Barcode</string>
 </resources>

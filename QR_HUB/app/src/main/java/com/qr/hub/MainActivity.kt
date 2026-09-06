@@ -1,5 +1,6 @@
 package com.qr.hub
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +29,11 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -79,20 +85,61 @@ sealed class Screen {
 }
 
 class MainActivity : ComponentActivity() {
+    private var pendingShortcutAction = mutableStateOf<String?>(null)
+    private var isUpdateReadyForRestart = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AdManager.initialize(this)
         enableEdgeToEdge()
+
+        pendingShortcutAction.value = intent?.getStringExtra("shortcut_action")
+
+        // Google Play In-App Updates check
+        InAppUpdateManager.checkForAppUpdate(this) {
+            isUpdateReadyForRestart.value = true
+        }
+
         setContent {
             QRHUBTheme {
-                AppNavigation()
+                AppNavigation(
+                    shortcutAction = pendingShortcutAction.value,
+                    onShortcutHandled = { pendingShortcutAction.value = null },
+                    isUpdateReady = isUpdateReadyForRestart.value,
+                    onRestartForUpdate = { InAppUpdateManager.completeUpdate() }
+                )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra("shortcut_action")?.let { action ->
+            pendingShortcutAction.value = action
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        InAppUpdateManager.onResume(this) {
+            isUpdateReadyForRestart.value = true
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        InAppUpdateManager.onDestroy()
     }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    shortcutAction: String? = null,
+    onShortcutHandled: () -> Unit = {},
+    isUpdateReady: Boolean = false,
+    onRestartForUpdate: () -> Unit = {}
+) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.ScannerTab) }
     val context = LocalContext.current
     var themeMode by remember { mutableStateOf(ThemePreferenceManager.getThemeMode(context)) }
@@ -101,6 +148,19 @@ fun AppNavigation() {
         AppThemeMode.SYSTEM -> systemDark
         AppThemeMode.DARK -> true
         AppThemeMode.LIGHT -> false
+    }
+
+    // Handle App Shortcuts from home screen long press
+    LaunchedEffect(shortcutAction) {
+        shortcutAction?.let { action ->
+            when (action) {
+                "action_scan" -> currentScreen = Screen.ScannerTab
+                "action_create_upi" -> currentScreen = Screen.GenerateForm(QRType.UPI)
+                "action_bulk_generate" -> currentScreen = Screen.GenerateForm(QRType.Bulk)
+                "action_generate_barcode" -> currentScreen = Screen.GenerateForm(QRType.Barcode)
+            }
+            onShortcutHandled()
+        }
     }
 
     // Handle system back button
@@ -197,6 +257,72 @@ fun AppNavigation() {
                             isDark = isDark,
                             onBackClick = { currentScreen = Screen.AboutLegal }
                         )
+                    }
+                }
+            }
+
+            // In-App Update Downloaded Banner
+            if (isUpdateReady) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        appGoldPrimary(isDark).copy(alpha = 0.6f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.SystemUpdate,
+                                contentDescription = "App Update Ready",
+                                tint = appGoldPrimary(isDark),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Update Ready to Install",
+                                    color = appTextPrimary(isDark),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Restart app to complete update",
+                                    color = appTextSecondary(isDark),
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                        Button(
+                            onClick = onRestartForUpdate,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = appGoldPrimary(isDark),
+                                contentColor = Color.Black
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                "Restart",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

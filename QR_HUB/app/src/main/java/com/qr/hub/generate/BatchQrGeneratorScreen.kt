@@ -384,6 +384,7 @@ fun BatchQrGeneratorScreen(
 
                                 generatedItems = list
                                 isGenerating = false
+                                InAppReviewManager.recordSuccessfulAction(activity)
                             }
                         }
                     },
