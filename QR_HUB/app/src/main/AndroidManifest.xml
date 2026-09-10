@@ -69,10 +69,10 @@
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode" />
 
-        <!-- Google Mobile Ads / AdMob App ID (Official Test App ID for 14+ Testers) -->
+        <!-- Google Mobile Ads / AdMob App ID (Production App ID) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-5378252094188023~4426119685" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
