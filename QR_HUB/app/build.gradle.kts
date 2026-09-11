@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.qr.hub"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.qr.hub"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 7
-        versionName = "1.5"
+        targetSdk = 36
+        versionCode = 8
+        versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
