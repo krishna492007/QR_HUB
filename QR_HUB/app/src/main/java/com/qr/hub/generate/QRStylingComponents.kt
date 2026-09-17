@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -62,9 +63,9 @@ fun QRCustomizationSection(
     var showColorPickerDialog by remember { mutableStateOf(false) }
     var colorPickerTarget by remember { mutableStateOf(ColorTarget.FOREGROUND) }
 
-    // Gallery Picker for custom logo
+    // Gallery Picker for custom logo (Android Photo Picker — no storage permission needed)
     val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
             try {
@@ -169,7 +170,7 @@ fun QRCustomizationSection(
                     2 -> DotShapesTab(styleConfig, isDark, onStyleChanged)
                     3 -> CornerEyesTab(styleConfig, isDark, onStyleChanged)
                     4 -> CompactFramesTab(qrType, styleConfig, isDark, onStyleChanged)
-                    5 -> TypeAwareCenterLogoTab(qrType, styleConfig, isDark, onStyleChanged, onPickGallery = { galleryLauncher.launch("image/*") })
+                    5 -> TypeAwareCenterLogoTab(qrType, styleConfig, isDark, onStyleChanged, onPickGallery = { galleryLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
                 }
             }
         }
