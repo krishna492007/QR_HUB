@@ -15,7 +15,7 @@
 - Quick Connect: `adb connect 10.228.192.18:5555` or run `connect_device.bat`
 
 ## App Version & Production AdMob
-- Current Version: v1.6 (versionCode 8) [Target SDK: Android 16 (API 36)]
+- Current Version: v1.7 (versionCode 9) [Target SDK: Android 16 (API 36)]
 - Production AdMob App ID: `ca-app-pub-5378252094188023~4426119685`
 - Banner Ad ID: `ca-app-pub-5378252094188023/8845088294` (Inline Adaptive width: `(screenWidthDp - 36).coerceAtLeast(300)`)
 - Interstitial Ad ID: `ca-app-pub-5378252094188023/2694235612` (Frequency: 1 ad per 2 actions)
