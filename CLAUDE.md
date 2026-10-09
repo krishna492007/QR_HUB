@@ -1,15 +1,16 @@
 # QR HUB Project Guidelines
 
 ## Project Structure & Paths
-- Git Repository Root: `QR_HUB/`
-- Android App Source: `QR_HUB/app/`
+- Git Repository Root: `.` (current folder)
+- Android App Source: `QR_HUB/app/` (nested Gradle project)
 - Java SDK Path (JDK 17 LTS): `C:\Users\Admin\.jdks\jdk-17.0.12+7`
-- Fast Build Commands (from `QR_HUB/`):
+- Fast Build Commands (run from `QR_HUB/` subfolder):
   - Debug APK: `JAVA_HOME="C:\Users\Admin\.jdks\jdk-17.0.12+7" ./gradlew assembleDebug`
   - Release AAB: `JAVA_HOME="C:\Users\Admin\.jdks\jdk-17.0.12+7" ./gradlew bundleRelease`
   - Install on device: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
   - Clean build: `JAVA_HOME="C:\Users\Admin\.jdks\jdk-17.0.12+7" ./gradlew clean`
   - Run lint: `JAVA_HOME="C:\Users\Admin\.jdks\jdk-17.0.12+7" ./gradlew lint`
+  - Run unit tests: `JAVA_HOME="C:\Users\Admin\.jdks\jdk-17.0.12+7" ./gradlew test`
 
 ## App Architecture
 - **UI Framework:** Pure Jetpack Compose (no XML layouts)
@@ -46,6 +47,7 @@
 - Release Keystore: `app/qrhub_release.jks`
 
 ## Critical Gotchas & Release Rules
+- **Nested Project Structure:** Android Studio project root is nested at `QR_HUB/` inside the git repo root. Always run `./gradlew` commands inside `QR_HUB/`.
 - **JDK Version:** Always compile with JDK 17. System default Java 25 crashes Gradle daemon.
 - **Ad Layout:** Never hardcode banner ad dimensions — preserve dynamic adaptive sizing in `BannerAdView.kt`.
 - **Native Debug Symbols:** Keep `ndk { debugSymbolLevel = "FULL" }` in `build.gradle.kts` release build type. Play Console warning about missing symbols is cosmetic — all .so files are pre-stripped third-party libs (AndroidX, CameraX). Cannot generate debug symbols for these; safe to ignore the warning.
